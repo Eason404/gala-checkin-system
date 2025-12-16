@@ -1,6 +1,7 @@
 import { Reservation, TicketType, PaymentStatus, CheckInStatus, PaymentMethod, Stats } from '../types';
-import { db } from '../firebaseConfig';
+import { db, analytics } from '../firebaseConfig'; // Import analytics instance
 import { collection, addDoc, getDocs, updateDoc, doc, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { logEvent } from 'firebase/analytics'; // Import logger function
 
 const COLLECTION_NAME = 'reservations';
 
@@ -68,6 +69,16 @@ export const createReservation = async (data: Partial<Reservation>): Promise<Res
 
   try {
     const docRef = await addDoc(collection(db, COLLECTION_NAME), newReservationData);
+    
+    // ANALYTICS: Log Registration
+    logEvent(analytics, 'sign_up', {
+      method: 'web_form',
+      ticket_type: newReservationData.ticketType,
+      total_people: totalPeople,
+      value: totalAmount,
+      currency: 'USD'
+    });
+
     // Return the object with the generated ID and converted timestamp
     return {
         ...newReservationData,
@@ -104,6 +115,35 @@ export const updateReservation = async (publicId: string, updates: Partial<Reser
     }
 
     await updateDoc(docRef, updates);
+
+    // ANALYTICS: Log Actions
+    if (updates.checkInStatus === CheckInStatus.Arrived) {
+        logEvent(analytics, 'check_in', {
+            id: publicId
+        });
+    }
+
+    // Log 'purchase' when payment is marked as Paid with an amount
+    if (updates.paymentStatus === PaymentStatus.Paid && updates.paidAmount && updates.paidAmount > 0) {
+        logEvent(analytics, 'purchase', {
+            transaction_id: publicId,
+            value: updates.paidAmount,
+            currency: 'USD',
+            items: [{
+                item_id: 'ticket',
+                item_name: 'Gala Ticket',
+                price: updates.paidAmount
+            }]
+        });
+    }
+
+    // Log cancellation
+    if (updates.checkInStatus === CheckInStatus.Cancelled) {
+        logEvent(analytics, 'reservation_cancelled', {
+             id: publicId
+        });
+    }
+
   } catch (e) {
     console.error("Error updating document: ", e);
   }

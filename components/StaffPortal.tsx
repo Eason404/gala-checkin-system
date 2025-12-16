@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getReservations, updateReservation, createReservation, generateLotteryNumber } from '../services/dataService';
 import { Reservation, TicketType, PaymentStatus, CheckInStatus, PaymentMethod } from '../types';
-import { Search, UserPlus, DollarSign, Check, ChevronLeft, QrCode, User, Users, CreditCard, Ticket, Info, CheckCircle, Loader2 } from 'lucide-react';
+import { Search, UserPlus, DollarSign, Check, ChevronLeft, User, Users, Ticket, Info, CheckCircle, Loader2, Calculator, Banknote, X } from 'lucide-react';
 
 const StaffPortal: React.FC = () => {
   // Mode: 'search' (default) | 'result' | 'walkin' | 'scanner'
@@ -14,10 +14,15 @@ const StaffPortal: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Payment Modal State
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [cashTendered, setCashTendered] = useState('');
+
   // Walk-in form state
   const [walkInForm, setWalkInForm] = useState({ name: '', phone: '', adults: 1, children: 0 });
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const cashInputRef = useRef<HTMLInputElement>(null);
 
   // Load Data
   const refreshData = async () => {
@@ -37,6 +42,13 @@ const StaffPortal: React.FC = () => {
       searchInputRef.current.focus();
     }
   }, [mode]);
+
+  // Auto-focus cash input when modal opens
+  useEffect(() => {
+    if (showPayModal && cashInputRef.current) {
+      cashInputRef.current.focus();
+    }
+  }, [showPayModal]);
 
   // Phone Formatter
   const formatPhoneDisplay = (val: string) => {
@@ -95,9 +107,23 @@ const StaffPortal: React.FC = () => {
     }
   };
 
+  const initiateCheckIn = () => {
+    if (!selectedRes) return;
+    
+    // If unpaid, show calculator modal first
+    if (selectedRes.paymentStatus === PaymentStatus.Unpaid && selectedRes.totalAmount > 0) {
+        setCashTendered('');
+        setShowPayModal(true);
+    } else {
+        // If already paid or free, proceed directly
+        handleFamilyCheckIn();
+    }
+  };
+
   // Check-in Logic (Family)
   const handleFamilyCheckIn = async () => {
     if (!selectedRes) return;
+    setShowPayModal(false); // Close modal if open
     
     setLoading(true);
     const count = selectedRes.totalPeople;
@@ -156,8 +182,11 @@ const StaffPortal: React.FC = () => {
     setLoading(false);
   };
 
-  // Demo Helpers
-  const demoNumbers = ['5085550101', '6175550202', '5085550404'];
+  // Calculator Logic
+  const totalDue = selectedRes ? selectedRes.totalAmount : 0;
+  const tendered = Number(cashTendered);
+  const changeDue = tendered - totalDue;
+  const isPaymentSufficient = tendered >= totalDue;
 
   return (
     <div className="max-w-4xl mx-auto pb-12">
@@ -333,19 +362,87 @@ const StaffPortal: React.FC = () => {
                 {selectedRes.checkInStatus === CheckInStatus.NotArrived && (
                     <div className="p-6 bg-gray-50 border-t border-gray-100">
                         <button 
-                            onClick={handleFamilyCheckIn}
+                            onClick={initiateCheckIn}
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-xl font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-3"
+                            className={`w-full text-xl font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-3 ${
+                                selectedRes.paymentStatus === PaymentStatus.Unpaid 
+                                    ? 'bg-cny-gold hover:bg-yellow-500 text-cny-red' 
+                                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
+                            }`}
                         >
-                            {loading ? <Loader2 className="animate-spin" /> : <><Check className="w-8 h-8" /> 确认签到 Check In</>}
+                            {loading ? <Loader2 className="animate-spin" /> : (
+                                selectedRes.paymentStatus === PaymentStatus.Unpaid 
+                                    ? <><Banknote className="w-8 h-8" /> Pay & Check In</>
+                                    : <><Check className="w-8 h-8" /> Confirm Check In</>
+                            )}
                         </button>
                         {selectedRes.paymentStatus === PaymentStatus.Unpaid && (
                             <p className="text-center text-xs text-red-500 mt-2 font-bold">
-                                Please collect ${selectedRes.totalAmount} cash first!
+                                Requires Cash Collection
                             </p>
                         )}
                     </div>
                 )}
+            </div>
+        </div>
+      )}
+
+      {/* --- PAYMENT CALCULATOR MODAL --- */}
+      {showPayModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+                <div className="bg-cny-red p-4 flex justify-between items-center text-white">
+                    <h3 className="font-bold text-lg flex items-center gap-2">
+                        <Calculator className="w-5 h-5" /> 收款计算器 Payment
+                    </h3>
+                    <button onClick={() => setShowPayModal(false)} className="hover:bg-red-800 p-1 rounded">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                    <div className="text-center">
+                        <p className="text-sm text-gray-500 uppercase font-bold tracking-wider">Total Due (应收)</p>
+                        <p className="text-4xl font-bold text-cny-red mt-1">${totalDue}</p>
+                    </div>
+
+                    <div className="bg-gray-100 p-4 rounded-xl border-2 border-transparent focus-within:border-gray-400 transition">
+                        <label className="block text-xs font-bold text-gray-500 mb-1">CASH RECEIVED (实收)</label>
+                        <div className="flex items-center gap-2">
+                            <DollarSign className="w-6 h-6 text-gray-400" />
+                            <input 
+                                ref={cashInputRef}
+                                type="number" 
+                                className="w-full bg-transparent text-3xl font-bold text-gray-800 outline-none placeholder-gray-300"
+                                placeholder="0"
+                                value={cashTendered}
+                                onChange={e => setCashTendered(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className={`p-4 rounded-xl border-2 text-center transition-colors ${isPaymentSufficient ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-100'}`}>
+                        <p className={`text-sm font-bold uppercase ${isPaymentSufficient ? 'text-green-700' : 'text-red-500'}`}>
+                            {isPaymentSufficient ? 'Change Due (找零)' : 'Insufficient Amount'}
+                        </p>
+                        <p className={`text-3xl font-bold mt-1 ${isPaymentSufficient ? 'text-green-600' : 'text-red-500'}`}>
+                            ${isPaymentSufficient ? changeDue : '0'}
+                        </p>
+                    </div>
+                    
+                    <button 
+                        onClick={handleFamilyCheckIn}
+                        disabled={!isPaymentSufficient}
+                        className={`w-full py-3 rounded-xl font-bold text-lg flex items-center justify-center gap-2 ${
+                            isPaymentSufficient 
+                             ? 'bg-cny-gold text-cny-red hover:bg-yellow-400 shadow-lg' 
+                             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
+                    >
+                        <CheckCircle className="w-5 h-5" />
+                        Confirm Paid & Check In
+                    </button>
+                </div>
             </div>
         </div>
       )}
