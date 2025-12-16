@@ -23,7 +23,8 @@ export enum PaymentMethod {
 }
 
 export interface Reservation {
-  id: string;
+  id: string; // The visual ID (e.g. CNY26-1234)
+  firebaseDocId?: string; // The actual Firestore Document ID (for fast updates)
   createdTime: number;
   ticketType: TicketType;
   contactName: string;

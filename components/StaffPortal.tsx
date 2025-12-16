@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getReservations, updateReservation, createReservation, generateLotteryNumber } from '../services/dataService';
 import { Reservation, TicketType, PaymentStatus, CheckInStatus, PaymentMethod } from '../types';
-import { Search, UserPlus, DollarSign, Check, ChevronLeft, QrCode, User, Users, CreditCard, Ticket, Info, CheckCircle } from 'lucide-react';
+import { Search, UserPlus, DollarSign, Check, ChevronLeft, QrCode, User, Users, CreditCard, Ticket, Info, CheckCircle, Loader2 } from 'lucide-react';
 
 const StaffPortal: React.FC = () => {
   // Mode: 'search' (default) | 'result' | 'walkin' | 'scanner'
@@ -12,6 +12,7 @@ const StaffPortal: React.FC = () => {
   const [searchName, setSearchName] = useState('');
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Walk-in form state
   const [walkInForm, setWalkInForm] = useState({ name: '', phone: '', adults: 1, children: 0 });
@@ -19,8 +20,11 @@ const StaffPortal: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Load Data
-  const refreshData = () => {
-    setReservations(getReservations());
+  const refreshData = async () => {
+    setLoading(true);
+    const data = await getReservations();
+    setReservations(data);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -46,12 +50,11 @@ const StaffPortal: React.FC = () => {
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    // Allow typing, but we search on cleaned version
     setSearchPhone(val);
   };
 
   // Search Logic
-  const executeSearch = (overridePhone?: string) => {
+  const executeSearch = async (overridePhone?: string) => {
     setErrorMsg('');
     const term = (overridePhone || searchPhone).replace(/\D/g, ''); // Clean non-digits
     
@@ -60,16 +63,20 @@ const StaffPortal: React.FC = () => {
         return;
     }
 
+    setLoading(true);
+    // Refresh data to get latest before search
+    const latestData = await getReservations();
+    setReservations(latestData);
+    setLoading(false);
+
     let found: Reservation | undefined;
 
-    // 1. Try exact phone match (last 10 digits)
     if (term) {
-        found = reservations.find(r => r.phoneNumber.includes(term));
+        found = latestData.find(r => r.phoneNumber.includes(term));
     }
 
-    // 2. Try Name if no phone match
     if (!found && searchName) {
-        found = reservations.find(r => r.contactName.toLowerCase().includes(searchName.toLowerCase()));
+        found = latestData.find(r => r.contactName.toLowerCase().includes(searchName.toLowerCase()));
     }
 
     if (found) {
@@ -89,9 +96,10 @@ const StaffPortal: React.FC = () => {
   };
 
   // Check-in Logic (Family)
-  const handleFamilyCheckIn = () => {
+  const handleFamilyCheckIn = async () => {
     if (!selectedRes) return;
     
+    setLoading(true);
     const count = selectedRes.totalPeople;
     // Generate lottery numbers if they don't exist
     const currentLottery = selectedRes.lotteryNumbers || [];
@@ -108,30 +116,18 @@ const StaffPortal: React.FC = () => {
         lotteryNumbers: newLottery
     };
 
-    updateReservation(selectedRes.id, updates);
+    // Use firebaseDocId for optimization if available
+    await updateReservation(selectedRes.id, updates, selectedRes.firebaseDocId);
     
     // Update local state immediately for UI feedback
     setSelectedRes({ ...selectedRes, ...updates });
-    refreshData();
+    await refreshData();
+    setLoading(false);
   };
 
-  // Simulated QR Scan
-  const handleSimulateScan = () => {
-    // Pick a random reservation to simulate a scan
-    if (reservations.length > 0) {
-        const randomRes = reservations[0]; // Just pick the first one for demo
-        setSelectedRes(randomRes);
-        setMode('result');
-    } else {
-        setErrorMsg('无数据可模拟 (No data to simulate)');
-        setMode('search');
-    }
-  };
-
-  const handleWalkInSubmit = (e: React.FormEvent) => {
+  const handleWalkInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const price = 20; // Updated to $20 for Walk-ins
-    // Price logic: Children Free
     const total = Number(walkInForm.adults) * price;
     const count = Number(walkInForm.adults) + Number(walkInForm.children);
 
@@ -139,7 +135,8 @@ const StaffPortal: React.FC = () => {
     const lotteryNums = [];
     for(let i=0; i<count; i++) lotteryNums.push(generateLotteryNumber());
 
-    const newRes = createReservation({
+    setLoading(true);
+    const newRes = await createReservation({
         ticketType: TicketType.WalkIn,
         contactName: walkInForm.name || 'Walk-In Guest',
         phoneNumber: walkInForm.phone,
@@ -152,11 +149,11 @@ const StaffPortal: React.FC = () => {
         lotteryNumbers: lotteryNums
     });
 
-    // Reset and show result
     setWalkInForm({ name: '', phone: '', adults: 1, children: 0 });
     setSelectedRes(newRes);
     setMode('result');
-    refreshData();
+    await refreshData();
+    setLoading(false);
   };
 
   // Demo Helpers
@@ -175,12 +172,15 @@ const StaffPortal: React.FC = () => {
                  <button onClick={() => setMode('walkin')} className="bg-cny-gold text-cny-red px-4 py-2 rounded-lg font-bold shadow hover:bg-yellow-400 flex items-center gap-1">
                     <UserPlus className="w-4 h-4" /> 现场购票 Walk-In
                  </button>
-                 <button onClick={() => setMode('scanner')} className="bg-gray-800 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-gray-700 flex items-center gap-1">
-                    <QrCode className="w-4 h-4" /> 扫码 Scan
-                 </button>
             </div>
         )}
       </div>
+
+      {loading && (
+          <div className="fixed inset-0 bg-white/50 z-50 flex items-center justify-center">
+              <Loader2 className="w-10 h-10 animate-spin text-cny-red" />
+          </div>
+      )}
 
       {/* --- SEARCH MODE --- */}
       {mode === 'search' && (
@@ -225,31 +225,6 @@ const StaffPortal: React.FC = () => {
                         {errorMsg}
                     </div>
                 )}
-            </div>
-
-            {/* DEMO CHEAT SHEET */}
-            <div className="mt-12 pt-6 border-t border-gray-100">
-                <p className="text-xs text-gray-400 uppercase tracking-widest text-center mb-3">Demo Cheat Sheet</p>
-                <div className="flex flex-wrap justify-center gap-2">
-                    {demoNumbers.map(num => (
-                        <button 
-                            key={num}
-                            onClick={() => {
-                                setSearchPhone(num);
-                                executeSearch(num); // Auto search
-                            }}
-                            className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full border border-gray-200 transition"
-                        >
-                            {num}
-                        </button>
-                    ))}
-                    <button onClick={() => {
-                        setSearchName('Jianguo');
-                        // No auto execute for name, let user see it
-                    }} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full border border-gray-200 transition">
-                        Name: Jianguo
-                    </button>
-                </div>
             </div>
         </div>
       )}
@@ -359,10 +334,10 @@ const StaffPortal: React.FC = () => {
                     <div className="p-6 bg-gray-50 border-t border-gray-100">
                         <button 
                             onClick={handleFamilyCheckIn}
+                            disabled={loading}
                             className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-xl font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-3"
                         >
-                            <Check className="w-8 h-8" />
-                            确认签到 Check In
+                            {loading ? <Loader2 className="animate-spin" /> : <><Check className="w-8 h-8" /> 确认签到 Check In</>}
                         </button>
                         {selectedRes.paymentStatus === PaymentStatus.Unpaid && (
                             <p className="text-center text-xs text-red-500 mt-2 font-bold">
@@ -417,35 +392,12 @@ const StaffPortal: React.FC = () => {
                     <span className="text-3xl font-bold text-cny-red">${walkInForm.adults * 20}</span>
                  </div>
 
-                 <button type="submit" className="w-full bg-cny-gold hover:bg-yellow-500 text-cny-red font-bold py-4 rounded-lg shadow-lg text-lg">
-                    Confirm & Check In
+                 <button type="submit" disabled={loading} className="w-full bg-cny-gold hover:bg-yellow-500 text-cny-red font-bold py-4 rounded-lg shadow-lg text-lg flex items-center justify-center">
+                    {loading ? <Loader2 className="animate-spin" /> : "Confirm & Check In"}
                  </button>
             </form>
         </div>
       )}
-
-      {/* --- SCANNER MODE (Mock) --- */}
-      {mode === 'scanner' && (
-          <div className="max-w-md mx-auto bg-black rounded-xl overflow-hidden shadow-2xl relative aspect-[3/4] flex flex-col items-center justify-center text-white">
-              <button onClick={() => setMode('search')} className="absolute top-4 left-4 z-20 bg-black/50 p-2 rounded-full">
-                  <ChevronLeft className="w-6 h-6" />
-              </button>
-              
-              <div className="absolute inset-0 opacity-50 bg-[url('https://images.unsplash.com/photo-1516192518150-0d8fee5425e3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80')] bg-cover bg-center"></div>
-              
-              <div className="w-64 h-64 border-4 border-cny-gold/50 rounded-2xl relative z-10 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-                  <div className="w-full h-0.5 bg-red-500 absolute top-1/2 animate-scan"></div>
-                  <p className="text-sm font-bold opacity-80">Scanning...</p>
-              </div>
-
-              <div className="absolute bottom-10 z-20">
-                  <button onClick={handleSimulateScan} className="bg-white text-black px-6 py-3 rounded-full font-bold shadow-xl active:scale-95 transition">
-                      Simulate Scan Result
-                  </button>
-              </div>
-          </div>
-      )}
-
     </div>
   );
 };

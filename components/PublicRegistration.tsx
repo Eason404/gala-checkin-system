@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createReservation, getReservations, updateReservation } from '../services/dataService';
 import { TicketType, PaymentStatus, CheckInStatus, Reservation } from '../types';
-import { CheckCircle, AlertCircle, Phone, User, Ticket, Search, XCircle, AlertTriangle, CalendarDays, Info, FileText, ScrollText, Wand2, Timer, TrendingUp } from 'lucide-react';
+import { validatePhone } from '../utils/validation';
+import { CheckCircle, AlertCircle, Phone, User, Ticket, Search, XCircle, AlertTriangle, CalendarDays, Info, FileText, ScrollText, Wand2, Timer, TrendingUp, Loader2 } from 'lucide-react';
 import EventSchedule from './EventSchedule';
 
 const PublicRegistration: React.FC = () => {
@@ -16,12 +17,13 @@ const PublicRegistration: React.FC = () => {
     children: 0,
     subscribe: false,
   });
-  const [agreedToWaiver, setAgreedToWaiver] = useState(false); // New state for waiver
-  const [showWaiverModal, setShowWaiverModal] = useState(false); // New state for modal
+  const [agreedToWaiver, setAgreedToWaiver] = useState(false);
+  const [showWaiverModal, setShowWaiverModal] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [reservationId, setReservationId] = useState('');
   const [phoneError, setPhoneError] = useState('');
-  const [submitError, setSubmitError] = useState(''); // New state for form submission errors
+  const [submitError, setSubmitError] = useState('');
+  const [loading, setLoading] = useState(false); // New loading state
 
   // Countdown State
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -34,13 +36,10 @@ const PublicRegistration: React.FC = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
 
-  // Countdown Logic (Mock Target: Feb 15, 2026 for Early Bird End)
+  // Countdown Logic
   useEffect(() => {
     const targetDate = new Date('2026-02-15T23:59:59').getTime();
-    
-    // For demo purposes, if target is passed, set a fake future date relative to now
-    // In real app, this would be fixed. Here we ensure the visual always shows something cool.
-    const demoTarget = new Date().getTime() + (5 * 24 * 60 * 60 * 1000) + (14 * 60 * 60 * 1000); // 5 days, 14 hours from now
+    const demoTarget = new Date().getTime() + (5 * 24 * 60 * 60 * 1000) + (14 * 60 * 60 * 1000); 
 
     const interval = setInterval(() => {
       const now = new Date().getTime();
@@ -61,13 +60,6 @@ const PublicRegistration: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
   
-  // Strict Phone Validation
-  const validatePhone = (phone: string) => {
-    const phoneRegex = /^(\+?1)?[ -. ]?\(?([0-9]{3})\)?[ -. ]?([0-9]{3})[ -. ]?([0-9]{4})$/;
-    return phoneRegex.test(phone);
-  };
-
-  // --- MAGIC FILL (TEST DEMO) ---
   const handleMagicFill = () => {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const firstNames = ['James', 'Mary', 'Robert', 'Patricia', 'John', 'Jennifer', 'Michael', 'Linda'];
@@ -78,20 +70,20 @@ const PublicRegistration: React.FC = () => {
       name: randomName,
       phone: `508-555-${randomNum}`,
       email: `test.${randomNum}@example.com`,
-      adults: Math.floor(1 + Math.random() * 3), // 1-3 adults
-      children: Math.floor(Math.random() * 3), // 0-2 children
+      adults: Math.floor(1 + Math.random() * 3), 
+      children: Math.floor(Math.random() * 3),
       subscribe: true,
     });
-    setAgreedToWaiver(true); // Auto check waiver for speed
+    setAgreedToWaiver(true);
     setPhoneError('');
-    setSubmitError(''); // Clear errors
+    setSubmitError('');
   };
 
   // --- REGISTRATION LOGIC ---
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPhoneError('');
-    setSubmitError(''); // Clear previous errors
+    setSubmitError('');
 
     if (!validatePhone(formData.phone)) {
       setPhoneError('请输入有效的美国手机号码 (Please enter a valid US phone number)');
@@ -108,24 +100,32 @@ const PublicRegistration: React.FC = () => {
       return;
     }
 
-    const newRes = createReservation({
-      contactName: formData.name,
-      phoneNumber: formData.phone,
-      email: formData.email,
-      adultsCount: Number(formData.adults),
-      childrenCount: Number(formData.children),
-      ticketType: TicketType.EarlyBird,
-      checkInStatus: CheckInStatus.NotArrived,
-      paymentStatus: PaymentStatus.Unpaid,
-      notes: formData.subscribe ? 'Subscribed' : '',
-    });
+    setLoading(true);
+    try {
+        const newRes = await createReservation({
+          contactName: formData.name,
+          phoneNumber: formData.phone,
+          email: formData.email,
+          adultsCount: Number(formData.adults),
+          childrenCount: Number(formData.children),
+          ticketType: TicketType.EarlyBird,
+          checkInStatus: CheckInStatus.NotArrived,
+          paymentStatus: PaymentStatus.Unpaid,
+          notes: formData.subscribe ? 'Subscribed' : '',
+        });
 
-    setReservationId(newRes.id);
-    setSubmitted(true);
+        setReservationId(newRes.id);
+        setSubmitted(true);
+    } catch (err) {
+        setSubmitError("预约失败，请稍后重试 (Submission failed, please try again).");
+        console.error(err);
+    } finally {
+        setLoading(false);
+    }
   };
 
   // --- MANAGE / CANCEL LOGIC ---
-  const handleLookup = (e: React.FormEvent) => {
+  const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLookupError('');
     setCancelSuccess(false);
@@ -142,33 +142,34 @@ const PublicRegistration: React.FC = () => {
       return;
     }
 
-    const allReservations = getReservations();
-    // Find the most recent active reservation for this phone AND name check
-    const found = allReservations.find(r => {
-      const phoneMatch = r.phoneNumber.replace(/\D/g, '').includes(cleanPhone);
-      // Case-insensitive partial match for name to be user-friendly but secure enough
-      const nameMatch = r.contactName.toLowerCase().includes(manageName.trim().toLowerCase());
-      const isActive = r.checkInStatus !== CheckInStatus.Cancelled;
-      return phoneMatch && nameMatch && isActive;
-    });
+    setLoading(true);
+    try {
+        const allReservations = await getReservations();
+        // Find the most recent active reservation for this phone AND name check
+        const found = allReservations.find(r => {
+          const phoneMatch = r.phoneNumber.replace(/\D/g, '').includes(cleanPhone);
+          const nameMatch = r.contactName.toLowerCase().includes(manageName.trim().toLowerCase());
+          const isActive = r.checkInStatus !== CheckInStatus.Cancelled;
+          return phoneMatch && nameMatch && isActive;
+        });
 
-    if (found) {
-      setMyRes(found);
-    } else {
-      setLookupError('未找到匹配的预约记录，请检查手机号或姓名 (No matching reservation found, please check phone and name)');
+        if (found) {
+          setMyRes(found);
+        } else {
+          setLookupError('未找到匹配的预约记录，请检查手机号或姓名 (No matching reservation found, please check phone and name)');
+        }
+    } catch (err) {
+        setLookupError('系统错误，无法查询 (System error)');
+    } finally {
+        setLoading(false);
     }
   };
 
-  // Helper variables for button state
   const getCancelEligibility = () => {
       if (!myRes) return { canCancel: false, reason: '' };
-
-      // 1. Check Checked In Status
       if (myRes.checkInStatus === CheckInStatus.Arrived) {
           return { canCancel: false, reason: 'arrived' };
       }
-
-      // 2. Check 72 Hour Rule
       const eventDate = new Date('2026-03-08T10:00:00').getTime();
       const now = Date.now();
       const hoursLeft = (eventDate - now) / (1000 * 60 * 60);
@@ -176,7 +177,6 @@ const PublicRegistration: React.FC = () => {
       if (hoursLeft < 72) {
           return { canCancel: false, reason: 'too_late' };
       }
-
       return { canCancel: true, reason: '' };
   };
 
@@ -187,16 +187,21 @@ const PublicRegistration: React.FC = () => {
     setShowCancelModal(true);
   };
 
-  const confirmCancel = () => {
+  const confirmCancel = async () => {
     if (!myRes) return;
-
-    updateReservation(myRes.id, { checkInStatus: CheckInStatus.Cancelled });
-    setShowCancelModal(false);
-    setCancelSuccess(true);
-    setMyRes(null);
+    setLoading(true);
+    try {
+        await updateReservation(myRes.id, { checkInStatus: CheckInStatus.Cancelled });
+        setShowCancelModal(false);
+        setCancelSuccess(true);
+        setMyRes(null);
+    } catch (err) {
+        alert("取消失败 (Failed to cancel)");
+    } finally {
+        setLoading(false);
+    }
   };
 
-  // --- RENDER SUCCESS VIEW (Registration) ---
   if (submitted) {
     return (
       <div className="max-w-lg mx-auto bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 mt-8 relative">
@@ -237,9 +242,6 @@ const PublicRegistration: React.FC = () => {
               <span className="text-gray-600 font-bold">预计费用 (Est. Cost):</span>
               <span className="font-bold text-2xl text-cny-red">${Number(formData.adults) * 15}</span>
             </div>
-            <div className="text-xs text-gray-500 mt-2 italic text-center">
-               * Children are free. Adults $15/each (Early Bird).
-            </div>
           </div>
 
           <button 
@@ -259,7 +261,6 @@ const PublicRegistration: React.FC = () => {
 
   return (
     <div className="max-w-lg mx-auto pb-12">
-      {/* Header Visual */}
       <div className="text-center mb-8 pt-6 relative">
         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-cny-red text-cny-gold w-20 h-20 rounded-full flex items-center justify-center text-4xl font-serif border-4 border-white shadow-lg z-10">
           马
@@ -272,7 +273,6 @@ const PublicRegistration: React.FC = () => {
 
       <EventSchedule />
 
-      {/* Tabs */}
       <div className="flex rounded-lg bg-gray-200 p-1 mb-6">
         <button 
           onClick={() => setActiveTab('register')}
@@ -289,10 +289,7 @@ const PublicRegistration: React.FC = () => {
       </div>
 
       {activeTab === 'register' ? (
-        /* REGISTRATION FORM */
         <div className="bg-white p-6 md:p-8 rounded-xl shadow-xl border-t-8 border-cny-gold relative">
-          
-          {/* MAGIC FILL BUTTON (UPDATED - VISIBLE & LABELED) */}
           <div className="flex justify-end mb-4">
               <button 
                 type="button"
@@ -304,7 +301,6 @@ const PublicRegistration: React.FC = () => {
               </button>
           </div>
 
-          {/* COUNTDOWN TICKER */}
           <div className="mb-6 rounded-lg overflow-hidden border border-orange-200 shadow-sm">
              <div className="bg-gradient-to-r from-orange-100 to-amber-100 p-3 flex items-center justify-between text-amber-900">
                 <div className="flex items-center gap-2">
@@ -442,7 +438,6 @@ const PublicRegistration: React.FC = () => {
               </div>
             </div>
 
-            {/* ERROR MESSAGE DISPLAY */}
             {submitError && (
                <div className="mb-4 bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg flex items-start gap-2 text-sm font-bold animate-pulse">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -452,9 +447,10 @@ const PublicRegistration: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-cny-red to-cny-dark hover:from-red-700 hover:to-red-900 text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-lg flex items-center justify-center gap-2"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-cny-red to-cny-dark hover:from-red-700 hover:to-red-900 text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              立即预约 Reserve Now
+              {loading ? <Loader2 className="animate-spin" /> : "立即预约 Reserve Now"}
             </button>
           </form>
         </div>
@@ -464,21 +460,6 @@ const PublicRegistration: React.FC = () => {
            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 pb-2 border-b border-gray-100">
             <Search className="text-gray-600 w-5 h-5" /> 查询预约 (Lookup)
           </h3>
-
-          {/* Test Data Helper */}
-          {!myRes && !cancelSuccess && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-800">
-              <div className="flex items-center gap-2 font-bold mb-2">
-                <Info className="w-4 h-4" />
-                <span>测试账号 (Test Data)</span>
-              </div>
-              <ul className="space-y-1 text-xs list-disc pl-4 opacity-80">
-                <li><span className="font-bold">Qiang Wang / 5085550101</span> - 未签到 (Unpaid)</li>
-                <li><span className="font-bold">Emily Chen / 6175550202</span> - 未签到 (Unpaid)</li>
-                <li><span className="font-bold">Jianguo Liu / 7815550303</span> - 已签到 (Arrived)</li>
-              </ul>
-            </div>
-          )}
 
           {!myRes && !cancelSuccess && (
             <form onSubmit={handleLookup} className="space-y-6">
@@ -512,8 +493,8 @@ const PublicRegistration: React.FC = () => {
                     />
                   </div>
                   
-                  <button type="submit" className="w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-gray-700 flex items-center justify-center gap-2">
-                    <Search className="w-4 h-4" /> 查询 Find Reservation
+                  <button type="submit" disabled={loading} className="w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-gray-700 flex items-center justify-center gap-2 disabled:opacity-50">
+                    {loading ? <Loader2 className="animate-spin"/> : <><Search className="w-4 h-4" /> 查询 Find Reservation</>}
                   </button>
                 </div>
                 {lookupError && <p className="text-red-500 mt-2 flex items-center gap-1"><AlertCircle className="w-4 h-4"/> {lookupError}</p>}
@@ -572,14 +553,14 @@ const PublicRegistration: React.FC = () => {
 
               <button 
                 onClick={handleCancelRequest}
-                disabled={!canCancel}
+                disabled={!canCancel || loading}
                 className={`w-full py-4 border-2 font-bold rounded-lg transition flex items-center justify-center gap-2 ${
                     canCancel 
                       ? 'border-red-500 text-red-600 hover:bg-red-50' 
                       : 'border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed'
                   }`}
               >
-                {reason === 'arrived' ? (
+                {loading ? <Loader2 className="animate-spin" /> : reason === 'arrived' ? (
                    <><CheckCircle className="w-5 h-5" /> 已签到 Cannot Cancel (Checked In)</>
                 ) : reason === 'too_late' ? (
                    <><AlertTriangle className="w-5 h-5" /> 超过期限 Cannot Cancel (Too Late)</>
@@ -632,11 +613,10 @@ const PublicRegistration: React.FC = () => {
         </div>
       )}
 
-      {/* WAIVER MODAL (New) */}
+      {/* WAIVER MODAL */}
       {showWaiverModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
            <div className="bg-white rounded-xl max-w-2xl w-full flex flex-col shadow-2xl max-h-[90vh]">
-              {/* Modal Header */}
               <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-xl">
                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                    <ScrollText className="w-5 h-5 text-cny-red" />
@@ -650,7 +630,6 @@ const PublicRegistration: React.FC = () => {
                  </button>
               </div>
 
-              {/* Modal Content - Scrollable */}
               <div className="p-6 overflow-y-auto text-sm text-gray-600 leading-relaxed space-y-4">
                  <div className="border border-gray-100 p-4 rounded bg-gray-50/50">
                     <h4 className="font-bold text-gray-800 mb-2 uppercase text-xs tracking-wider">Waiver and Release of Liability</h4>
@@ -688,7 +667,6 @@ const PublicRegistration: React.FC = () => {
                  </div>
               </div>
 
-              {/* Modal Footer */}
               <div className="p-5 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 rounded-b-xl">
                  <button 
                    onClick={() => setShowWaiverModal(false)}

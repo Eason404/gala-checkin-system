@@ -2,20 +2,39 @@ import React, { useEffect, useState } from 'react';
 import { calculateStats, getReservations } from '../services/dataService';
 import { Stats, Reservation } from '../types';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Users, DollarSign, UserCheck, TrendingUp } from 'lucide-react';
+import { Download, Users, DollarSign, UserCheck, TrendingUp, Loader2, Cloud, RefreshCw, Wifi } from 'lucide-react';
 
 const COLORS = ['#D72638', '#FFD700', '#0088FE', '#00C49F'];
 
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = async () => {
+    setRefreshing(true);
+    try {
+        const [fetchedStats, fetchedReservations] = await Promise.all([
+            calculateStats(),
+            getReservations()
+        ]);
+        setStats(fetchedStats);
+        setReservations(fetchedReservations);
+    } catch (e) {
+        console.error("Failed to load dashboard data", e);
+    } finally {
+        setLoading(false);
+        setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    setStats(calculateStats());
-    setReservations(getReservations());
+    fetchData();
   }, []);
 
-  if (!stats) return <div className="p-8 text-center">Loading...</div>;
+  if (loading) return <div className="p-12 text-center flex justify-center"><Loader2 className="animate-spin w-8 h-8 text-cny-red" /></div>;
+  if (!stats) return <div className="p-8 text-center text-red-500 font-bold">Error loading data. Please check your Firebase configuration.</div>;
 
   const pieData = [
     { name: '早鸟票 Early Bird', value: stats.earlyBirdCount },
@@ -27,7 +46,7 @@ const AdminDashboard: React.FC = () => {
   ];
 
   const downloadCSV = () => {
-    const headers = ['ID', 'Name', 'Phone', 'Type', 'TotalPeople', 'TotalAmount', 'PaidAmount', 'Status', 'CheckIn'];
+    const headers = ['ID', 'Name', 'Phone', 'Type', 'TotalPeople', 'TotalAmount', 'PaidAmount', 'Status', 'CheckIn', 'Notes', 'LotteryNumbers'];
     const rows = reservations.map(r => [
       r.id,
       `"${r.contactName}"`,
@@ -37,7 +56,9 @@ const AdminDashboard: React.FC = () => {
       r.totalAmount,
       r.paidAmount,
       r.paymentStatus,
-      r.checkInStatus
+      r.checkInStatus,
+      `"${r.notes || ''}"`,
+      `"${(r.lotteryNumbers || []).join(' ')}"`
     ]);
     
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -55,6 +76,35 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      
+      {/* System Status Bar */}
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+           <div className="bg-green-100 text-green-700 p-2 rounded-full">
+              <Cloud className="w-5 h-5" />
+           </div>
+           <div>
+              <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                 Database Connected
+                 <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                 </span>
+              </h3>
+              <p className="text-xs text-gray-500">Google Firestore (Cloud)</p>
+           </div>
+        </div>
+        
+        <button 
+           onClick={fetchData}
+           disabled={refreshing}
+           className="flex items-center gap-2 text-sm text-cny-red hover:bg-red-50 px-3 py-2 rounded transition font-medium"
+        >
+           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+           {refreshing ? 'Refreshing...' : 'Refresh Data'}
+        </button>
+      </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
              <TrendingUp className="text-cny-red" /> 数据统计 Dashboard
