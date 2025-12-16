@@ -1,0 +1,55 @@
+export enum TicketType {
+  EarlyBird = 'EarlyBird',
+  WalkIn = 'WalkIn',
+}
+
+export enum PaymentStatus {
+  Unpaid = 'Unpaid',
+  Paid = 'Paid',
+  PartialPaid = 'PartialPaid',
+}
+
+export enum CheckInStatus {
+  NotArrived = 'NotArrived',
+  Arrived = 'Arrived',
+  Cancelled = 'Cancelled', // New status
+}
+
+export enum PaymentMethod {
+  Cash = 'Cash',
+  Check = 'Check',
+  Other = 'Other',
+  None = 'None',
+}
+
+export interface Reservation {
+  id: string;
+  createdTime: number;
+  ticketType: TicketType;
+  contactName: string;
+  phoneNumber: string;
+  email?: string;
+  adultsCount: number;
+  childrenCount: number;
+  totalPeople: number;
+  pricePerPerson: number;
+  totalAmount: number;
+  paidAmount: number;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  checkInStatus: CheckInStatus;
+  notes?: string;
+  // New field for Lottery Numbers (e.g., ["001", "002"])
+  lotteryNumbers?: string[]; 
+}
+
+export interface Stats {
+  totalReservations: number;
+  totalPeople: number;
+  earlyBirdCount: number;
+  walkInCount: number;
+  totalRevenueExpected: number;
+  totalRevenueCollected: number;
+  checkedInCount: number;
+  cancelledCount: number; // New stat
+}

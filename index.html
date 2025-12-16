@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Natick 2026 马年春晚</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"PingFang SC"', '"Microsoft YaHei"', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+            },
+            colors: {
+              cny: {
+                red: '#D72638',
+                gold: '#FFD700',
+                dark: '#8a1c26',
+                bg: '#FFF8F0',
+                accent: '#FCE7BB'
+              }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-cny-bg text-gray-800 font-sans">
+    <div id="root"></div>
+  </body>
+</html>
