@@ -19,7 +19,7 @@
                 red: '#D72638',
                 gold: '#FFD700',
                 dark: '#8a1c26',
-                bg: '#FFFDF5', // Softer paper white
+                bg: '#FFFDF5', 
                 accent: '#FCE7BB',
                 cloud: '#F9F1E7'
               }
@@ -33,23 +33,18 @@
     </script>
     <style>
       @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-5px); }
-        100% { transform: translateY(0px); }
+        0% { transform: translate3d(0, 0, 0); }
+        50% { transform: translate3d(0, -5px, 0); }
+        100% { transform: translate3d(0, 0, 0); }
       }
-      .festive-float { animation: float 3s ease-in-out infinite; }
-      .traditional-border {
-        border: 2px solid #FFD700;
-        position: relative;
-        padding: 1rem;
+      .festive-float { 
+        animation: float 3s ease-in-out infinite; 
+        will-change: transform;
       }
-      .traditional-border::before, .traditional-border::after {
-        content: "🏮";
-        position: absolute;
-        font-size: 0.8rem;
+      .optimized-list {
+        content-visibility: auto;
+        contain-intrinsic-size: 1000px;
       }
-      .traditional-border::before { top: -10px; left: -10px; }
-      .traditional-border::after { bottom: -10px; right: -10px; }
     </style>
   <script type="importmap">
 {

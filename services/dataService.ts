@@ -1,3 +1,4 @@
+
 import { Reservation, TicketType, PaymentStatus, CheckInStatus, PaymentMethod, Stats } from '../types';
 import { db, analytics } from '../firebaseConfig';
 import { collection, addDoc, getDocs, updateDoc, doc, query, where, orderBy, Timestamp } from 'firebase/firestore';
@@ -76,7 +77,6 @@ export const getReservations = async (): Promise<Reservation[]> => {
 };
 
 export const createReservation = async (data: Partial<Reservation>): Promise<Reservation> => {
-  // Validation checks for required fields
   if (!data.contactName || data.contactName.trim().length < 2) {
     throw new Error('MISSING_NAME');
   }
@@ -104,7 +104,11 @@ export const createReservation = async (data: Partial<Reservation>): Promise<Res
     throw new Error('DUPLICATE_PHONE');
   }
 
-  const price = data.ticketType === TicketType.WalkIn ? 20 : 15;
+  // PRICING LOGIC
+  let price = 15;
+  if (data.ticketType === TicketType.Regular) price = 20;
+  if (data.ticketType === TicketType.WalkIn) price = 20;
+
   const adults = data.adultsCount || 0;
   const children = data.childrenCount || 0;
   const totalPeople = adults + children;
@@ -196,7 +200,9 @@ export const calculateStats = async (): Promise<Stats> => {
     totalReservations: 0,
     totalPeople: 0,
     earlyBirdCount: 0,
+    regularCount: 0,
     walkInCount: 0,
+    lunchBoxCount: 0,
     totalRevenueExpected: 0,
     totalRevenueCollected: 0,
     checkedInCount: 0,
@@ -210,10 +216,14 @@ export const calculateStats = async (): Promise<Stats> => {
     }
     stats.totalReservations++;
     stats.totalPeople += r.totalPeople;
+    stats.lunchBoxCount += r.adultsCount; // Lunch box count based on adults
     stats.totalRevenueExpected += r.totalAmount;
     stats.totalRevenueCollected += r.paidAmount;
+
     if (r.ticketType === TicketType.EarlyBird) stats.earlyBirdCount++;
+    if (r.ticketType === TicketType.Regular) stats.regularCount++;
     if (r.ticketType === TicketType.WalkIn) stats.walkInCount++;
+    
     if (r.checkInStatus === CheckInStatus.Arrived) stats.checkedInCount += r.totalPeople;
   });
 

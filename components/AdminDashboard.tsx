@@ -2,16 +2,18 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { calculateStats, getReservations } from '../services/dataService';
 import { Stats, Reservation, CheckInStatus, PaymentStatus, TicketType } from '../types';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Download, Users, DollarSign, UserCheck, TrendingUp, Loader2, RefreshCw, Search, Filter, ArrowUpDown, ChevronRight, Activity, PieChart as PieIcon, CreditCard, UserX } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Download, Users, DollarSign, UserCheck, TrendingUp, Loader2, RefreshCw, Search, Filter, ArrowUpDown, ChevronRight, Activity, PieChart as PieIcon, CreditCard, Utensils, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 
 const COLORS = ['#D72638', '#FFD700', '#3B82F6', '#10B981', '#F59E0B'];
+const PAGE_SIZE = 15;
 
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Advanced Filter State
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,6 +44,11 @@ const AdminDashboard: React.FC = () => {
     fetchData();
   }, []);
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterPayment, filterType]);
+
   const filteredData = useMemo(() => {
     return reservations.filter(r => {
       const matchSearch = r.contactName.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -60,14 +67,21 @@ const AdminDashboard: React.FC = () => {
     });
   }, [reservations, searchTerm, filterStatus, filterPayment, filterType, sortKey, sortOrder]);
 
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredData.slice(start, start + PAGE_SIZE);
+  }, [filteredData, currentPage]);
+
   const toggleSort = (key: 'contactName' | 'totalAmount' | 'createdTime') => {
     if (sortKey === key) setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
     else { setSortKey(key); setSortOrder('desc'); }
   };
 
   const revenueByTicket = useMemo(() => [
-    { name: 'Early Bird', amount: reservations.filter(r => r.ticketType === TicketType.EarlyBird).reduce((acc, curr) => acc + curr.totalAmount, 0) },
-    { name: 'Walk-In', amount: reservations.filter(r => r.ticketType === TicketType.WalkIn).reduce((acc, curr) => acc + curr.totalAmount, 0) },
+    { name: '早鸟票', amount: reservations.filter(r => r.ticketType === TicketType.EarlyBird).reduce((acc, curr) => acc + curr.totalAmount, 0) },
+    { name: '常规票', amount: reservations.filter(r => r.ticketType === TicketType.Regular).reduce((acc, curr) => acc + curr.totalAmount, 0) },
+    { name: '现场票', amount: reservations.filter(r => r.ticketType === TicketType.WalkIn).reduce((acc, curr) => acc + curr.totalAmount, 0) },
   ], [reservations]);
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="animate-spin w-10 h-10 text-cny-red" /></div>;
@@ -114,9 +128,9 @@ const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: '预计到场人数', val: stats.totalPeople, sub: 'Total Headcount', color: 'border-blue-500', icon: <Users className="text-blue-500" /> },
-          { label: '现场已签到', val: stats.checkedInCount, sub: `${Math.round((stats.checkedInCount/stats.totalPeople || 0)*100)}% 签到率`, color: 'border-green-500', icon: <UserCheck className="text-green-500" /> },
+          { label: '预计盒饭总数', val: stats.lunchBoxCount, sub: 'Based on Adults Count', color: 'border-orange-500', icon: <Utensils className="text-orange-500" /> },
           { label: '已确认收入', val: `$${stats.totalRevenueCollected}`, sub: 'Net Cash Collected', color: 'border-cny-gold', icon: <DollarSign className="text-cny-gold" /> },
-          { label: '待收余款', val: `$${pendingAmount}`, sub: 'Unpaid Balance', color: 'border-orange-500', icon: <CreditCard className="text-orange-500" /> }
+          { label: '待收余款', val: `$${pendingAmount}`, sub: 'Unpaid Balance', color: 'border-red-500', icon: <CreditCard className="text-red-500" /> }
         ].map((kpi, idx) => (
           <div key={idx} className={`bg-white p-7 rounded-[2rem] shadow-sm border-l-8 ${kpi.color} hover:shadow-md transition-shadow`}>
              <div className="flex items-center gap-3 text-gray-400 mb-3 font-black uppercase text-[10px] tracking-widest">
@@ -158,7 +172,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* Data Table */}
         <div className="overflow-hidden rounded-3xl border border-gray-50">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto optimized-list">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">
                         <tr>
@@ -174,9 +188,9 @@ const AdminDashboard: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                        {filteredData.length === 0 ? (
+                        {paginatedData.length === 0 ? (
                             <tr><td colSpan={5} className="p-20 text-center text-gray-300 font-bold uppercase tracking-widest italic">No matching records found.</td></tr>
-                        ) : filteredData.map(res => (
+                        ) : paginatedData.map(res => (
                             <tr key={res.id} className="hover:bg-cny-cloud/10 transition-colors group">
                                 <td className="p-5">
                                     <div className="font-black text-gray-900 text-base">{res.contactName}</div>
@@ -207,19 +221,48 @@ const AdminDashboard: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        Showing {Math.min(filteredData.length, (currentPage - 1) * PAGE_SIZE + 1)}-{Math.min(filteredData.length, currentPage * PAGE_SIZE)} of {filteredData.length}
+                    </div>
+                    <div className="flex gap-2">
+                        <button 
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(p => p - 1)}
+                            className="p-2 bg-white border border-gray-200 rounded-xl disabled:opacity-30 hover:bg-gray-50 transition"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <div className="flex items-center px-4 text-xs font-black text-gray-700">
+                            Page {currentPage} / {totalPages}
+                        </div>
+                        <button 
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(p => p + 1)}
+                            className="p-2 bg-white border border-gray-200 rounded-xl disabled:opacity-30 hover:bg-gray-50 transition"
+                        >
+                            <ChevronRightIcon className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
       </div>
 
       {/* Visual Analytics - Bento Bottom */}
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="bg-white p-8 rounded-[2.5rem] shadow-lg border border-gray-100 lg:col-span-1">
-           <h3 className="text-lg font-black text-gray-800 mb-8 uppercase tracking-tight flex items-center gap-2"><PieIcon className="w-5 h-5 text-cny-red" /> 门票类型分布</h3>
+           <h3 className="text-lg font-black text-gray-800 mb-8 uppercase tracking-tight flex items-center gap-2"><PieIcon className="w-5 h-5 text-cny-red" /> 票务分布</h3>
            <div className="h-64">
              <ResponsiveContainer width="100%" height="100%">
                <PieChart>
                  <Pie data={[
-                    { name: 'Early Bird', value: reservations.filter(r => r.ticketType === TicketType.EarlyBird).length },
-                    { name: 'Walk-In', value: reservations.filter(r => r.ticketType === TicketType.WalkIn).length }
+                    { name: '早鸟', value: reservations.filter(r => r.ticketType === TicketType.EarlyBird).length },
+                    { name: '常规', value: reservations.filter(r => r.ticketType === TicketType.Regular).length },
+                    { name: '现场', value: reservations.filter(r => r.ticketType === TicketType.WalkIn).length }
                  ]} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                    {COLORS.map((color, index) => <Cell key={index} fill={color} />)}
                  </Pie>
@@ -233,14 +276,14 @@ const AdminDashboard: React.FC = () => {
                   <span className="text-gray-400">{Math.round(reservations.filter(r => r.ticketType === TicketType.EarlyBird).length / (reservations.length || 1) * 100)}%</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cny-gold"></div> 现场票</span>
-                  <span className="text-gray-400">{Math.round(reservations.filter(r => r.ticketType === TicketType.WalkIn).length / (reservations.length || 1) * 100)}%</span>
+                  <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cny-gold"></div> 常规票</span>
+                  <span className="text-gray-400">{Math.round(reservations.filter(r => r.ticketType === TicketType.Regular).length / (reservations.length || 1) * 100)}%</span>
               </div>
            </div>
         </div>
 
         <div className="bg-white p-8 rounded-[2.5rem] shadow-lg border border-gray-100 lg:col-span-2">
-           <h3 className="text-lg font-black text-gray-800 mb-8 uppercase tracking-tight flex items-center gap-2"><TrendingUp className="w-5 h-5 text-cny-red" /> 门票收入贡献 ($)</h3>
+           <h3 className="text-lg font-black text-gray-800 mb-8 uppercase tracking-tight flex items-center gap-2"><TrendingUp className="w-5 h-5 text-cny-red" /> 收入明细 ($)</h3>
            <div className="h-64">
              <ResponsiveContainer width="100%" height="100%">
                <BarChart data={revenueByTicket}>
@@ -253,7 +296,7 @@ const AdminDashboard: React.FC = () => {
              </ResponsiveContainer>
            </div>
            <div className="mt-6 p-4 bg-gray-50 rounded-2xl flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">总计预计收入 (GROSS)</span>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">总计预计收入</span>
               <span className="text-2xl font-black text-gray-900">${stats.totalRevenueExpected}</span>
            </div>
         </div>

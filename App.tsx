@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import PublicRegistration from './components/PublicRegistration';
 import StaffPortal from './components/StaffPortal';
@@ -11,7 +11,7 @@ import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { logout, ENABLE_AUTH } from './services/authService';
 
-const Navigation: React.FC = () => {
+const Navigation = memo(() => {
   const location = useLocation();
   const [user, setUser] = useState<any>(null);
 
@@ -112,19 +112,17 @@ const Navigation: React.FC = () => {
       </nav>
     </>
   );
-};
+});
 
-const Footer: React.FC = () => (
+const Footer = memo(() => (
   <footer className="bg-cny-dark text-white pt-12 pb-32 sm:pb-12 mt-16 border-t-4 border-cny-gold relative overflow-hidden">
     <div className="max-w-3xl mx-auto px-6 text-center relative z-10">
-      {/* Small festive divider */}
       <div className="flex justify-center items-center gap-4 mb-8 opacity-40">
           <div className="h-px bg-cny-gold flex-1"></div>
           <p className="text-sm font-serif text-cny-gold">🐎 2026 🐎</p>
           <div className="h-px bg-cny-gold flex-1"></div>
       </div>
       
-      {/* Organizations - Compact single column layout */}
       <div className="space-y-4 mb-8">
         <div>
           <h4 className="text-cny-gold font-black uppercase tracking-[0.2em] text-[8px] mb-1 opacity-50">Organizer / 主办单位</h4>
@@ -136,7 +134,6 @@ const Footer: React.FC = () => (
         </div>
       </div>
 
-      {/* Simplified contact & copyright */}
       <div className="pt-6 border-t border-white/5 space-y-4">
         <a href="mailto:natickchineseassociation@gmail.com" className="inline-flex items-center gap-2 text-white/50 hover:text-cny-gold transition-colors text-xs font-bold">
           <Mail className="w-3.5 h-3.5" />
@@ -148,7 +145,7 @@ const Footer: React.FC = () => (
       </div>
     </div>
   </footer>
-);
+));
 
 function App() {
   return (

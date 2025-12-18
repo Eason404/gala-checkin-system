@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { createReservation, getReservations, updateReservation } from '../services/dataService';
+import { createReservation, getReservations } from '../services/dataService';
 import { TicketType, PaymentStatus, CheckInStatus, Reservation } from '../types';
 import { validatePhone, validateEmail } from '../utils/validation';
-import { CheckCircle, AlertCircle, Phone, Ticket, Search, XCircle, AlertTriangle, CalendarDays, ScrollText, Wand2, TrendingUp, Loader2, Mail, Plus, Minus, ArrowRight, MapPin, QrCode, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { CheckCircle, AlertCircle, Phone, Ticket, Wand2, Loader2, Mail, Plus, Minus, ArrowRight, QrCode, Utensils } from 'lucide-react';
 import QRCode from 'qrcode';
 
 const PublicRegistration: React.FC = () => {
@@ -18,6 +17,7 @@ const PublicRegistration: React.FC = () => {
     email: '',
     adults: 1,
     children: 0,
+    ticketType: TicketType.EarlyBird,
     subscribe: false,
   });
   const [agreedToWaiver, setAgreedToWaiver] = useState(false);
@@ -25,8 +25,6 @@ const PublicRegistration: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [reservationId, setReservationId] = useState('');
   const [qrCodeData, setQrCodeData] = useState<string>('');
-  const [phoneError, setPhoneError] = useState('');
-  const [emailError, setEmailError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(false); 
 
@@ -35,7 +33,8 @@ const PublicRegistration: React.FC = () => {
   const [manageName, setManageName] = useState(''); 
   const [myRes, setMyRes] = useState<Reservation | null>(null);
   const [lookupError, setLookupError] = useState('');
-  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const currentPrice = formData.ticketType === TicketType.EarlyBird ? 15 : 20;
 
   useEffect(() => {
     if (submitted && reservationId) {
@@ -65,18 +64,15 @@ const PublicRegistration: React.FC = () => {
       email: `${fName.toLowerCase()}.${tsSuffix}@${domains[Math.floor(Math.random() * domains.length)]}`,
       adults: Math.floor(Math.random() * 3) + 1,
       children: Math.floor(Math.random() * 3),
+      ticketType: Math.random() > 0.5 ? TicketType.EarlyBird : TicketType.Regular,
       subscribe: true,
     });
     setAgreedToWaiver(true);
-    setPhoneError('');
-    setEmailError('');
     setSubmitError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPhoneError('');
-    setEmailError('');
     setSubmitError('');
 
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
@@ -84,11 +80,11 @@ const PublicRegistration: React.FC = () => {
       return;
     }
     if (!validateEmail(formData.email)) {
-      setEmailError('邮箱格式错误');
+      setSubmitError('邮箱格式错误');
       return;
     }
     if (!validatePhone(formData.phone)) {
-      setPhoneError('手机号格式错误');
+      setSubmitError('手机号格式错误');
       return;
     }
     if (!agreedToWaiver) {
@@ -105,7 +101,7 @@ const PublicRegistration: React.FC = () => {
           email: formData.email,
           adultsCount: Number(formData.adults),
           childrenCount: Number(formData.children),
-          ticketType: TicketType.EarlyBird,
+          ticketType: formData.ticketType,
         });
 
         setReservationId(newRes.id);
@@ -183,12 +179,16 @@ const PublicRegistration: React.FC = () => {
                 <span className="font-bold">{formData.firstName} {formData.lastName}</span>
              </div>
              <div className="flex justify-between items-center border-b border-white/20 pb-2">
+                <span className="text-white/60 text-xs font-bold">票务类型</span>
+                <span className="font-bold">{formData.ticketType === TicketType.EarlyBird ? '早鸟票' : '常规票'}</span>
+             </div>
+             <div className="flex justify-between items-center border-b border-white/20 pb-2">
                 <span className="text-white/60 text-xs font-bold">随行人数</span>
                 <span className="font-bold">{formData.adults} 成人 / {formData.children} 儿童</span>
              </div>
              <div className="flex justify-between items-center pt-2">
                 <span className="text-white/60 text-xs font-bold uppercase tracking-widest">预估费用</span>
-                <span className="text-2xl font-bold text-cny-gold">${formData.adults * 15}</span>
+                <span className="text-2xl font-bold text-cny-gold">${formData.adults * currentPrice}</span>
              </div>
           </div>
 
@@ -244,14 +244,37 @@ const PublicRegistration: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Ticket Type Selector */}
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">选择票务 (Ticket Type) <span className="text-cny-red">*</span></label>
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setFormData({...formData, ticketType: TicketType.EarlyBird})}
+                  className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${formData.ticketType === TicketType.EarlyBird ? 'border-cny-red bg-red-50 ring-4 ring-red-50' : 'border-gray-100 bg-gray-50/50 grayscale opacity-60'}`}
+                >
+                  <span className={`font-black text-sm ${formData.ticketType === TicketType.EarlyBird ? 'text-cny-red' : 'text-gray-500'}`}>早鸟票 Early Bird</span>
+                  <span className="text-lg font-black text-gray-900">$15 <span className="text-[10px] text-gray-400">/ 成人</span></span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setFormData({...formData, ticketType: TicketType.Regular})}
+                  className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${formData.ticketType === TicketType.Regular ? 'border-cny-red bg-red-50 ring-4 ring-red-50' : 'border-gray-100 bg-gray-50/50 grayscale opacity-60'}`}
+                >
+                  <span className={`font-black text-sm ${formData.ticketType === TicketType.Regular ? 'text-cny-red' : 'text-gray-500'}`}>常规票 Regular</span>
+                  <span className="text-lg font-black text-gray-900">$20 <span className="text-[10px] text-gray-400">/ 成人</span></span>
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase px-1">姓 (Last Name) <span className="text-cny-red">*</span></label>
-                <input required className="w-full p-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-cny-red/5 focus:bg-white" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+                <input required className="w-full p-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-cny-red/5 focus:bg-white transition-all" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase px-1">名 (First Name) <span className="text-cny-red">*</span></label>
-                <input required className="w-full p-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-cny-red/5 focus:bg-white" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                <input required className="w-full p-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-cny-red/5 focus:bg-white transition-all" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
               </div>
             </div>
 
@@ -274,7 +297,7 @@ const PublicRegistration: React.FC = () => {
             <div className="p-1 bg-cny-cloud/30 rounded-3xl border border-cny-gold/10">
                 <div className="grid grid-cols-2 gap-1">
                    <div className="bg-white/60 p-4 rounded-2xl text-center shadow-sm">
-                      <span className="text-[10px] font-black text-gray-400 block mb-2 uppercase tracking-widest">成人 ($15)</span>
+                      <span className="text-[10px] font-black text-gray-400 block mb-2 uppercase tracking-widest">成人 (${currentPrice})</span>
                       <div className="flex items-center justify-between px-2">
                         <button type="button" onClick={() => adjustCount('adults', -1)} className="p-2 hover:bg-cny-red/5 rounded-full transition"><Minus className="w-4 h-4 text-gray-400" /></button>
                         <span className="font-black text-2xl text-gray-900">{formData.adults}</span>
@@ -290,6 +313,10 @@ const PublicRegistration: React.FC = () => {
                       </div>
                    </div>
                 </div>
+                <div className="p-3 flex items-center gap-2 text-[10px] font-bold text-gray-400 justify-center">
+                   <Utensils className="w-3 h-3 text-cny-gold" />
+                   注：成人含盒饭一份，儿童提供主食。
+                </div>
             </div>
 
             <div className="bg-gradient-to-br from-cny-red to-cny-dark p-6 rounded-[2rem] text-white shadow-2xl relative overflow-hidden group">
@@ -297,7 +324,7 @@ const PublicRegistration: React.FC = () => {
                   <div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-white/50">预计总额 Total</span>
                     <div className="text-4xl font-black text-cny-gold flex items-baseline gap-1">
-                        <span className="text-xl">$</span>{formData.adults * 15}
+                        <span className="text-xl">$</span>{formData.adults * currentPrice}
                     </div>
                   </div>
                   <div className="text-right">

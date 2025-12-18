@@ -1,5 +1,7 @@
+
 export enum TicketType {
   EarlyBird = 'EarlyBird',
+  Regular = 'Regular',
   WalkIn = 'WalkIn',
 }
 
@@ -48,7 +50,9 @@ export interface Stats {
   totalReservations: number;
   totalPeople: number;
   earlyBirdCount: number;
+  regularCount: number; // Added
   walkInCount: number;
+  lunchBoxCount: number; // New: Based on total adults
   totalRevenueExpected: number;
   totalRevenueCollected: number;
   checkedInCount: number;
