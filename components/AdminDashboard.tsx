@@ -1,18 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { calculateStats, getReservations } from '../services/dataService';
-import { Stats, Reservation, CheckInStatus, PaymentStatus } from '../types';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Users, DollarSign, UserCheck, TrendingUp, Loader2, Cloud, RefreshCw, Search, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
-const COLORS = ['#D72638', '#FFD700', '#0088FE', '#00C49F'];
+import React, { useEffect, useState, useMemo } from 'react';
+import { calculateStats, getReservations } from '../services/dataService';
+import { Stats, Reservation, CheckInStatus, PaymentStatus, TicketType } from '../types';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Download, Users, DollarSign, UserCheck, TrendingUp, Loader2, RefreshCw, Search, Filter, ArrowUpDown, ChevronRight, Activity, PieChart as PieIcon, CreditCard, UserX } from 'lucide-react';
+
+const COLORS = ['#D72638', '#FFD700', '#3B82F6', '#10B981', '#F59E0B'];
 
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [filteredReservations, setFilteredReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Advanced Filter State
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterPayment, setFilterPayment] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [sortKey, setSortKey] = useState<'contactName' | 'totalAmount' | 'createdTime'>('createdTime');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -23,7 +30,6 @@ const AdminDashboard: React.FC = () => {
         ]);
         setStats(fetchedStats);
         setReservations(fetchedReservations);
-        setFilteredReservations(fetchedReservations);
     } catch (e) {
         console.error("Failed to load dashboard data", e);
     } finally {
@@ -36,127 +42,219 @@ const AdminDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (!reservations) return;
-    const lowerTerm = searchTerm.toLowerCase();
-    const results = reservations.filter(r => 
-        r.contactName.toLowerCase().includes(lowerTerm) ||
-        r.phoneNumber.includes(lowerTerm) ||
-        r.id.toLowerCase().includes(lowerTerm)
-    );
-    setFilteredReservations(results);
-  }, [searchTerm, reservations]);
+  const filteredData = useMemo(() => {
+    return reservations.filter(r => {
+      const matchSearch = r.contactName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          r.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          r.phoneNumber.includes(searchTerm);
+      const matchStatus = filterStatus === 'all' || r.checkInStatus === filterStatus;
+      const matchPayment = filterPayment === 'all' || r.paymentStatus === filterPayment;
+      const matchType = filterType === 'all' || r.ticketType === filterType;
+      
+      return matchSearch && matchStatus && matchPayment && matchType;
+    }).sort((a, b) => {
+      const factor = sortOrder === 'asc' ? 1 : -1;
+      if (sortKey === 'contactName') return a.contactName.localeCompare(b.contactName) * factor;
+      if (sortKey === 'totalAmount') return (a.totalAmount - b.totalAmount) * factor;
+      return (a.createdTime - b.createdTime) * factor;
+    });
+  }, [reservations, searchTerm, filterStatus, filterPayment, filterType, sortKey, sortOrder]);
+
+  const toggleSort = (key: 'contactName' | 'totalAmount' | 'createdTime') => {
+    if (sortKey === key) setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortOrder('desc'); }
+  };
+
+  const revenueByTicket = useMemo(() => [
+    { name: 'Early Bird', amount: reservations.filter(r => r.ticketType === TicketType.EarlyBird).reduce((acc, curr) => acc + curr.totalAmount, 0) },
+    { name: 'Walk-In', amount: reservations.filter(r => r.ticketType === TicketType.WalkIn).reduce((acc, curr) => acc + curr.totalAmount, 0) },
+  ], [reservations]);
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="animate-spin w-10 h-10 text-cny-red" /></div>;
   if (!stats) return <div className="p-8 text-center text-red-500 font-bold">Error loading data.</div>;
 
-  const pieData = [
-    { name: '早鸟票 Early Bird', value: stats.earlyBirdCount },
-    { name: '现场票 Walk-In', value: stats.walkInCount },
-  ];
-
   const downloadCSV = () => {
-    const headers = ['ID', 'Name', 'Phone', 'Type', 'People', 'Amount', 'Status', 'CheckIn'];
-    const rows = reservations.map(r => [r.id, r.contactName, r.phoneNumber, r.ticketType, r.totalPeople, r.totalAmount, r.paymentStatus, r.checkInStatus]);
+    const headers = ['ID', 'Name', 'Phone', 'Type', 'Adults', 'Children', 'Amount', 'Paid', 'Status', 'CheckIn'];
+    const rows = filteredData.map(r => [r.id, r.contactName, r.phoneNumber, r.ticketType, r.adultsCount, r.childrenCount, r.totalAmount, r.paidAmount, r.paymentStatus, r.checkInStatus]);
     const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", "cny2026_data.csv");
+    link.setAttribute("download", `cny_analytics_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  const pendingAmount = stats.totalRevenueExpected - stats.totalRevenueCollected;
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-20">
-      
+    <div className="max-w-7xl mx-auto space-y-8 pb-20 px-4">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-             <TrendingUp className="text-cny-red w-8 h-8" /> 数据中心 <span className="text-sm font-bold text-gray-400 uppercase tracking-widest hidden sm:inline">Admin</span>
-          </h2>
-          <p className="text-gray-500 text-sm mt-1">Real-time event tracking and statistics.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100">
+        <div className="flex items-center gap-5">
+          <div className="bg-cny-red p-4 rounded-3xl shadow-lg">
+             <Activity className="text-white w-8 h-8" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-black text-gray-900 tracking-tight">数据洞察 Dashboard</h2>
+            <p className="text-gray-400 text-sm font-bold mt-1 uppercase tracking-widest">Real-time Advanced Analytics</p>
+          </div>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <button onClick={fetchData} disabled={refreshing} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-gray-200 px-4 py-2.5 rounded-2xl text-sm font-bold hover:bg-gray-50 transition">
+        <div className="flex gap-3 w-full md:w-auto">
+          <button onClick={fetchData} disabled={refreshing} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-50 border border-gray-100 px-6 py-3.5 rounded-2xl text-sm font-black hover:bg-gray-100 transition active:scale-95">
              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> 刷新
           </button>
-          <button onClick={downloadCSV} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-2xl text-sm font-bold hover:bg-gray-800 transition shadow-lg">
-             <Download className="w-4 h-4" /> 导出
+          <button onClick={downloadCSV} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-cny-dark text-white px-6 py-3.5 rounded-2xl text-sm font-black hover:shadow-lg transition active:scale-95">
+             <Download className="w-4 h-4" /> 导出报表
           </button>
         </div>
       </div>
 
-      {/* KPI Tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* KPI Tiles - Enhanced */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: '总人数', sub: 'Total People', value: stats.totalPeople, color: 'border-blue-500', icon: <Users className="w-4 h-4" /> },
-          { label: '已签到', sub: 'Arrived', value: stats.checkedInCount, color: 'border-green-500', icon: <UserCheck className="w-4 h-4" /> },
-          { label: '实收', sub: 'Revenue', value: `$${stats.totalRevenueCollected}`, color: 'border-cny-gold', icon: <DollarSign className="w-4 h-4" /> },
-          { label: '预计', sub: 'Expected', value: `$${stats.totalRevenueExpected}`, color: 'border-gray-300', icon: <TrendingUp className="w-4 h-4" /> }
+          { label: '预计到场人数', val: stats.totalPeople, sub: 'Total Headcount', color: 'border-blue-500', icon: <Users className="text-blue-500" /> },
+          { label: '现场已签到', val: stats.checkedInCount, sub: `${Math.round((stats.checkedInCount/stats.totalPeople || 0)*100)}% 签到率`, color: 'border-green-500', icon: <UserCheck className="text-green-500" /> },
+          { label: '已确认收入', val: `$${stats.totalRevenueCollected}`, sub: 'Net Cash Collected', color: 'border-cny-gold', icon: <DollarSign className="text-cny-gold" /> },
+          { label: '待收余款', val: `$${pendingAmount}`, sub: 'Unpaid Balance', color: 'border-orange-500', icon: <CreditCard className="text-orange-500" /> }
         ].map((kpi, idx) => (
-          <div key={idx} className={`bg-white p-5 rounded-3xl shadow-sm border-b-4 ${kpi.color} group hover:scale-[1.02] transition-transform cursor-default`}>
-             <div className="flex items-center gap-2 text-gray-400 mb-2 font-black uppercase text-[10px] tracking-widest">
+          <div key={idx} className={`bg-white p-7 rounded-[2rem] shadow-sm border-l-8 ${kpi.color} hover:shadow-md transition-shadow`}>
+             <div className="flex items-center gap-3 text-gray-400 mb-3 font-black uppercase text-[10px] tracking-widest">
                 {kpi.icon} {kpi.label}
              </div>
-             <div className="text-2xl sm:text-3xl font-black text-gray-900 leading-none">{kpi.value}</div>
-             <div className="text-[10px] text-gray-300 font-bold mt-2">{kpi.sub}</div>
+             <div className="text-3xl font-black text-gray-900">{kpi.val}</div>
+             <div className="text-[10px] text-gray-400 font-bold mt-2 italic">{kpi.sub}</div>
           </div>
         ))}
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-lg border border-gray-100">
-           <h3 className="text-lg font-black text-gray-800 mb-6 uppercase tracking-tight">票务分布 Tickets</h3>
-           <div className="h-64 sm:h-72">
+      {/* Advanced Filters Bento */}
+      <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] shadow-lg border border-gray-100 space-y-6">
+        <div className="flex flex-col lg:flex-row gap-6 items-center">
+            <div className="relative flex-grow w-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input className="w-full pl-12 pr-4 py-4 bg-gray-50 rounded-2xl text-sm border border-gray-100 focus:bg-white transition-all outline-none focus:ring-4 focus:ring-cny-red/5" placeholder="搜索 ID、姓名或电话..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            </div>
+            <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+                <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
+                    <Filter className="w-4 h-4 text-gray-400" />
+                    <select className="bg-transparent text-xs font-bold outline-none" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                        <option value="all">所有状态 (Status)</option>
+                        <option value={CheckInStatus.NotArrived}>未签到</option>
+                        <option value={CheckInStatus.Arrived}>已签到</option>
+                        <option value={CheckInStatus.Cancelled}>已取消</option>
+                    </select>
+                </div>
+                <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
+                    <CreditCard className="w-4 h-4 text-gray-400" />
+                    <select className="bg-transparent text-xs font-bold outline-none" value={filterPayment} onChange={e => setFilterPayment(e.target.value)}>
+                        <option value="all">支付情况 (Payment)</option>
+                        <option value={PaymentStatus.Paid}>已支付</option>
+                        <option value={PaymentStatus.Unpaid}>待支付</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {/* Data Table */}
+        <div className="overflow-hidden rounded-3xl border border-gray-50">
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">
+                        <tr>
+                            <th className="p-5 cursor-pointer hover:text-cny-red" onClick={() => toggleSort('contactName')}>
+                                <div className="flex items-center gap-1">预约人 <ArrowUpDown className="w-3 h-3"/></div>
+                            </th>
+                            <th className="p-5">门票 & 人数</th>
+                            <th className="p-5 cursor-pointer hover:text-cny-red text-right" onClick={() => toggleSort('totalAmount')}>
+                                <div className="flex items-center justify-end gap-1">预估金额 <ArrowUpDown className="w-3 h-3"/></div>
+                            </th>
+                            <th className="p-5 text-center">状态</th>
+                            <th className="p-5"></th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {filteredData.length === 0 ? (
+                            <tr><td colSpan={5} className="p-20 text-center text-gray-300 font-bold uppercase tracking-widest italic">No matching records found.</td></tr>
+                        ) : filteredData.map(res => (
+                            <tr key={res.id} className="hover:bg-cny-cloud/10 transition-colors group">
+                                <td className="p-5">
+                                    <div className="font-black text-gray-900 text-base">{res.contactName}</div>
+                                    <div className="text-[10px] text-gray-400 font-bold tracking-tight">{res.phoneNumber} · {res.id}</div>
+                                </td>
+                                <td className="p-5">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${res.ticketType === TicketType.EarlyBird ? 'bg-indigo-50 text-indigo-500' : 'bg-orange-50 text-orange-500'}`}>{res.ticketType}</span>
+                                        <span className="text-gray-900 font-bold text-xs">{res.adultsCount}A / {res.childrenCount}C</span>
+                                    </div>
+                                </td>
+                                <td className="p-5 text-right font-black text-gray-900 text-base">${res.totalAmount}</td>
+                                <td className="p-5">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <div className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${res.paymentStatus === PaymentStatus.Paid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                                            {res.paymentStatus === PaymentStatus.Paid ? '已付' : '未付'}
+                                        </div>
+                                        <div className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${res.checkInStatus === CheckInStatus.Arrived ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                                            {res.checkInStatus === CheckInStatus.Arrived ? '到场' : '待到场'}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="p-5 text-right">
+                                    <button className="p-2 text-gray-300 hover:text-cny-red transition-colors"><ChevronRight className="w-5 h-5" /></button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      </div>
+
+      {/* Visual Analytics - Bento Bottom */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-lg border border-gray-100 lg:col-span-1">
+           <h3 className="text-lg font-black text-gray-800 mb-8 uppercase tracking-tight flex items-center gap-2"><PieIcon className="w-5 h-5 text-cny-red" /> 门票类型分布</h3>
+           <div className="h-64">
              <ResponsiveContainer width="100%" height="100%">
                <PieChart>
-                 <Pie data={pieData} cx="50%" cy="50%" innerRadius={70} outerRadius={90} fill="#8884d8" paddingAngle={5} dataKey="value" label>
-                   {pieData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                 <Pie data={[
+                    { name: 'Early Bird', value: reservations.filter(r => r.ticketType === TicketType.EarlyBird).length },
+                    { name: 'Walk-In', value: reservations.filter(r => r.ticketType === TicketType.WalkIn).length }
+                 ]} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                   {COLORS.map((color, index) => <Cell key={index} fill={color} />)}
                  </Pie>
                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                 <Legend verticalAlign="bottom" height={36}/>
                </PieChart>
              </ResponsiveContainer>
            </div>
-        </div>
-
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-lg border border-gray-100 flex flex-col">
-           <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-black text-gray-800 uppercase tracking-tight">搜索列表 Reservations</h3>
-              <div className="relative">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                 <input className="pl-9 pr-4 py-2 bg-gray-50 rounded-xl text-xs border border-gray-100 outline-none w-40 sm:w-56 focus:bg-white transition-all" placeholder="ID / Name / Phone" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+           <div className="mt-4 space-y-2">
+              <div className="flex justify-between items-center text-xs font-bold">
+                  <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cny-red"></div> 早鸟票</span>
+                  <span className="text-gray-400">{Math.round(reservations.filter(r => r.ticketType === TicketType.EarlyBird).length / (reservations.length || 1) * 100)}%</span>
+              </div>
+              <div className="flex justify-between items-center text-xs font-bold">
+                  <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cny-gold"></div> 现场票</span>
+                  <span className="text-gray-400">{Math.round(reservations.filter(r => r.ticketType === TicketType.WalkIn).length / (reservations.length || 1) * 100)}%</span>
               </div>
            </div>
-           <div className="overflow-x-auto flex-grow max-h-[350px]">
-              <table className="w-full text-sm text-left">
-                 <thead className="bg-gray-50 text-[10px] font-black uppercase text-gray-400 tracking-widest">
-                    <tr>
-                       <th className="p-4">Contact</th>
-                       <th className="p-4">Status</th>
-                       <th className="p-4 text-right">Paid</th>
-                    </tr>
-                 </thead>
-                 <tbody className="divide-y divide-gray-50">
-                    {filteredReservations.slice(0, 50).map(res => (
-                       <tr key={res.id} className="hover:bg-gray-50/50 transition-colors group">
-                          <td className="p-4">
-                             <div className="font-bold text-gray-900 text-sm">{res.contactName}</div>
-                             <div className="text-[10px] text-gray-400 font-mono">{res.id}</div>
-                          </td>
-                          <td className="p-4">
-                             <div className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg w-fit ${res.checkInStatus === CheckInStatus.Arrived ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400'}`}>
-                                {res.checkInStatus}
-                             </div>
-                          </td>
-                          <td className="p-4 text-right font-black text-gray-900">${res.paidAmount}</td>
-                       </tr>
-                    ))}
-                 </tbody>
-              </table>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-lg border border-gray-100 lg:col-span-2">
+           <h3 className="text-lg font-black text-gray-800 mb-8 uppercase tracking-tight flex items-center gap-2"><TrendingUp className="w-5 h-5 text-cny-red" /> 门票收入贡献 ($)</h3>
+           <div className="h-64">
+             <ResponsiveContainer width="100%" height="100%">
+               <BarChart data={revenueByTicket}>
+                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                 <Tooltip cursor={{ fill: '#f8f8f8' }} contentStyle={{ borderRadius: '12px', border: 'none' }} />
+                 <Bar dataKey="amount" fill="#D72638" radius={[8, 8, 0, 0]} barSize={60} />
+               </BarChart>
+             </ResponsiveContainer>
+           </div>
+           <div className="mt-6 p-4 bg-gray-50 rounded-2xl flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">总计预计收入 (GROSS)</span>
+              <span className="text-2xl font-black text-gray-900">${stats.totalRevenueExpected}</span>
            </div>
         </div>
       </div>
