@@ -1,3 +1,4 @@
+
 # Natick CNY 2026 - AI Development Context
 
 **Project Name:** Natick Chinese New Year 2026 Gala System
@@ -14,8 +15,8 @@
 *   **Routing:** `react-router-dom` (HashRouter used for compatibility).
 *   **Icons:** `lucide-react`.
 *   **Charts:** `recharts`.
-*   **Data Persistence:** `localStorage` (Client-side only, no backend).
-*   **Build Environment:** ES Modules via browser native support (no complex bundler config visible in snippets, relies on import maps).
+*   **QR:** `qrcode` (Generation) and `html5-qrcode` (Scanning).
+*   **Data Persistence:** Google Firebase Firestore (Real-time NoSQL).
 
 ---
 
@@ -29,20 +30,22 @@
 
 ### B. Registration (Public)
 1.  **Validation:**
-    *   Phone: Must be a valid US format (10 digits).
-    *   Adults + Children must be > 0.
+    *   **Name:** First and Last name required.
+    *   **Email:** Must follow valid email pattern (validated via JS).
+    *   **Phone:** Must be a valid US format (10 digits).
+    *   **Capacity:** Adults + Children must be > 0.
     *   **Mandatory Waiver:** User *must* check the "Waiver & Media Consent" box.
-2.  **Magic Fill:** A developer tool (Wand icon) exists to auto-fill random valid data for testing.
-3.  **UI Feedback:** Use inline red error boxes for validation failures. Do not use `alert()`.
-4.  **Countdown:** A visual ticker simulates a "Price Jump Alert" (mock logic targeting Feb 15).
+2.  **QR Code:** Upon success, a unique QR code (based on `id`) is generated for the user to screenshot or receive via email.
+3.  **UI Feedback:** Use modern, shaking error alerts and fluid transitions.
 
 ### C. Check-In (Staff Portal)
-1.  **Search:** Supports partial match by Phone (last 4 digits+) or Name (case-insensitive).
-2.  **Process:**
-    *   Staff confirms payment (Cash).
+1.  **Search:** Supports Phone lookup, Name search, or **QR ID Scan** (Public ID starts with `CNY26-`).
+2.  **QR Scanner:** Staff can use the device camera to scan visitor tickets for instantaneous lookup.
+3.  **Process:**
+    *   Staff confirms payment (Cash calculator included).
     *   Clicking "Check In" updates status to `Arrived`.
     *   **Lottery Numbers:** Generated *only* upon check-in. One number per person (Adult + Child). Format: 3 digits (100-999).
-3.  **Walk-In Mode:** Staff can create a new registration on the spot (defaults to $20 pricing).
+4.  **Walk-In Mode:** Staff can create a new registration on the spot (defaults to $20 pricing).
 
 ### D. Administration
 1.  **Stats:** Real-time calculation of total revenue (expected vs. collected), headcounts, and ticket types.
@@ -68,10 +71,10 @@ export enum CheckInStatus {
 
 export interface Reservation {
   id: string;             // Format: "CNY26-XXXX"
-  createdTime: number;    // Timestamp
+  createdTime: number;    // Timestamp (Firestore)
   ticketType: TicketType;
   contactName: string;
-  phoneNumber: string;    // Stored as clean digits usually, displayed formatted
+  phoneNumber: string;    // Clean digits
   email?: string;
   adultsCount: number;
   childrenCount: number;
@@ -79,44 +82,14 @@ export interface Reservation {
   pricePerPerson: number; // 15 or 20
   totalAmount: number;    // adults * price
   paidAmount: number;
-  paymentStatus: 'Unpaid' | 'Paid' | 'PartialPaid';
-  paymentMethod: 'Cash' | 'Check' | 'Other' | 'None';
+  paymentStatus: 'Unpaid' | 'Paid';
+  paymentMethod: 'Cash' | 'Check' | 'None';
   checkInStatus: CheckInStatus;
   notes?: string;
   lotteryNumbers?: string[]; // Generated on Check-in
 }
 ```
 
-## 4. Design System (Tailwind)
+## 4. How to Resume Work
 
-*   **Primary Colors:**
-    *   Red: `cny-red` (#D72638)
-    *   Gold: `cny-gold` (#FFD700)
-    *   Dark: `cny-dark` (#8a1c26)
-    *   Background: `cny-bg` (#FFF8F0)
-*   **Font:** San-serif stack favoring Chinese characters ("PingFang SC", "Microsoft YaHei").
-*   **Components:**
-    *   *Cards:* White background, rounded-xl, shadow-lg, often with top borders.
-    *   *Buttons:* Gradient reds for primary actions, distinct hover states.
-    *   *Modals:* Fixed positioning, semi-transparent black backdrop.
-
-## 5. File Structure Overview
-
-*   `index.html`: Entry point, Tailwind config, Import maps.
-*   `types.ts`: Central type definitions.
-*   `services/dataService.ts`: CRUD operations wrapper for `localStorage`. Handles ID generation and stats calculation.
-*   `components/PublicRegistration.tsx`: User-facing form, Waiver modal, Success page.
-*   `components/StaffPortal.tsx`: Staff dashboard, Search, Check-in logic, QR mock.
-*   `components/AdminDashboard.tsx`: Charts and CSV export.
-*   `components/EventSchedule.tsx`: Static schedule display component.
-
-## 6. How to Resume Work (Prompt for AI)
-
-If you are a new AI agent taking over this project, use the following instruction:
-
-> "You are working on the Natick CNY 2026 Gala System. It is a React/TypeScript app using Tailwind CSS and localStorage.
->
-> **Current State:** The app allows public registration ($15 early bird), staff check-in (generating lottery tickets), and admin reporting.
-> **Constraint:** Do not introduce a backend database. Keep all logic in `dataService.ts` using localStorage. Maintain the 'Year of the Horse' red/gold theme.
->
-> Refer to the code in `services/dataService.ts` for data integrity rules."
+> **Constraint:** Registration requires valid name, email, and phone. Staff Portal uses `html5-qrcode` for scanning. Admin analytics depend on `dataService.ts` stats calculation.

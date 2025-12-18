@@ -1,5 +1,7 @@
 {
   "name": "Natick CNY 2026 Gala System",
   "description": "Event registration, check-in, and management system for the 2026 Natick Chinese New Year Gala.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

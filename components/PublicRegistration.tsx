@@ -1,16 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
 import { createReservation, getReservations, updateReservation } from '../services/dataService';
 import { TicketType, PaymentStatus, CheckInStatus, Reservation } from '../types';
-import { validatePhone } from '../utils/validation';
-import { CheckCircle, AlertCircle, Phone, User, Ticket, Search, XCircle, AlertTriangle, CalendarDays, Info, FileText, ScrollText, Wand2, Timer, TrendingUp, Loader2 } from 'lucide-react';
-import EventSchedule from './EventSchedule';
+import { validatePhone, validateEmail } from '../utils/validation';
+import { CheckCircle, AlertCircle, Phone, Ticket, Search, XCircle, AlertTriangle, CalendarDays, ScrollText, Wand2, TrendingUp, Loader2, Mail, Plus, Minus, ArrowRight, MapPin, QrCode, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import QRCode from 'qrcode';
 
 const PublicRegistration: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'register' | 'manage'>('register');
   
   // Registration Form State
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     phone: '',
     email: '',
     adults: 1,
@@ -21,9 +24,12 @@ const PublicRegistration: React.FC = () => {
   const [showWaiverModal, setShowWaiverModal] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [reservationId, setReservationId] = useState('');
+  const [qrCodeData, setQrCodeData] = useState<string>('');
   const [phoneError, setPhoneError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [submitError, setSubmitError] = useState('');
-  const [loading, setLoading] = useState(false); // New loading state
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [loading, setLoading] = useState(false); 
 
   // Countdown State
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -36,9 +42,23 @@ const PublicRegistration: React.FC = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
 
-  // Countdown Logic
+  // Generate QR when submitted
   useEffect(() => {
-    const targetDate = new Date('2026-02-15T23:59:59').getTime();
+    if (submitted && reservationId) {
+      QRCode.toDataURL(reservationId, {
+        width: 400,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff',
+        },
+      })
+      .then(url => setQrCodeData(url))
+      .catch(err => console.error(err));
+    }
+  }, [submitted, reservationId]);
+
+  useEffect(() => {
     const demoTarget = new Date().getTime() + (5 * 24 * 60 * 60 * 1000) + (14 * 60 * 60 * 1000); 
 
     const interval = setInterval(() => {
@@ -61,198 +81,157 @@ const PublicRegistration: React.FC = () => {
   }, []);
   
   const handleMagicFill = () => {
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const firstNames = ['James', 'Mary', 'Robert', 'Patricia', 'John', 'Jennifer', 'Michael', 'Linda'];
-    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller'];
-    const randomName = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
-    
+    const tsSuffix = Date.now().toString().slice(-4);
     setFormData({
-      name: randomName,
-      phone: `508-555-${randomNum}`,
-      email: `test.${randomNum}@example.com`,
-      adults: Math.floor(1 + Math.random() * 3), 
-      children: Math.floor(Math.random() * 3),
+      firstName: 'James',
+      lastName: 'Smith',
+      phone: `508-555-${tsSuffix}`,
+      email: `test.${tsSuffix}@example.com`,
+      adults: 2,
+      children: 1,
       subscribe: true,
     });
     setAgreedToWaiver(true);
     setPhoneError('');
+    setEmailError('');
     setSubmitError('');
+    setIsDuplicate(false);
   };
 
-  // --- REGISTRATION LOGIC ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPhoneError('');
+    setEmailError('');
     setSubmitError('');
+    setIsDuplicate(false);
 
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      setSubmitError('请填写姓名 (Please enter your name)');
+      return;
+    }
+    if (!validateEmail(formData.email)) {
+      setEmailError('请输入有效的邮箱 (Invalid email)');
+      return;
+    }
     if (!validatePhone(formData.phone)) {
-      setPhoneError('请输入有效的美国手机号码 (Please enter a valid US phone number)');
+      setPhoneError('请输入有效的手机号 (Invalid phone)');
       return;
     }
-
-    if (formData.adults + formData.children === 0) {
-      setSubmitError("总人数必须大于0 (Total attendees must be greater than 0)");
-      return;
-    }
-
     if (!agreedToWaiver) {
-      setSubmitError("请勾选同意免责声明 (Please check the Waiver box to continue)");
+      setSubmitError("您必须接受免责声明才能继续 (You must accept waiver to continue)");
+      return;
+    }
+    if (formData.adults + formData.children <= 0) {
+      setSubmitError("总人数不能为0 (Total attendees must be > 0)");
       return;
     }
 
     setLoading(true);
     try {
+        const fullName = `${formData.firstName} ${formData.lastName}`.trim();
         const newRes = await createReservation({
-          contactName: formData.name,
+          contactName: fullName,
           phoneNumber: formData.phone,
           email: formData.email,
           adultsCount: Number(formData.adults),
           childrenCount: Number(formData.children),
           ticketType: TicketType.EarlyBird,
-          checkInStatus: CheckInStatus.NotArrived,
-          paymentStatus: PaymentStatus.Unpaid,
-          notes: formData.subscribe ? 'Subscribed' : '',
         });
 
         setReservationId(newRes.id);
         setSubmitted(true);
-    } catch (err) {
-        setSubmitError("预约失败，请稍后重试 (Submission failed, please try again).");
-        console.error(err);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: any) {
+        if (err.message === 'DUPLICATE_PHONE') {
+          setSubmitError("该手机号已预约 (Registered).");
+          setIsDuplicate(true);
+        } else {
+          setSubmitError("预约失败，请稍后重试 (Failed).");
+        }
     } finally {
         setLoading(false);
     }
   };
 
-  // --- MANAGE / CANCEL LOGIC ---
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLookupError('');
     setCancelSuccess(false);
     setMyRes(null);
 
-    const cleanPhone = managePhone.replace(/\D/g, '');
-    if (cleanPhone.length < 10) {
-      setLookupError('请输入完整的10位电话号码');
-      return;
-    }
-
-    if (!manageName.trim()) {
-      setLookupError('请输入预约姓名以验证身份 (Please enter the contact name for verification)');
+    if (!manageName.trim() || !managePhone.trim()) {
+      setLookupError('请填写姓名和手机号');
       return;
     }
 
     setLoading(true);
     try {
         const allReservations = await getReservations();
-        // Find the most recent active reservation for this phone AND name check
-        const found = allReservations.find(r => {
-          const phoneMatch = r.phoneNumber.replace(/\D/g, '').includes(cleanPhone);
-          const nameMatch = r.contactName.toLowerCase().includes(manageName.trim().toLowerCase());
-          const isActive = r.checkInStatus !== CheckInStatus.Cancelled;
-          return phoneMatch && nameMatch && isActive;
-        });
-
-        if (found) {
-          setMyRes(found);
-        } else {
-          setLookupError('未找到匹配的预约记录，请检查手机号或姓名 (No matching reservation found, please check phone and name)');
-        }
+        const cleanPhone = managePhone.replace(/\D/g, '');
+        const found = allReservations.find(r => 
+          r.phoneNumber.replace(/\D/g, '').includes(cleanPhone) && 
+          r.contactName.toLowerCase().includes(manageName.trim().toLowerCase()) &&
+          r.checkInStatus !== CheckInStatus.Cancelled
+        );
+        if (found) setMyRes(found);
+        else setLookupError('未找到匹配的预约');
     } catch (err) {
-        setLookupError('系统错误，无法查询 (System error)');
+        setLookupError('查询失败');
     } finally {
         setLoading(false);
     }
   };
 
-  const getCancelEligibility = () => {
-      if (!myRes) return { canCancel: false, reason: '' };
-      if (myRes.checkInStatus === CheckInStatus.Arrived) {
-          return { canCancel: false, reason: 'arrived' };
-      }
-      const eventDate = new Date('2026-03-08T10:00:00').getTime();
-      const now = Date.now();
-      const hoursLeft = (eventDate - now) / (1000 * 60 * 60);
-
-      if (hoursLeft < 72) {
-          return { canCancel: false, reason: 'too_late' };
-      }
-      return { canCancel: true, reason: '' };
-  };
-
-  const { canCancel, reason } = getCancelEligibility();
-
-  const handleCancelRequest = () => {
-    if (!myRes || !canCancel) return;
-    setShowCancelModal(true);
-  };
-
-  const confirmCancel = async () => {
-    if (!myRes) return;
-    setLoading(true);
-    try {
-        await updateReservation(myRes.id, { checkInStatus: CheckInStatus.Cancelled });
-        setShowCancelModal(false);
-        setCancelSuccess(true);
-        setMyRes(null);
-    } catch (err) {
-        alert("取消失败 (Failed to cancel)");
-    } finally {
-        setLoading(false);
-    }
+  const adjustCount = (field: 'adults' | 'children', delta: number) => {
+    setFormData(prev => ({ ...prev, [field]: Math.max(0, Math.min(20, (prev[field] || 0) + delta)) }));
   };
 
   if (submitted) {
     return (
-      <div className="max-w-lg mx-auto bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 mt-8 relative">
-        <div className="h-4 bg-cny-red w-full"></div>
-        <div className="p-8 text-center">
+      <div className="max-w-lg mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden mt-4 animate-in fade-in zoom-in duration-500 border-2 border-cny-gold/30">
+        <div className="h-2 bg-gradient-to-r from-cny-red via-cny-gold to-cny-red w-full"></div>
+        <div className="p-6 sm:p-10 text-center">
           <div className="mb-6 flex justify-center">
-            <div className="rounded-full bg-green-100 p-4 animate-bounce-subtle">
-                <CheckCircle className="w-16 h-16 text-green-600" />
+            <div className="rounded-full bg-green-50 p-6">
+                <CheckCircle className="w-16 h-16 text-green-500" />
             </div>
           </div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">预约成功!</h2>
-          <p className="text-gray-500 uppercase tracking-wide mb-8 font-medium">Reservation Confirmed</p>
+          <h2 className="text-3xl font-black text-gray-900 mb-1">预约成功!</h2>
+          <p className="text-gray-400 font-medium mb-8">恭贺新禧，期待您的光临</p>
           
-          <div className="bg-gradient-to-br from-cny-red to-cny-dark p-6 rounded-xl text-white shadow-lg mb-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full"></div>
-            <div className="relative z-10">
-                <p className="text-cny-gold text-sm font-bold uppercase tracking-widest mb-2">Access Code</p>
-                <p className="text-5xl font-mono font-bold tracking-wider drop-shadow-md">{reservationId}</p>
-                <div className="mt-4 pt-4 border-t border-white/20 flex justify-between text-xs opacity-90">
-                    <span>Natick CNY 2026</span>
-                    <span>{new Date().toLocaleDateString()}</span>
-                </div>
-            </div>
+          <div className="bg-gray-50 rounded-3xl p-6 mb-8 border border-dashed border-gray-200">
+             {qrCodeData ? (
+               <div className="space-y-4">
+                  <img src={qrCodeData} alt="Check-in QR" className="w-48 h-48 mx-auto border-8 border-white shadow-xl rounded-2xl" />
+                  <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
+                    <QrCode className="w-4 h-4 text-cny-red" />
+                    <span className="text-xs font-bold text-gray-600 tracking-wider">ID: {reservationId}</span>
+                  </div>
+               </div>
+             ) : <div className="h-48 flex items-center justify-center"><Loader2 className="animate-spin" /></div>}
           </div>
 
-          <div className="bg-gray-50 p-5 rounded-lg text-left text-sm space-y-3 mb-8 border border-gray-200">
-            <div className="flex justify-between border-b border-gray-200 pb-2">
-              <span className="text-gray-600">联系人 (Contact):</span>
-              <span className="font-bold text-lg">{formData.name}</span>
-            </div>
-            <div className="flex justify-between border-b border-gray-200 pb-2">
-              <span className="text-gray-600">人数 (People):</span>
-              <span className="font-bold text-lg">
-                {Number(formData.adults)} Adult, {Number(formData.children)} Child
-              </span>
-            </div>
-            <div className="flex justify-between border-b border-gray-200 pb-2 bg-yellow-50 -mx-5 px-5 pt-2">
-              <span className="text-gray-600 font-bold">预计费用 (Est. Cost):</span>
-              <span className="font-bold text-2xl text-cny-red">${Number(formData.adults) * 15}</span>
-            </div>
+          <div className="bg-cny-red text-white p-6 rounded-2xl shadow-xl mb-8 text-left space-y-3 relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-4 opacity-10"><Ticket className="w-20 h-20" /></div>
+             <div className="flex justify-between items-center border-b border-white/20 pb-2">
+                <span className="text-white/60 text-xs font-bold">联络人</span>
+                <span className="font-bold">{formData.firstName} {formData.lastName}</span>
+             </div>
+             <div className="flex justify-between items-center border-b border-white/20 pb-2">
+                <span className="text-white/60 text-xs font-bold">随行人数</span>
+                <span className="font-bold">{formData.adults} 成人 / {formData.children} 儿童</span>
+             </div>
+             <div className="flex justify-between items-center pt-2">
+                <span className="text-white/60 text-xs font-bold uppercase tracking-widest">预估费用</span>
+                <span className="text-2xl font-bold text-cny-gold">${formData.adults * 15}</span>
+             </div>
           </div>
 
           <button 
-            onClick={() => {
-              setSubmitted(false);
-              setFormData({ name: '', phone: '', email: '', adults: 1, children: 0, subscribe: false });
-              setAgreedToWaiver(false);
-            }}
-            className="w-full py-3 text-cny-red hover:text-white hover:bg-cny-red border border-cny-red rounded-lg transition font-bold"
+            onClick={() => { setSubmitted(false); setReservationId(''); }}
+            className="w-full py-4 bg-gray-100 text-gray-800 rounded-2xl font-bold hover:bg-gray-200 transition"
           >
-            为其他家庭预约 Make another reservation
+            返回首页 Back to Home
           </button>
         </div>
       </div>
@@ -260,434 +239,280 @@ const PublicRegistration: React.FC = () => {
   }
 
   return (
-    <div className="max-w-lg mx-auto pb-12">
-      <div className="text-center mb-8 pt-6 relative">
-        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-cny-red text-cny-gold w-20 h-20 rounded-full flex items-center justify-center text-4xl font-serif border-4 border-white shadow-lg z-10">
-          马
+    <div className="max-w-xl mx-auto space-y-8 pb-12">
+      {/* --- HERO SECTION --- */}
+      <div className="text-center py-4 relative">
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 opacity-20 pointer-events-none">
+           <div className="text-[120px] font-serif select-none text-cny-gold">福</div>
         </div>
-        <div className="mt-10">
-          <h2 className="text-3xl font-bold text-cny-red">Natick 2026 马年春晚</h2>
-          <p className="text-xl text-gray-700 font-medium mt-1">社区活动预约</p>
+        
+        <div className="relative z-10 space-y-4">
+            <div className="inline-block relative">
+                <div className="bg-cny-red text-cny-gold rounded-2xl shadow-xl w-16 h-16 flex items-center justify-center text-3xl font-serif mx-auto border-2 border-cny-gold/40 rotate-3 festive-float">
+                  马
+                </div>
+                <div className="absolute -right-2 -bottom-1 text-2xl">🏮</div>
+            </div>
+            
+            <div className="bg-white/40 backdrop-blur-sm p-8 rounded-3xl border-2 border-cny-gold/20 shadow-lg relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-cny-gold/30 rounded-tl-xl"></div>
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-cny-gold/30 rounded-br-xl"></div>
+                
+                <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">2026 Natick 春晚</h1>
+                <p className="text-cny-red/70 font-bold tracking-widest uppercase text-xs">Natick Chinese New Year Gala</p>
+                <div className="h-px bg-gradient-to-r from-transparent via-cny-gold/50 to-transparent my-4"></div>
+                <p className="text-gray-500 text-sm font-medium">万马奔腾 · 龙马精神 · 欢度佳节</p>
+            </div>
         </div>
       </div>
 
-      <EventSchedule />
-
-      <div className="flex rounded-lg bg-gray-200 p-1 mb-6">
+      {/* --- TAB NAVIGATION --- */}
+      <div className="bg-cny-cloud/50 backdrop-blur-md rounded-full p-1.5 flex shadow-inner border border-cny-gold/10">
         <button 
-          onClick={() => setActiveTab('register')}
-          className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'register' ? 'bg-white text-cny-red shadow' : 'text-gray-500 hover:text-gray-700'}`}
+          onClick={() => setActiveTab('register')} 
+          className={`flex-1 py-3 rounded-full font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+            activeTab === 'register' ? 'bg-cny-red text-white shadow-lg scale-[1.02]' : 'text-gray-500 hover:text-cny-red'
+          }`}
         >
-          预约活动 Register
+          <Sparkles className={`w-4 h-4 ${activeTab === 'register' ? 'animate-pulse' : 'hidden'}`} />
+          活动预约 Register
         </button>
         <button 
-          onClick={() => setActiveTab('manage')}
-          className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'manage' ? 'bg-white text-cny-red shadow' : 'text-gray-500 hover:text-gray-700'}`}
+          onClick={() => setActiveTab('manage')} 
+          className={`flex-1 py-3 rounded-full font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+            activeTab === 'manage' ? 'bg-cny-red text-white shadow-lg scale-[1.02]' : 'text-gray-500 hover:text-cny-red'
+          }`}
         >
-          管理/取消 Manage
+          <Search className={`w-4 h-4 ${activeTab === 'manage' ? '' : 'hidden'}`} />
+          管理预约 Manage
         </button>
       </div>
 
       {activeTab === 'register' ? (
-        <div className="bg-white p-6 md:p-8 rounded-xl shadow-xl border-t-8 border-cny-gold relative">
-          <div className="flex justify-end mb-4">
-              <button 
-                type="button"
-                onClick={handleMagicFill}
-                className="bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 px-3 py-1.5 rounded-lg shadow-sm transition-all text-xs font-bold flex items-center gap-2"
-              >
-                <Wand2 className="w-4 h-4" />
-                测试专用：一键填充 (Magic Fill)
-              </button>
+        <div className="bg-white rounded-[2.5rem] shadow-2xl p-6 sm:p-10 border border-cny-gold/5 animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+             <ScrollText className="w-40 h-40 text-cny-red" />
           </div>
 
-          <div className="mb-6 rounded-lg overflow-hidden border border-orange-200 shadow-sm">
-             <div className="bg-gradient-to-r from-orange-100 to-amber-100 p-3 flex items-center justify-between text-amber-900">
-                <div className="flex items-center gap-2">
-                   <div className="bg-white p-1.5 rounded-full shadow-sm animate-pulse">
-                      <TrendingUp className="w-4 h-4 text-orange-600" />
-                   </div>
-                   <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-orange-800">Price Jump Alert</p>
-                      <p className="text-xs font-medium leading-tight">Price increases to <span className="font-bold line-through text-orange-400">$20</span> soon!</p>
-                   </div>
-                </div>
-                <div className="text-right">
-                   <div className="font-mono font-bold text-lg leading-none tracking-tight">
-                     {String(timeLeft.days).padStart(2, '0')}:{String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}
-                   </div>
-                   <p className="text-[10px] uppercase font-bold text-orange-600">Time Left</p>
-                </div>
-             </div>
+          <div className="flex items-center justify-between mb-8 relative z-10">
+            <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+              <div className="w-2 h-6 bg-cny-red rounded-full"></div>
+              登记预约 <span className="text-gray-400 font-normal text-sm ml-2">RSVP</span>
+            </h3>
+            <button 
+              type="button" 
+              onClick={handleMagicFill} 
+              className="group flex items-center gap-2 text-purple-600 bg-purple-50 px-3 py-2 rounded-xl border border-purple-100 hover:bg-purple-100 transition shadow-sm active:scale-95"
+            >
+              <Wand2 className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+              <span className="text-xs font-bold hidden sm:inline">自动填写</span>
+            </button>
           </div>
 
-          <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 pb-2 border-b border-gray-100">
-            <Ticket className="text-cny-red w-5 h-5" /> 填写预约信息
-          </h3>
-          
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block font-bold text-gray-800 mb-1 flex items-center gap-1">
-                <User className="w-4 h-4 text-gray-500" />
-                联系人姓名 <span className="font-normal text-gray-500 text-sm">(Contact Name)</span> 
-                <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cny-red focus:border-cny-red outline-none transition bg-gray-50"
-                value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
-                placeholder="请输入姓名 e.g., San Zhang"
-              />
+          <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">姓 (Last Name) <span className="text-cny-red">*</span></label>
+                <input required className="w-full p-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-cny-red/5 focus:bg-white transition-all text-gray-900 font-medium" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">名 (First Name) <span className="text-cny-red">*</span></label>
+                <input required className="w-full p-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-cny-red/5 focus:bg-white transition-all text-gray-900 font-medium" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+              </div>
             </div>
 
-            <div>
-              <label className="block font-bold text-gray-800 mb-1 flex items-center gap-1">
-                <Phone className="w-4 h-4 text-gray-500" />
-                手机号码 <span className="font-normal text-gray-500 text-sm">(Phone Number)</span> 
-                <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                required
-                className={`w-full p-3 border rounded-lg focus:ring-2 outline-none transition bg-gray-50 ${phoneError ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-cny-red focus:border-cny-red'}`}
-                value={formData.phone}
-                onChange={e => setFormData({...formData, phone: e.target.value})}
-                placeholder="e.g., 508-555-0123"
-              />
-              {phoneError && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3"/>{phoneError}</p>}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">手机号码 (Phone) <span className="text-cny-red">*</span></label>
+              <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                  <input type="tel" required className={`w-full pl-11 pr-4 py-4 bg-gray-50/50 border rounded-2xl outline-none focus:ring-4 transition-all text-gray-900 font-medium ${phoneError ? 'border-red-500 focus:ring-red-50' : 'border-gray-100 focus:ring-cny-red/5'}`} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="508-xxx-xxxx" />
+              </div>
+              {phoneError && <p className="text-red-500 text-xs font-bold px-1 flex items-center gap-1 animate-pulse"><AlertCircle className="w-3 h-3"/> {phoneError}</p>}
             </div>
 
-            <div>
-              <label className="block font-bold text-gray-800 mb-1">电子邮箱 <span className="font-normal text-gray-500 text-sm">(Email)</span></label>
-              <input
-                type="email"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cny-red focus:border-cny-red outline-none transition bg-gray-50"
-                value={formData.email}
-                onChange={e => setFormData({...formData, email: e.target.value})}
-                placeholder="选填 Optional"
-              />
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">电子邮箱 (Email) <span className="text-cny-red">*</span></label>
+              <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                  <input type="email" required className={`w-full pl-11 pr-4 py-4 bg-gray-50/50 border rounded-2xl outline-none focus:ring-4 transition-all text-gray-900 font-medium ${emailError ? 'border-red-500 focus:ring-red-50' : 'border-gray-100 focus:ring-cny-red/5'}`} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="you@example.com" />
+              </div>
+              {emailError && <p className="text-red-500 text-xs font-bold px-1 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {emailError}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div>
-                <label className="block font-bold text-gray-800 mb-1">成人 <span className="font-normal text-gray-500 text-sm">(Adults)</span></label>
-                <div className="relative">
-                  <input
-                      type="number"
-                      min="0"
-                      max="20"
-                      required
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cny-red focus:border-cny-red outline-none transition text-center text-lg font-semibold"
-                      value={formData.adults}
-                      onChange={e => setFormData({...formData, adults: Number(e.target.value)})}
-                  />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">$15</span>
+            <div className="p-1 bg-cny-cloud/30 rounded-3xl border border-cny-gold/10">
+                <div className="grid grid-cols-2 gap-1">
+                   <div className="bg-white/60 p-4 rounded-2xl text-center shadow-sm">
+                      <span className="text-[10px] font-black text-gray-400 block mb-2 uppercase tracking-widest">成人 ($15)</span>
+                      <div className="flex items-center justify-between px-2">
+                        <button type="button" onClick={() => adjustCount('adults', -1)} className="p-2 hover:bg-cny-red/5 rounded-full transition"><Minus className="w-4 h-4 text-gray-400" /></button>
+                        <span className="font-black text-2xl text-gray-900">{formData.adults}</span>
+                        <button type="button" onClick={() => adjustCount('adults', 1)} className="p-2 hover:bg-cny-red/5 rounded-full transition"><Plus className="w-4 h-4 text-cny-red" /></button>
+                      </div>
+                   </div>
+                   <div className="bg-white/60 p-4 rounded-2xl text-center shadow-sm">
+                      <span className="text-[10px] font-black text-gray-400 block mb-2 uppercase tracking-widest">儿童 (免费)</span>
+                      <div className="flex items-center justify-between px-2">
+                        <button type="button" onClick={() => adjustCount('children', -1)} className="p-2 hover:bg-cny-red/5 rounded-full transition"><Minus className="w-4 h-4 text-gray-400" /></button>
+                        <span className="font-black text-2xl text-gray-900">{formData.children}</span>
+                        <button type="button" onClick={() => adjustCount('children', 1)} className="p-2 hover:bg-cny-red/5 rounded-full transition"><Plus className="w-4 h-4 text-cny-red" /></button>
+                      </div>
+                   </div>
                 </div>
-              </div>
-              <div>
-                <label className="block font-bold text-gray-800 mb-1">儿童 <span className="font-normal text-gray-500 text-sm">(Kids)</span></label>
-                <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      max="20"
-                      required
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cny-red focus:border-cny-red outline-none transition text-center text-lg font-semibold"
-                      value={formData.children}
-                      onChange={e => setFormData({...formData, children: Number(e.target.value)})}
-                    />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-green-500">FREE</span>
-                </div>
-              </div>
             </div>
 
-            <div className="bg-cny-red/5 p-4 rounded-lg border border-cny-red/10 mt-4">
-              <div className="flex justify-between items-center text-xl">
-                <span className="font-bold text-gray-700">总金额 <span className="text-sm font-normal">(Total)</span>:</span>
-                <span className="text-2xl font-bold text-cny-red">${Number(formData.adults) * 15}</span>
-              </div>
-              <p className="text-xs text-gray-500 text-right mt-1">现场支付 (Pay on-site)</p>
+            <div className="bg-gradient-to-br from-cny-red to-cny-dark p-6 rounded-[2rem] text-white shadow-2xl relative overflow-hidden group">
+               <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all duration-700"></div>
+               <div className="flex justify-between items-end relative z-10">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/50">预计总额 Total</span>
+                    <div className="text-4xl font-black text-cny-gold flex items-baseline gap-1">
+                        <span className="text-xl">$</span>{formData.adults * 15}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="inline-block bg-white/10 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tight mb-2">现场支付 Pay at Door</div>
+                    <div className="text-[10px] text-white/40 italic">2026年3月8日 · Natick High</div>
+                  </div>
+               </div>
             </div>
 
-            <div className="flex flex-col gap-3 mb-2 pt-2">
-              <div className="flex items-start gap-3">
-                 <input 
-                   type="checkbox" 
-                   id="waiver"
-                   checked={agreedToWaiver}
-                   onChange={e => setAgreedToWaiver(e.target.checked)}
-                   className="w-5 h-5 mt-0.5 rounded text-cny-red focus:ring-cny-red border-gray-300"
-                 />
-                 <label htmlFor="waiver" className="text-sm text-gray-600 leading-tight">
-                    我已阅读并同意 <button type="button" onClick={() => setShowWaiverModal(true)} className="text-blue-600 underline font-bold hover:text-blue-800">免责声明与肖像权授权 (Waiver & Media Consent)</button>
-                    <span className="text-red-500 ml-1">*</span>
-                 </label>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input 
-                  type="checkbox" 
-                  id="subscribe"
-                  checked={formData.subscribe}
-                  onChange={e => setFormData({...formData, subscribe: e.target.checked})}
-                  className="w-5 h-5 rounded text-cny-red focus:ring-cny-red border-gray-300"
-                />
-                <label htmlFor="subscribe" className="text-sm text-gray-600">接收活动通知 <span className="text-xs">(Notifications)</span></label>
-              </div>
+            <div className="flex items-start gap-3 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+               <input type="checkbox" id="waiver" checked={agreedToWaiver} onChange={e => setAgreedToWaiver(e.target.checked)} className="w-5 h-5 rounded-md text-cny-red focus:ring-cny-red border-gray-300 mt-0.5 cursor-pointer" />
+               <label htmlFor="waiver" className="text-xs text-gray-500 leading-relaxed select-none">
+                  我已确认阅读并同意 <span className="text-cny-red font-black">*</span> <button type="button" onClick={() => setShowWaiverModal(true)} className="text-cny-red font-bold hover:underline">免责声明、媒体授权及肖像使用协议</button>
+               </label>
             </div>
 
             {submitError && (
-               <div className="mb-4 bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg flex items-start gap-2 text-sm font-bold animate-pulse">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <div>{submitError}</div>
-               </div>
+              <div className="p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-3 border border-red-100 animate-shake">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-bold">{submitError}</span>
+              </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-cny-red to-cny-dark hover:from-red-700 hover:to-red-900 text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {loading ? <Loader2 className="animate-spin" /> : "立即预约 Reserve Now"}
+            <button disabled={loading} className="w-full py-5 bg-cny-red hover:bg-cny-dark text-white rounded-3xl font-black text-lg shadow-xl hover:shadow-2xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 group relative overflow-hidden">
+               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+               {loading ? <Loader2 className="animate-spin w-6 h-6" /> : (
+                 <>
+                   <span>立即预约 Reserve Now</span>
+                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                 </>
+               )}
             </button>
           </form>
         </div>
       ) : (
-        /* MANAGE RESERVATION TAB */
-        <div className="bg-white p-6 md:p-8 rounded-xl shadow-xl border-t-8 border-gray-600">
-           <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 pb-2 border-b border-gray-100">
-            <Search className="text-gray-600 w-5 h-5" /> 查询预约 (Lookup)
+        <div className="bg-white rounded-[2.5rem] shadow-xl p-6 sm:p-10 border border-cny-gold/5 animate-in fade-in slide-in-from-bottom-4">
+          <h3 className="text-xl font-black text-gray-900 mb-8 flex items-center gap-2">
+            <div className="w-2 h-6 bg-cny-red rounded-full"></div>
+            查询预约 <span className="text-gray-400 font-normal text-sm ml-2">MY RSVP</span>
           </h3>
-
-          {!myRes && !cancelSuccess && (
-            <form onSubmit={handleLookup} className="space-y-6">
-               <div className="space-y-4">
-                  <div>
-                    <label className="block font-bold text-gray-800 mb-1">
-                       预约人姓名 <span className="text-red-500">*</span>
-                       <br/>
-                       <span className="font-normal text-gray-500 text-sm">Contact Name</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 outline-none text-lg bg-gray-50"
-                      value={manageName}
-                      onChange={e => setManageName(e.target.value)}
-                      placeholder="e.g. Qiang Wang"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-gray-800 mb-1">
-                       手机号码 <span className="text-red-500">*</span>
-                       <br/>
-                       <span className="font-normal text-gray-500 text-sm">Phone Number</span>
-                    </label>
-                    <input
-                      type="tel"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 outline-none text-lg bg-gray-50"
-                      value={managePhone}
-                      onChange={e => setManagePhone(e.target.value)}
-                      placeholder="e.g. 5085550101"
-                    />
-                  </div>
-                  
-                  <button type="submit" disabled={loading} className="w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-gray-700 flex items-center justify-center gap-2 disabled:opacity-50">
-                    {loading ? <Loader2 className="animate-spin"/> : <><Search className="w-4 h-4" /> 查询 Find Reservation</>}
-                  </button>
-                </div>
-                {lookupError && <p className="text-red-500 mt-2 flex items-center gap-1"><AlertCircle className="w-4 h-4"/> {lookupError}</p>}
-            </form>
-          )}
-
-          {cancelSuccess && (
-             <div className="text-center py-8">
-                <div className="inline-flex bg-gray-100 p-4 rounded-full mb-4">
-                  <XCircle className="w-12 h-12 text-gray-500" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-800">已取消 Cancelled</h3>
-                <p className="text-gray-500 mt-2">您的预约已取消。期待下次见到您！<br/>Your reservation has been cancelled.</p>
-                <button 
-                  onClick={() => { setCancelSuccess(false); setManagePhone(''); setManageName(''); }}
-                  className="mt-6 text-blue-600 font-bold hover:underline"
-                >
-                  返回 Back
-                </button>
+          <form onSubmit={handleLookup} className="space-y-4">
+             <div className="space-y-2">
+                 <label className="text-[10px] font-black text-gray-400 uppercase px-1">预约姓名</label>
+                 <input required className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-cny-red/5" placeholder="例如: 张三" value={manageName} onChange={e => setManageName(e.target.value)} />
              </div>
-          )}
+             <div className="space-y-2">
+                 <label className="text-[10px] font-black text-gray-400 uppercase px-1">手机号码</label>
+                 <input type="tel" required className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-cny-red/5" placeholder="508-xxx-xxxx" value={managePhone} onChange={e => setManagePhone(e.target.value)} />
+             </div>
+             <button disabled={loading} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition flex items-center justify-center shadow-lg active:scale-95">
+               {loading ? <Loader2 className="animate-spin" /> : "搜索记录 Search"}
+             </button>
+          </form>
 
           {myRes && (
-            <div className="mt-4 animate-fade-in">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
-                <div className="flex justify-between items-start mb-4">
+            <div className="mt-8 p-6 bg-cny-cloud/20 rounded-3xl border-2 border-cny-gold/10 space-y-4 animate-in zoom-in-95 relative">
+                <div className="absolute top-2 right-4 opacity-10">🏮</div>
+                <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="text-xl font-bold text-gray-800">{myRes.contactName}</h4>
-                    <p className="text-gray-500 text-sm">{myRes.phoneNumber}</p>
+                    <h4 className="font-black text-gray-900 text-xl">{myRes.contactName}</h4>
+                    <p className="text-xs text-gray-400 font-mono tracking-widest">{myRes.id}</p>
                   </div>
-                  <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                    {myRes.ticketType}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="bg-white p-3 rounded border border-gray-100">
-                    <span className="block text-gray-500 text-xs">Access Code</span>
-                    <span className="block font-mono font-bold text-lg text-gray-800">{myRes.id}</span>
-                  </div>
-                  <div className="bg-white p-3 rounded border border-gray-100">
-                    <span className="block text-gray-500 text-xs">Total People</span>
-                    <span className="block font-bold text-lg text-gray-800">{myRes.totalPeople}</span>
+                  <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                      myRes.checkInStatus === CheckInStatus.Arrived ? 'bg-green-100 text-green-700' : 'bg-cny-gold/20 text-cny-red'
+                  }`}>
+                      {myRes.checkInStatus === CheckInStatus.Arrived ? '已签到' : '待参加'}
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3 mb-6">
-                 <CalendarDays className="w-5 h-5 text-yellow-600 mt-0.5" />
-                 <div>
-                   <h5 className="font-bold text-yellow-800 text-sm">Cancellation Policy</h5>
-                   <p className="text-xs text-yellow-700 mt-1">
-                     Please cancel at least 72 hours before the event (Before March 5, 2026) to release your spot for others.
-                   </p>
-                 </div>
-              </div>
-
-              <button 
-                onClick={handleCancelRequest}
-                disabled={!canCancel || loading}
-                className={`w-full py-4 border-2 font-bold rounded-lg transition flex items-center justify-center gap-2 ${
-                    canCancel 
-                      ? 'border-red-500 text-red-600 hover:bg-red-50' 
-                      : 'border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed'
-                  }`}
-              >
-                {loading ? <Loader2 className="animate-spin" /> : reason === 'arrived' ? (
-                   <><CheckCircle className="w-5 h-5" /> 已签到 Cannot Cancel (Checked In)</>
-                ) : reason === 'too_late' ? (
-                   <><AlertTriangle className="w-5 h-5" /> 超过期限 Cannot Cancel (Too Late)</>
-                ) : (
-                   <><XCircle className="w-5 h-5" /> 取消预约 Cancel Reservation</>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white p-4 rounded-2xl border border-cny-gold/5 shadow-sm">
+                    <span className="text-[10px] text-gray-400 font-black uppercase mb-1 block">成人人数</span>
+                    <span className="font-black text-2xl text-gray-900">{myRes.adultsCount}</span>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-cny-gold/5 shadow-sm">
+                    <span className="text-[10px] text-gray-400 font-black uppercase mb-1 block">儿童人数</span>
+                    <span className="font-black text-2xl text-gray-900">{myRes.childrenCount}</span>
+                  </div>
+                </div>
+                {myRes.checkInStatus !== CheckInStatus.Cancelled && (
+                  <button onClick={() => setShowCancelModal(true)} className="w-full py-3 text-red-500 font-bold hover:bg-red-50 rounded-xl transition border border-transparent hover:border-red-100 flex items-center justify-center gap-2">
+                    <XCircle className="w-4 h-4" /> 取消此预约 Cancel
+                  </button>
                 )}
-              </button>
             </div>
           )}
+          {lookupError && <p className="mt-4 text-center text-red-500 font-bold flex items-center justify-center gap-2"><AlertCircle className="w-4 h-4" /> {lookupError}</p>}
         </div>
       )}
 
-      {/* CONFIRMATION MODAL */}
-      {showCancelModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-           <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl transform transition-all scale-100">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                 <AlertTriangle className="w-6 h-6 text-red-600" />
-              </div>
-              <h3 className="text-xl font-bold text-center text-gray-900 mb-2">确定要取消吗?</h3>
-              <p className="text-center text-gray-500 text-sm mb-6">
-                 Are you sure you want to cancel?
-              </p>
-              
-              <div className="bg-red-50 border border-red-100 rounded-lg p-4 mb-6">
-                 <p className="text-red-800 font-bold text-sm text-center">
-                   ⚠️ 注意 Warning
-                 </p>
-                 <p className="text-red-600 text-xs text-center mt-1">
-                   取消预约将释放您的午餐名额。<br/>
-                   This will remove the lunch box quota.
-                 </p>
-              </div>
-
-              <div className="flex gap-3">
-                 <button 
-                   onClick={() => setShowCancelModal(false)}
-                   className="flex-1 py-2 bg-gray-200 text-gray-800 font-bold rounded-lg hover:bg-gray-300"
-                 >
-                   保留 Keep
-                 </button>
-                 <button 
-                   onClick={confirmCancel}
-                   className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
-                 >
-                   确认取消 Confirm
-                 </button>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* WAIVER MODAL */}
+      {/* Waiver Modal */}
       {showWaiverModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-           <div className="bg-white rounded-xl max-w-2xl w-full flex flex-col shadow-2xl max-h-[90vh]">
-              <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                   <ScrollText className="w-5 h-5 text-cny-red" />
-                   免责声明与媒体授权
-                 </h3>
-                 <button 
-                   onClick={() => setShowWaiverModal(false)}
-                   className="text-gray-400 hover:text-gray-600"
-                 >
-                   <XCircle className="w-6 h-6" />
-                 </button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+           <div className="bg-white rounded-t-3xl sm:rounded-[2.5rem] max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                 <h3 className="text-lg font-black text-gray-800 flex items-center gap-2 uppercase tracking-tight"><ScrollText className="w-5 h-5 text-cny-red" /> 免责声明与媒体授权</h3>
+                 <button onClick={() => setShowWaiverModal(false)} className="bg-gray-200 p-2 rounded-full text-gray-500 hover:bg-gray-300 transition"><XCircle className="w-5 h-5" /></button>
               </div>
-
-              <div className="p-6 overflow-y-auto text-sm text-gray-600 leading-relaxed space-y-4">
-                 <div className="border border-gray-100 p-4 rounded bg-gray-50/50">
-                    <h4 className="font-bold text-gray-800 mb-2 uppercase text-xs tracking-wider">Waiver and Release of Liability</h4>
-                    <p>
-                      I hereby assume all of the risks of participating in the 2026 Natick Chinese New Year Gala. 
-                      I certify that I am physically fit, have sufficiently prepared or trained for participation in this activity, 
-                      and have not been advised to not participate by a qualified medical professional.
-                    </p>
-                    <p className="mt-2">
-                      I acknowledge that this Accident Waiver and Release of Liability Form will be used by the event holders, 
-                      sponsors, and organizers of the activity in which I may participate, and that it will govern my actions and responsibilities at said activity.
-                    </p>
-                    <p className="mt-2">
-                      In consideration of my application and permitting me to participate in this activity, I hereby take action for myself, 
-                      my executors, administrators, heirs, next of kin, successors, and assigns as follows:
-                    </p>
-                    <ul className="list-disc pl-5 mt-2 space-y-1">
-                      <li>(A) I WAIVE, RELEASE, AND DISCHARGE from any and all liability, including but not limited to, liability arising from the negligence or fault of the entities or persons released, for my death, disability, personal injury, property damage, property theft, or actions of any kind which may hereafter occur to me including my traveling to and from this activity.</li>
-                      <li>(B) I INDEMNIFY, HOLD HARMLESS, AND PROMISE NOT TO SUE the entities or persons mentioned in this paragraph from any and all liabilities or claims made as a result of participation in this activity, whether caused by the negligence of release or otherwise.</li>
-                    </ul>
+              <div className="p-8 overflow-y-auto space-y-6 text-gray-600 leading-relaxed text-sm">
+                 <div className="bg-cny-cloud/30 p-4 rounded-2xl">
+                    <p className="font-black text-gray-900 mb-2">1. 责任豁免 (Liability Waiver)</p>
+                    <p>我自愿承担参加 2026 Natick 华人春晚的所有风险。我确认本人及家属身体健康状况良好，并已为参加此次活动做好充分准备。我同意免除组织者、志愿者及 Natick 公立学校对活动中可能发生的任何人身伤害或财产损失的任何及所有法律责任。</p>
                  </div>
-
-                 <div className="border border-gray-100 p-4 rounded bg-gray-50/50">
-                    <h4 className="font-bold text-gray-800 mb-2 uppercase text-xs tracking-wider">Media Consent / Photo Release</h4>
-                    <p>
-                      I understand that at this event or related activities, I may be photographed. I agree to allow my photo, video, or film likeness to be used for any legitimate purpose by the event holders, producers, sponsors, organizers, and assigns, including but not limited to usage on the Natick CNY website, social media channels, and promotional materials.
-                    </p>
-                 </div>
-
-                 <div className="border border-gray-100 p-4 rounded bg-gray-50/50">
-                    <h4 className="font-bold text-gray-800 mb-2 uppercase text-xs tracking-wider">Medical Consent</h4>
-                    <p>
-                       I hereby consent to receive medical treatment which may be deemed advisable in the event of injury, accident, and/or illness during this activity.
-                    </p>
+                 <div className="bg-cny-cloud/30 p-4 rounded-2xl">
+                    <p className="font-black text-gray-900 mb-2">2. 媒体同意与肖像权 (Media Release)</p>
+                    <p>我同意允许组织者出于任何合法目的，在社区网站、社交媒体和宣传材料中使用本人及家属的肖像（照片/录像/电影），无需另行通知或支付报酬。</p>
                  </div>
               </div>
-
-              <div className="p-5 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 rounded-b-xl">
-                 <button 
-                   onClick={() => setShowWaiverModal(false)}
-                   className="px-4 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-lg"
-                 >
-                   关闭 Close
-                 </button>
-                 <button 
-                   onClick={() => {
-                     setAgreedToWaiver(true);
-                     setShowWaiverModal(false);
-                   }}
-                   className="px-6 py-2 bg-cny-red text-white font-bold rounded-lg hover:bg-red-700 shadow-md flex items-center gap-2"
-                 >
-                   <CheckCircle className="w-4 h-4" /> 我同意 I Agree
-                 </button>
+              <div className="p-6 bg-gray-50 border-t flex gap-4">
+                 <button onClick={() => setShowWaiverModal(false)} className="flex-1 py-4 text-gray-500 font-bold hover:bg-gray-200 rounded-2xl transition">关闭</button>
+                 <button onClick={() => { setAgreedToWaiver(true); setShowWaiverModal(false); }} className="flex-1 py-4 bg-cny-red text-white font-black rounded-2xl shadow-lg hover:shadow-2xl transition-all">同意并确认</button>
               </div>
            </div>
         </div>
       )}
 
+      {/* Cancel Modal */}
+      {showCancelModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+              <div className="bg-white rounded-[2rem] max-w-sm w-full p-8 shadow-2xl animate-in zoom-in duration-200">
+                  <div className="bg-red-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <AlertTriangle className="w-10 h-10 text-red-500" />
+                  </div>
+                  <h3 className="text-2xl font-black text-center mb-2">确认取消预约？</h3>
+                  <p className="text-gray-500 text-center text-sm mb-8 leading-relaxed">
+                      取消后名额将释放给其他有需要的家庭，该操作无法撤销。
+                  </p>
+                  <div className="flex gap-4">
+                      <button onClick={() => setShowCancelModal(false)} className="flex-1 py-3 bg-gray-100 rounded-xl font-bold hover:bg-gray-200 transition">保留</button>
+                      <button 
+                        onClick={async () => {
+                            if (!myRes) return;
+                            setLoading(true);
+                            await updateReservation(myRes.id, { checkInStatus: CheckInStatus.Cancelled }, myRes.firebaseDocId);
+                            setMyRes(null);
+                            setShowCancelModal(false);
+                            setCancelSuccess(true);
+                            setLoading(false);
+                        }}
+                        className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-lg"
+                      >
+                        确认取消
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };
