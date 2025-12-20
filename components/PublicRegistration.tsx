@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createReservation, getReservations } from '../services/dataService';
 import { TicketType, PaymentStatus, CheckInStatus, Reservation } from '../types';
 import { validatePhone, validateEmail } from '../utils/validation';
-import { CheckCircle, AlertCircle, Phone, Ticket, Wand2, Loader2, Mail, Plus, Minus, ArrowRight, QrCode, Utensils, Sparkles, X, Gift } from 'lucide-react';
+import { CheckCircle, AlertCircle, Phone, Ticket, Wand2, Loader2, Mail, Plus, Minus, ArrowRight, QrCode, Utensils, Sparkles, X, Gift, Flame, Clock, Zap, Lock } from 'lucide-react';
 import QRCode from 'qrcode';
 
 const ConfettiBurst = () => {
@@ -308,24 +308,83 @@ const PublicRegistration: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Ticket Type Selector - Neo Style */}
-            <div className="grid grid-cols-2 gap-4">
-                <button 
-                  type="button" 
-                  onClick={() => { setFormData({...formData, ticketType: TicketType.EarlyBird}); triggerHaptic(20); }}
-                  className={`relative p-6 rounded-[2rem] border-2 transition-all group overflow-hidden ${formData.ticketType === TicketType.EarlyBird ? 'border-cny-red bg-red-50' : 'border-gray-100 grayscale bg-gray-50/50 opacity-60'}`}
-                >
-                  <div className={`text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${formData.ticketType === TicketType.EarlyBird ? 'text-cny-red' : 'text-gray-400'}`}>早鸟票</div>
-                  <div className="text-3xl font-black text-gray-900">$15</div>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => { setFormData({...formData, ticketType: TicketType.Regular}); triggerHaptic(20); }}
-                  className={`relative p-6 rounded-[2rem] border-2 transition-all group overflow-hidden ${formData.ticketType === TicketType.Regular ? 'border-cny-red bg-red-50' : 'border-gray-100 grayscale bg-gray-50/50 opacity-60'}`}
-                >
-                  <div className={`text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${formData.ticketType === TicketType.Regular ? 'text-cny-red' : 'text-gray-400'}`}>常规票</div>
-                  <div className="text-3xl font-black text-gray-900">$20</div>
-                </button>
+            {/* Ticket Type Selector - Enhanced for Scarcity/Value */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-2">
+                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Select Ticket</span>
+                 <div className="flex items-center gap-1 text-[10px] font-bold text-red-500 animate-pulse">
+                    <Flame className="w-3 h-3 fill-red-500" />
+                    SELLING FAST
+                 </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {/* EARLY BIRD CARD (Featured) - Span 3 */}
+                  <button 
+                    type="button" 
+                    onClick={() => { setFormData({...formData, ticketType: TicketType.EarlyBird}); triggerHaptic(20); }}
+                    className={`md:col-span-3 relative p-6 rounded-[2rem] border-2 transition-all group overflow-hidden text-left shadow-lg
+                      ${formData.ticketType === TicketType.EarlyBird 
+                        ? 'border-cny-gold bg-gradient-to-br from-red-50 to-white ring-4 ring-cny-gold/20 scale-[1.02]' 
+                        : 'border-gray-100 bg-white hover:border-cny-red/30'}`}
+                  >
+                    {/* Badge */}
+                    <div className="absolute top-0 right-0 bg-cny-red text-cny-gold px-4 py-1.5 rounded-bl-2xl font-black text-[10px] uppercase tracking-wider shadow-md">
+                      Save 25%
+                    </div>
+
+                    <div className="flex items-start justify-between mb-4">
+                       <div>
+                          <div className={`text-xs font-black uppercase tracking-[0.2em] mb-1 flex items-center gap-2 ${formData.ticketType === TicketType.EarlyBird ? 'text-cny-red' : 'text-gray-400'}`}>
+                             <Sparkles className="w-3 h-3" /> 早鸟票 Early Bird
+                          </div>
+                          <p className="text-[10px] text-gray-400 font-bold max-w-[140px] leading-tight">Includes Lunch & Gala Entrance</p>
+                       </div>
+                    </div>
+
+                    <div className="flex items-end gap-3 mb-6">
+                       <div className="text-4xl font-black text-gray-900 tracking-tight">$15</div>
+                       <div className="text-lg font-bold text-gray-300 line-through decoration-2 mb-1">$20</div>
+                    </div>
+
+                    {/* Scarcity Progress Bar */}
+                    <div className="space-y-2">
+                       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                          <span className="text-cny-red">87% Claimed</span>
+                          <span className="text-gray-300">Only 40 left</span>
+                       </div>
+                       <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-cny-red to-orange-500 w-[87%] rounded-full shadow-[0_0_10px_rgba(215,38,56,0.5)]"></div>
+                       </div>
+                    </div>
+                  </button>
+
+                  {/* REGULAR CARD (De-emphasized) - Span 2 */}
+                  <button 
+                    type="button" 
+                    onClick={() => { setFormData({...formData, ticketType: TicketType.Regular}); triggerHaptic(20); }}
+                    className={`md:col-span-2 relative p-6 rounded-[2rem] border-2 transition-all group overflow-hidden text-left
+                      ${formData.ticketType === TicketType.Regular 
+                        ? 'border-gray-900 bg-gray-50' 
+                        : 'border-gray-50 bg-gray-50/50 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 hover:border-gray-200'}`}
+                  >
+                    <div className="flex flex-col h-full justify-between">
+                       <div>
+                          <div className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-gray-400 flex items-center gap-2">
+                             {formData.ticketType === TicketType.Regular ? <CheckCircle className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                             常规票 Regular
+                          </div>
+                          <div className="text-3xl font-black text-gray-900 mt-2">$20</div>
+                       </div>
+                       
+                       <div className="mt-4 pt-4 border-t border-gray-200/50">
+                          <p className="text-[10px] text-gray-400 font-bold leading-tight">
+                             Standard price applies after Early Bird sells out.
+                          </p>
+                       </div>
+                    </div>
+                  </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
@@ -391,8 +450,14 @@ const PublicRegistration: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="bg-white/10 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 mb-4 inline-block">Pay at Entry</div>
-                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">March 8, 2026 @ NHS</p>
+                    {/* Dynamic Savings Badge */}
+                    {formData.ticketType === TicketType.EarlyBird && formData.adults > 0 && (
+                      <div className="bg-white text-cny-red px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 mb-4 inline-flex items-center gap-1 shadow-lg animate-bounce">
+                        <Zap className="w-3 h-3 fill-cny-red" />
+                        Save ${formData.adults * 5}!
+                      </div>
+                    )}
+                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Pay at Entry · Cash Only</p>
                   </div>
                </div>
             </div>

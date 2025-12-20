@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { calculateStats, getReservations, updateReservation, deleteReservation } from '../services/dataService';
-import { Stats, Reservation, CheckInStatus, PaymentStatus, TicketType } from '../types';
+import { calculateStats, getReservations, updateReservation, deleteReservation, getTicketConfig, updateTicketConfig } from '../services/dataService';
+import { Stats, Reservation, CheckInStatus, PaymentStatus, TicketType, TicketConfig } from '../types';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Download, Users, DollarSign, TrendingUp, Loader2, RefreshCw, Search, Filter, ArrowUpDown, ChevronRight, Activity, PieChart as PieIcon, CreditCard, Utensils, MoreVertical, X, Trash2, Ban, AlertTriangle, CheckCircle, Mail } from 'lucide-react';
+import { Download, Users, DollarSign, TrendingUp, Loader2, RefreshCw, Search, Filter, ArrowUpDown, ChevronRight, Activity, PieChart as PieIcon, CreditCard, Utensils, MoreVertical, X, Trash2, Ban, AlertTriangle, CheckCircle, Mail, Settings, Edit3, Ticket } from 'lucide-react';
 
 const COLORS = ['#D72638', '#FFD700', '#3B82F6', '#10B981', '#F59E0B'];
 const ROW_HEIGHT = 84; 
@@ -13,6 +13,8 @@ const BUFFER_ROWS = 5;
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [config, setConfig] = useState<TicketConfig | null>(null);
+  
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -32,15 +34,22 @@ const AdminDashboard: React.FC = () => {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Config Modal State
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [editConfig, setEditConfig] = useState<TicketConfig>({ totalCapacity: 400, earlyBirdCap: 300, regularCap: 50, walkInCap: 50 });
+
   const fetchData = async () => {
     setRefreshing(true);
     try {
-        const [fetchedStats, fetchedReservations] = await Promise.all([
+        const [fetchedStats, fetchedReservations, fetchedConfig] = await Promise.all([
             calculateStats(),
-            getReservations()
+            getReservations(),
+            getTicketConfig()
         ]);
         setStats(fetchedStats);
         setReservations(fetchedReservations);
+        setConfig(fetchedConfig);
+        setEditConfig(fetchedConfig);
     } catch (e) {
         console.error("Failed to load dashboard data", e);
     } finally {
@@ -116,11 +125,36 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleSaveConfig = async () => {
+    setActionLoading(true);
+    try {
+      await updateTicketConfig(editConfig);
+      setConfig(editConfig);
+      setShowConfigModal(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const revenueByTicket = useMemo(() => [
     { name: '早鸟票', amount: reservations.filter(r => r.ticketType === TicketType.EarlyBird && r.checkInStatus !== CheckInStatus.Cancelled).reduce((acc, curr) => acc + curr.totalAmount, 0) },
     { name: '常规票', amount: reservations.filter(r => r.ticketType === TicketType.Regular && r.checkInStatus !== CheckInStatus.Cancelled).reduce((acc, curr) => acc + curr.totalAmount, 0) },
     { name: '现场票', amount: reservations.filter(r => r.ticketType === TicketType.WalkIn && r.checkInStatus !== CheckInStatus.Cancelled).reduce((acc, curr) => acc + curr.totalAmount, 0) },
   ], [reservations]);
+
+  // Inventory Calculations (UPDATED: Count only Adults/Tickets, exclude free children)
+  const getSoldByType = (type: TicketType) => 
+    reservations
+      .filter(r => r.ticketType === type && r.checkInStatus !== CheckInStatus.Cancelled)
+      .reduce((acc, r) => acc + r.adultsCount, 0);
+
+  const soldEarlyBird = getSoldByType(TicketType.EarlyBird);
+  const soldRegular = getSoldByType(TicketType.Regular);
+  const soldWalkIn = getSoldByType(TicketType.WalkIn);
+  const totalSold = soldEarlyBird + soldRegular + soldWalkIn;
+  const configTotal = config?.totalCapacity || 400;
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="animate-spin w-10 h-10 text-cny-red" /></div>;
   if (!stats) return <div className="p-8 text-center text-red-500 font-bold">Error loading data.</div>;
@@ -142,6 +176,51 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-20 px-4 animate-in fade-in duration-700">
       
+      {/* Config Modal */}
+      {showConfigModal && (
+        <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
+           <div className="bg-white max-w-sm w-full rounded-[2.5rem] shadow-2xl animate-in zoom-in duration-300 overflow-hidden">
+              <div className="bg-gray-900 p-6 flex justify-between items-center text-white">
+                 <h3 className="font-black text-lg flex items-center gap-2"><Settings className="w-5 h-5 text-cny-gold" /> 库存规划</h3>
+                 <button onClick={() => setShowConfigModal(false)}><X className="w-5 h-5 text-gray-400" /></button>
+              </div>
+              <div className="p-8 space-y-6">
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">活动总票数 (Total Cap)</label>
+                    <input type="number" className="w-full p-4 bg-gray-50 rounded-xl font-black text-2xl border border-gray-100" value={editConfig.totalCapacity} onChange={e => setEditConfig({...editConfig, totalCapacity: Number(e.target.value)})} />
+                 </div>
+                 
+                 <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-tight truncate">早鸟 (EB)</label>
+                       <input type="number" className="w-full p-3 bg-red-50 rounded-xl font-bold text-center border border-red-100" value={editConfig.earlyBirdCap} onChange={e => setEditConfig({...editConfig, earlyBirdCap: Number(e.target.value)})} />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-tight truncate">常规 (Reg)</label>
+                       <input type="number" className="w-full p-3 bg-gray-50 rounded-xl font-bold text-center border border-gray-100" value={editConfig.regularCap} onChange={e => setEditConfig({...editConfig, regularCap: Number(e.target.value)})} />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-tight truncate">现场 (Walk)</label>
+                       <input type="number" className="w-full p-3 bg-gray-50 rounded-xl font-bold text-center border border-gray-100" value={editConfig.walkInCap} onChange={e => setEditConfig({...editConfig, walkInCap: Number(e.target.value)})} />
+                    </div>
+                 </div>
+
+                 {/* Validation Message */}
+                 {(editConfig.earlyBirdCap + editConfig.regularCap + editConfig.walkInCap) !== editConfig.totalCapacity && (
+                    <div className="flex items-start gap-2 text-xs text-orange-500 bg-orange-50 p-3 rounded-xl">
+                       <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                       <span className="font-bold">注意: 子分类总和 ({editConfig.earlyBirdCap + editConfig.regularCap + editConfig.walkInCap}) 不等于总票数 ({editConfig.totalCapacity})。</span>
+                    </div>
+                 )}
+
+                 <button onClick={handleSaveConfig} disabled={actionLoading} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition">
+                    {actionLoading ? <Loader2 className="animate-spin mx-auto" /> : "保存设置 Save Config"}
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
+
       {/* Management Modal (Glassmorphism) */}
       {selectedForAction && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in">
@@ -225,11 +304,63 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Inventory Management Section */}
+      <div className="bg-white p-8 rounded-[2.5rem] shadow-lg border border-gray-100 space-y-6">
+         <div className="flex justify-between items-end">
+            <div>
+               <h3 className="text-lg font-black text-gray-800 uppercase tracking-tight flex items-center gap-2">
+                  <Ticket className="w-5 h-5 text-cny-gold" /> 库存规划 Inventory
+               </h3>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Total Capacity Planning (Adults Only)</p>
+            </div>
+            <button onClick={() => setShowConfigModal(true)} className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition">
+               <Edit3 className="w-3 h-3" /> 编辑 Adjust
+            </button>
+         </div>
+
+         {/* Total Progress */}
+         <div className="space-y-2">
+             <div className="flex justify-between text-xs font-black uppercase tracking-widest">
+                <span>Total Allocated: <span className="text-cny-red">{totalSold}</span></span>
+                <span className="text-gray-400">Limit: {configTotal}</span>
+             </div>
+             <div className="h-4 bg-gray-100 rounded-full overflow-hidden flex relative">
+                <div 
+                  className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-1000" 
+                  style={{ width: `${Math.min(100, (totalSold / configTotal) * 100)}%` }}
+                ></div>
+                {totalSold > configTotal && (
+                   <div className="absolute inset-0 bg-red-500/20 animate-pulse border-2 border-red-500 rounded-full"></div>
+                )}
+             </div>
+         </div>
+
+         {/* Breakdown Cards */}
+         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+               { label: '早鸟票 Early Bird', sold: soldEarlyBird, cap: config?.earlyBirdCap || 0, color: 'bg-red-50 border-red-100' },
+               { label: '常规票 Regular', sold: soldRegular, cap: config?.regularCap || 0, color: 'bg-gray-50 border-gray-100' },
+               { label: '现场票 Walk-In', sold: soldWalkIn, cap: config?.walkInCap || 0, color: 'bg-orange-50 border-orange-100' },
+            ].map((item, i) => (
+               <div key={i} className={`p-4 rounded-2xl border ${item.color}`}>
+                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{item.label}</div>
+                  <div className="flex items-end justify-between">
+                     <div className="text-2xl font-black text-gray-900">{item.sold} <span className="text-sm text-gray-400 font-bold">/ {item.cap}</span></div>
+                     <div className="text-[10px] font-bold text-gray-400">{Math.round((item.sold / (item.cap || 1)) * 100)}%</div>
+                  </div>
+                  <div className="h-1.5 w-full bg-white rounded-full mt-3 overflow-hidden">
+                     <div className="h-full bg-gray-900 rounded-full" style={{ width: `${Math.min(100, (item.sold / (item.cap || 1)) * 100)}%` }}></div>
+                  </div>
+               </div>
+            ))}
+         </div>
+      </div>
+
       {/* KPI Tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: '预计到场人数', val: stats.totalPeople, sub: 'Active Headcount', color: 'border-blue-500', icon: <Users className="text-blue-500" /> },
-          { label: '预计盒饭总数', val: stats.lunchBoxCount, sub: 'Based on Adults Count', color: 'border-orange-500', icon: <Utensils className="text-orange-500" /> },
+          { label: '预计到场人数', val: stats.totalPeople, sub: 'Total Headcount (Inc. Kids)', color: 'border-blue-500', icon: <Users className="text-blue-500" /> },
+          { label: '预计盒饭总数', val: stats.lunchBoxCount, sub: 'Adult Tickets Sold', color: 'border-orange-500', icon: <Utensils className="text-orange-500" /> },
           { label: '已确认收入', val: `$${stats.totalRevenueCollected}`, sub: 'Net Cash Collected', color: 'border-cny-gold', icon: <DollarSign className="text-cny-gold" /> },
           { label: '待收余款', val: `$${pendingAmount}`, sub: 'Unpaid Balance', color: 'border-red-500', icon: <CreditCard className="text-red-500" /> }
         ].map((kpi, idx) => (
@@ -358,14 +489,14 @@ const AdminDashboard: React.FC = () => {
       {/* Visual Analytics - Bento Bottom */}
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="bg-white p-8 rounded-[2.5rem] shadow-lg border border-gray-100 lg:col-span-1">
-           <h3 className="text-lg font-black text-gray-800 mb-8 uppercase tracking-tight flex items-center gap-2"><PieIcon className="w-5 h-5 text-cny-red" /> 票务分布</h3>
+           <h3 className="text-lg font-black text-gray-800 mb-8 uppercase tracking-tight flex items-center gap-2"><PieIcon className="w-5 h-5 text-cny-red" /> 票务分布 (按成人票)</h3>
            <div className="h-64">
              <ResponsiveContainer width="100%" height="100%">
                <PieChart>
                  <Pie data={[
-                    { name: '早鸟', value: reservations.filter(r => r.ticketType === TicketType.EarlyBird && r.checkInStatus !== CheckInStatus.Cancelled).length },
-                    { name: '常规', value: reservations.filter(r => r.ticketType === TicketType.Regular && r.checkInStatus !== CheckInStatus.Cancelled).length },
-                    { name: '现场', value: reservations.filter(r => r.ticketType === TicketType.WalkIn && r.checkInStatus !== CheckInStatus.Cancelled).length }
+                    { name: '早鸟', value: soldEarlyBird },
+                    { name: '常规', value: soldRegular },
+                    { name: '现场', value: soldWalkIn }
                  ]} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                    {COLORS.map((color, index) => <Cell key={index} fill={color} />)}
                  </Pie>
@@ -376,11 +507,11 @@ const AdminDashboard: React.FC = () => {
            <div className="mt-4 space-y-2">
               <div className="flex justify-between items-center text-xs font-bold">
                   <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cny-red"></div> 早鸟票</span>
-                  <span className="text-gray-400">{Math.round(reservations.filter(r => r.ticketType === TicketType.EarlyBird && r.checkInStatus !== CheckInStatus.Cancelled).length / (reservations.filter(r => r.checkInStatus !== CheckInStatus.Cancelled).length || 1) * 100)}%</span>
+                  <span className="text-gray-400">{Math.round((soldEarlyBird / (totalSold || 1)) * 100)}%</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold">
                   <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cny-gold"></div> 常规票</span>
-                  <span className="text-gray-400">{Math.round(reservations.filter(r => r.ticketType === TicketType.Regular && r.checkInStatus !== CheckInStatus.Cancelled).length / (reservations.filter(r => r.checkInStatus !== CheckInStatus.Cancelled).length || 1) * 100)}%</span>
+                  <span className="text-gray-400">{Math.round((soldRegular / (totalSold || 1)) * 100)}%</span>
               </div>
            </div>
         </div>

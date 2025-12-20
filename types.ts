@@ -46,6 +46,13 @@ export interface Reservation {
   lotteryNumbers?: string[]; 
 }
 
+export interface TicketConfig {
+  totalCapacity: number;
+  earlyBirdCap: number;
+  regularCap: number;
+  walkInCap: number;
+}
+
 export interface Stats {
   totalReservations: number;
   totalPeople: number;

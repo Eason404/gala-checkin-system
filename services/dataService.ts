@@ -1,11 +1,13 @@
 
-import { Reservation, TicketType, PaymentStatus, CheckInStatus, PaymentMethod, Stats } from '../types';
+import { Reservation, TicketType, PaymentStatus, CheckInStatus, PaymentMethod, Stats, TicketConfig } from '../types';
 import { db, analytics } from '../firebaseConfig';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy, Timestamp, setDoc, getDoc } from 'firebase/firestore';
 import { logEvent } from 'firebase/analytics';
 
 const COLLECTION_NAME = 'reservations';
 const MAIL_COLLECTION = 'mail';
+const SYSTEM_COLLECTION = 'system';
+const CONFIG_DOC_ID = 'ticketConfig';
 const OFFICIAL_EMAIL = 'natickchineseassociation@gmail.com';
 
 const generateId = (): string => {
@@ -26,6 +28,7 @@ const mapDocToReservation = (docSnap: any): Reservation => {
   } as Reservation;
 };
 
+// ... (Existing sendConfirmationEmail code omitted for brevity, no changes needed inside) ...
 const sendConfirmationEmail = async (reservation: any) => {
   if (!reservation.email || !reservation.email.includes('@')) {
     console.warn("Invalid email for reservation:", reservation.id);
@@ -142,6 +145,42 @@ export const getReservations = async (): Promise<Reservation[]> => {
   } catch (error) {
     console.error("Error fetching reservations:", error);
     return [];
+  }
+};
+
+export const getTicketConfig = async (): Promise<TicketConfig> => {
+  try {
+    const docRef = doc(db, SYSTEM_COLLECTION, CONFIG_DOC_ID);
+    const snapshot = await getDoc(docRef);
+    if (snapshot.exists()) {
+      return snapshot.data() as TicketConfig;
+    }
+    // Default config if not exists
+    return {
+      totalCapacity: 400,
+      earlyBirdCap: 300,
+      regularCap: 50,
+      walkInCap: 50
+    };
+  } catch (e) {
+    console.warn("Could not fetch ticket config, using defaults", e);
+    return {
+      totalCapacity: 400,
+      earlyBirdCap: 300,
+      regularCap: 50,
+      walkInCap: 50
+    };
+  }
+};
+
+export const updateTicketConfig = async (config: TicketConfig): Promise<void> => {
+  try {
+    const docRef = doc(db, SYSTEM_COLLECTION, CONFIG_DOC_ID);
+    await setDoc(docRef, config, { merge: true });
+    logEvent(analytics, 'update_config', { ...config });
+  } catch (e) {
+    console.error("Error updating config:", e);
+    throw e;
   }
 };
 
@@ -296,14 +335,15 @@ export const calculateStats = async (): Promise<Stats> => {
       return; 
     }
     stats.totalReservations++;
-    stats.totalPeople += r.totalPeople;
+    stats.totalPeople += r.totalPeople; // Keep tracking total headcount including kids
     stats.lunchBoxCount += r.adultsCount;
     stats.totalRevenueExpected += r.totalAmount;
     stats.totalRevenueCollected += r.paidAmount;
 
-    if (r.ticketType === TicketType.EarlyBird) stats.earlyBirdCount++;
-    if (r.ticketType === TicketType.Regular) stats.regularCount++;
-    if (r.ticketType === TicketType.WalkIn) stats.walkInCount++;
+    // UPDATED: Count Adults (Tickets) instead of just the Reservation itself
+    if (r.ticketType === TicketType.EarlyBird) stats.earlyBirdCount += r.adultsCount;
+    if (r.ticketType === TicketType.Regular) stats.regularCount += r.adultsCount;
+    if (r.ticketType === TicketType.WalkIn) stats.walkInCount += r.adultsCount;
     
     if (r.checkInStatus === CheckInStatus.Arrived) stats.checkedInCount += r.totalPeople;
   });
