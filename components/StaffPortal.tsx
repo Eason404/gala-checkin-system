@@ -32,6 +32,12 @@ const StaffPortal: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const cashInputRef = useRef<HTMLInputElement>(null);
 
+  const triggerHaptic = (pattern: number | number[] = 10) => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(pattern);
+    }
+  };
+
   // Load Data
   const refreshData = async () => {
     setLoading(true);
@@ -70,6 +76,7 @@ const StaffPortal: React.FC = () => {
         config,
         (decodedText) => {
           // Success
+          triggerHaptic([50, 30, 50]);
           stopScanner();
           executeSearch(decodedText);
         },
@@ -131,6 +138,7 @@ const StaffPortal: React.FC = () => {
     
     if (searchVal.length < 4 && !nameTerm) {
         setErrorMsg('请输入至少4位数字或完整ID');
+        triggerHaptic([50, 100]);
         return;
     }
 
@@ -154,12 +162,14 @@ const StaffPortal: React.FC = () => {
     }
 
     if (found) {
+        triggerHaptic(50);
         setSelectedRes(found);
         setMode('result');
         setSearchPhone('');
         setSearchName('');
         setWalkInError('');
     } else {
+        triggerHaptic([50, 100]);
         setErrorMsg('未找到记录 (No reservation found).');
     }
   };
@@ -177,6 +187,7 @@ const StaffPortal: React.FC = () => {
     if (selectedRes.paymentStatus === PaymentStatus.Unpaid && selectedRes.totalAmount > 0) {
         setCashTendered('');
         setShowPayModal(true);
+        triggerHaptic(30);
     } else {
         // If already paid or free, proceed directly
         handleFamilyCheckIn();
@@ -205,19 +216,25 @@ const StaffPortal: React.FC = () => {
         lotteryNumbers: newLottery
     };
 
-    // Use firebaseDocId for optimization if available
-    await updateReservation(selectedRes.id, updates, selectedRes.firebaseDocId);
-    
-    // Update local state immediately for UI feedback
-    setSelectedRes({ ...selectedRes, ...updates });
-    await refreshData();
-    setLoading(false);
+    try {
+      // Use firebaseDocId for optimization if available
+      await updateReservation(selectedRes.id, updates, selectedRes.firebaseDocId);
+      
+      triggerHaptic([100, 50, 100]);
+      // Update local state immediately for UI feedback
+      setSelectedRes({ ...selectedRes, ...updates });
+      await refreshData();
+    } catch (e) {
+      triggerHaptic([50, 200, 50]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleWalkInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setWalkInError('');
-    const price = 20; // Updated to $20 for Walk-ins
+    const price = 20; 
     const total = Number(walkInForm.adults) * price;
     const count = Number(walkInForm.adults) + Number(walkInForm.children);
 
@@ -240,11 +257,13 @@ const StaffPortal: React.FC = () => {
             lotteryNumbers: lotteryNums
         });
 
+        triggerHaptic([100, 50, 100]);
         setWalkInForm({ name: '', phone: '', adults: 1, children: 0 });
         setSelectedRes(newRes);
         setMode('result');
         await refreshData();
     } catch (err: any) {
+        triggerHaptic([50, 200]);
         if (err.message === 'DUPLICATE_PHONE') {
             setWalkInError("该号码已有预约 (This phone already has a reservation).");
         } else {
@@ -271,10 +290,10 @@ const StaffPortal: React.FC = () => {
         {/* Quick Action Bar */}
         {mode === 'search' && (
             <div className="flex gap-2">
-                 <button onClick={() => setMode('walkin')} className="bg-cny-gold text-cny-red px-4 py-2 rounded-lg font-bold shadow hover:bg-yellow-400 flex items-center gap-1 transition-all">
+                 <button onClick={() => { setMode('walkin'); triggerHaptic(20); }} className="bg-cny-gold text-cny-red px-4 py-2 rounded-lg font-bold shadow hover:bg-yellow-400 flex items-center gap-1 transition-all">
                     <UserPlus className="w-4 h-4" /> 现场购票 Walk-In
                  </button>
-                 <button onClick={() => setShowScanner(true)} className="bg-gray-800 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-gray-700 flex items-center gap-2 transition-all">
+                 <button onClick={() => { setShowScanner(true); triggerHaptic(20); }} className="bg-gray-800 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-gray-700 flex items-center gap-2 transition-all">
                     <Camera className="w-4 h-4" /> 扫码 Scan
                  </button>
             </div>
@@ -398,7 +417,7 @@ const StaffPortal: React.FC = () => {
       {/* --- RESULT MODE (Check-In Card) --- */}
       {mode === 'result' && selectedRes && (
         <div className="max-w-xl mx-auto animate-fade-in-up">
-            <button onClick={() => { setMode('search'); setSelectedRes(null); }} className="mb-4 text-gray-500 hover:text-gray-800 flex items-center gap-1 font-bold transition group">
+            <button onClick={() => { setMode('search'); setSelectedRes(null); triggerHaptic(10); }} className="mb-4 text-gray-500 hover:text-gray-800 flex items-center gap-1 font-bold transition group">
                 <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> 返回搜索 Back
             </button>
 
@@ -529,7 +548,7 @@ const StaffPortal: React.FC = () => {
                     <h3 className="font-bold text-lg flex items-center gap-2">
                         <Calculator className="w-5 h-5" /> 收款计算器 Payment
                     </h3>
-                    <button onClick={() => setShowPayModal(false)} className="hover:bg-red-800 p-1 rounded transition">
+                    <button onClick={() => { setShowPayModal(false); triggerHaptic(10); }} className="hover:bg-red-800 p-1 rounded transition">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -584,7 +603,7 @@ const StaffPortal: React.FC = () => {
       {/* --- WALK IN MODE --- */}
       {mode === 'walkin' && (
         <div className="max-w-lg mx-auto bg-white p-6 rounded-xl shadow-xl border-t-8 border-cny-gold animate-fade-in-up">
-            <button onClick={() => setMode('search')} className="mb-4 text-gray-500 flex items-center gap-1 text-sm font-bold transition hover:text-gray-800">
+            <button onClick={() => { setMode('search'); triggerHaptic(10); }} className="mb-4 text-gray-500 flex items-center gap-1 text-sm font-bold transition hover:text-gray-800">
                 <ChevronLeft className="w-4 h-4" /> Cancel
             </button>
             <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
