@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, memo } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import PublicRegistration from './components/PublicRegistration';
@@ -136,7 +137,7 @@ function App() {
     <Router>
       <div className="min-h-screen flex flex-col text-gray-800">
         <Navigation />
-        <main className="flex-grow px-4 pt-24 sm:pt-32 pb-12 max-w-6xl mx-auto w-full relative z-10">
+        <main className="flex-grow px-4 pt-24 sm:pt-32 pb-12 max-w-7xl mx-auto w-full relative z-20">
             <Routes>
               <Route path="/" element={<PublicRegistration />} />
               <Route path="/schedule" element={<EventSchedule />} />

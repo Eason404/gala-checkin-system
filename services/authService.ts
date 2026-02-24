@@ -1,45 +1,62 @@
-import { auth, googleProvider, db } from '../firebaseConfig';
-import { signInWithPopup, signOut as firebaseSignOut, User } from 'firebase/auth';
+
+
+import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 
-// FEATURE FLAG: Authentication & Access Control
-// Set to 'true' to enforce Google Login and Role Checks (Admin/Staff).
-// Set to 'false' to disable all security checks (Test Mode).
-export const ENABLE_AUTH = false;
+const SESSION_KEY = 'cny_access_token';
+const ROLE_KEY = 'cny_access_role';
+const COLLECTION_NAME = 'access_keys';
 
-// Login with Google Popup
-export const loginWithGoogle = async (): Promise<User> => {
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
-  } catch (error) {
-    console.error("Login failed", error);
-    throw error;
-  }
-};
+export const ENABLE_AUTH = true;
 
-export const logout = async () => {
-  await firebaseSignOut(auth);
-};
+export type UserRole = 'admin' | 'staff' | null;
 
-// Check Firestore 'roles' collection to see if user is 'admin' or 'staff'
-export const getUserRole = async (email: string | null): Promise<'admin' | 'staff' | null> => {
-  if (!email) return null;
+export const loginWithCode = async (code: string): Promise<{ success: boolean; role: UserRole; error?: string }> => {
+  // REMOVED: .toUpperCase() enforcement. 
+  // This allows for complex, case-sensitive passphrases (e.g. "MySecurePass2026").
+  // Users must now enter the code exactly as it is stored in Firestore Document ID.
+  const cleanCode = code.trim();
   
+  if (!cleanCode) return { success: false, role: null };
+
+  console.log(`[Auth] 尝试验证代码...`);
+
   try {
-    // We use email as the Document ID for easy lookup.
-    // Ensure you create a collection 'roles' in Firestore.
-    // Doc ID: 'user@email.com', Field: 'role': 'admin' or 'staff'
-    const docRef = doc(db, 'roles', email.toLowerCase());
-    const snapshot = await getDoc(docRef);
-    
-    if (snapshot.exists()) {
-      const data = snapshot.data();
-      return data.role as 'admin' | 'staff';
+    const docRef = doc(db, COLLECTION_NAME, cleanCode);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const role = data.role as UserRole;
+      
+      sessionStorage.setItem(SESSION_KEY, cleanCode);
+      sessionStorage.setItem(ROLE_KEY, role || 'staff');
+      
+      return { success: true, role };
+    } else {
+      // 文档不存在
+      return { success: false, role: null, error: 'NOT_FOUND' };
     }
-    return null; // No role assigned
-  } catch (e) {
-    console.error("Error fetching role", e);
-    return null;
+  } catch (error: any) {
+    console.error("[Auth] Firebase 错误:", error);
+    // 如果报权限错误，通常是集合不存在或 Rules 限制
+    if (error.code === 'permission-denied') {
+        return { success: false, role: null, error: 'PERMISSION_DENIED' };
+    }
+    return { success: false, role: null, error: error.message };
   }
+};
+
+export const logout = () => {
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(ROLE_KEY);
+  window.location.reload();
+};
+
+export const getCurrentUserCode = (): string => {
+  return sessionStorage.getItem(SESSION_KEY) || 'PUBLIC';
+};
+
+export const getCurrentUserRole = (): UserRole => {
+  return (sessionStorage.getItem(ROLE_KEY) as UserRole) || null;
 };

@@ -1,3 +1,4 @@
+
 # Natick CNY 2026 Gala System 🏮🐎
 
 A React-based event management system designed for the **2026 Natick Chinese New Year (Year of the Horse) Gala**. This application handles the entire event lifecycle: public registration, staff check-in, and administrative analytics.
@@ -15,14 +16,14 @@ A React-based event management system designed for the **2026 Natick Chinese New
 *   **Styling**: Tailwind CSS
 *   **Routing**: React Router (HashRouter)
 *   **Icons & Charts**: Lucide React, Recharts
-*   **Persistence**: `localStorage` (Serverless/Client-side prototype)
+*   **Backend & Persistence**: Google Firebase (Firestore, Auth, Analytics)
 
 ## 📂 Documentation
 
 For developers and AI agents continuing this work:
 
-1.  **[AI_CONTEXT.md](./AI_CONTEXT.md)**: Detailed breakdown of business logic, architecture, and data models. **Read this first.**
-2.  **[DESIGN_FIREBASE_MIGRATION.md](./DESIGN_FIREBASE_MIGRATION.md)**: Blueprint for moving from LocalStorage to a Google Firebase backend.
+1.  **[AI_CONTEXT.md](./AI_CONTEXT.md)**: Detailed breakdown of creative vision and system architecture.
+2.  **[DESIGN_FIREBASE_MIGRATION.md](./DESIGN_FIREBASE_MIGRATION.md)**: (Now Active) Reference for Firestore Database Schema and Security Architecture.
 
 ## 🚀 Getting Started
 
@@ -42,7 +43,7 @@ For developers and AI agents continuing this work:
 ## 🧪 Testing
 
 *   **Magic Fill**: Use the wand icon 🪄 on the registration page to auto-fill valid data.
-*   **Reset Data**: Increment `STORAGE_KEY` in `services/dataService.ts` to clear local storage and reset to seed data.
+*   **Firebase**: Ensure `src/firebaseConfig.ts` is correctly configured with your project credentials.
 
 ---
 *Designed for the Natick Community • March 8, 2026*

@@ -1,61 +1,117 @@
-import React, { useState } from 'react';
-import { loginWithGoogle } from '../services/authService';
-import { Shield, Loader2, AlertCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { loginWithCode } from '../services/authService';
+import { Loader2, AlertCircle, KeyRound, Settings, Eye, EyeOff } from 'lucide-react';
 
 const Login: React.FC = () => {
+  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [errorType, setErrorType] = useState<'NONE' | 'INVALID' | 'DB_EMPTY' | 'ERROR'>('NONE');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleLogin = async () => {
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.length < 6) return; // Enforce minimum 6 characters
+    
     setLoading(true);
-    setError('');
+    setErrorType('NONE');
+
     try {
-      await loginWithGoogle();
-      // Navigation is handled by the parent ProtectedRoute or AuthState listener
+        const result = await loginWithCode(code);
+        if (result.success) {
+            window.location.reload();
+        } else {
+            if (result.error === 'NOT_FOUND') {
+                setErrorType('INVALID');
+            } else if (result.error === 'PERMISSION_DENIED') {
+                setErrorType('DB_EMPTY');
+            } else {
+                setErrorType('ERROR');
+            }
+            setLoading(false);
+            if (navigator.vibrate) navigator.vibrate([50, 100, 50]);
+        }
     } catch (err) {
-      setError('Failed to sign in. Please try again.');
-      setLoading(false);
+        setErrorType('ERROR');
+        setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full border-t-8 border-cny-red text-center">
-        <div className="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Shield className="w-8 h-8 text-cny-red" />
+    <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
+      <div className="glass-card p-10 rounded-[3rem] shadow-2xl max-w-sm w-full border-t-8 border-cny-red text-center relative overflow-hidden animate-in fade-in zoom-in duration-500">
+        <div className="bg-red-50 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
+          <KeyRound className="w-10 h-10 text-cny-red" />
         </div>
         
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Staff Access</h2>
-        <p className="text-gray-500 mb-8 text-sm">
-          Please verify your identity to access the staff or admin portal.
-        </p>
+        <h2 className="text-3xl font-black text-gray-900 mb-2">内部通道</h2>
+        <p className="text-gray-400 mb-10 text-xs font-bold uppercase tracking-widest">STAFF ACCESS ONLY</p>
 
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-xs font-bold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" /> {error}
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="relative">
+              <input
+                ref={inputRef}
+                type={showPassword ? "text" : "password"}
+                placeholder="输入安全口令 (至少6位)"
+                className={`w-full p-6 bg-gray-50 border-2 rounded-[2rem] text-center font-black text-xl tracking-widest outline-none transition-all
+                  ${errorType !== 'NONE' ? 'border-red-200 text-red-600' : 'border-gray-100 focus:border-cny-red'}`}
+                value={code}
+                onChange={e => setCode(e.target.value.trim())} 
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-2"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+
+            {errorType === 'INVALID' && (
+              <p className="text-red-500 font-bold text-xs flex items-center justify-center gap-2">
+                <AlertCircle className="w-4 h-4" /> 口令错误或未授权
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || code.length < 6}
+              className="w-full bg-gray-900 text-white font-black py-6 rounded-[2rem] shadow-xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-30"
+            >
+              {loading ? <Loader2 className="animate-spin" /> : "安全登录 LOGIN"}
+            </button>
+        </form>
+
+        {/* 数据库配置急救引导 (仅在出错时显示) */}
+        {(errorType === 'DB_EMPTY') && (
+          <div className="mt-10 p-6 bg-orange-50 rounded-3xl border border-orange-100 text-left animate-in slide-in-from-top-4">
+            <div className="flex items-center gap-2 text-orange-600 font-black text-[10px] uppercase tracking-widest mb-3">
+              <Settings className="w-3 h-3" /> 数据库配置指南
+            </div>
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="w-5 h-5 bg-orange-200 rounded-full flex items-center justify-center text-[10px] font-black shrink-0">1</div>
+                <p className="text-[11px] text-gray-600 leading-tight">点击 Firebase 的 <b>+ Start collection</b>，填写 ID: <code className="bg-white px-1 text-cny-red">access_keys</code></p>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-5 h-5 bg-orange-200 rounded-full flex items-center justify-center text-[10px] font-black shrink-0">2</div>
+                <p className="text-[11px] text-gray-600 leading-tight">新增文档，ID 建议填写复杂短语 (如 <code className="bg-white px-1 text-cny-red">Natick2026Admin</code>)</p>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-5 h-5 bg-orange-200 rounded-full flex items-center justify-center text-[10px] font-black shrink-0">3</div>
+                <p className="text-[11px] text-gray-600 leading-tight">添加字段 <code className="bg-white px-1 text-cny-red">role</code>，值填 <code className="bg-white px-1 text-cny-red">admin</code></p>
+              </div>
+            </div>
           </div>
         )}
-
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 px-4 rounded-lg shadow-sm transition flex items-center justify-center gap-3"
-        >
-          {loading ? (
-            <Loader2 className="animate-spin w-5 h-5 text-gray-400" />
-          ) : (
-            <>
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-              Sign in with Google
-            </>
-          )}
-        </button>
       </div>
-      <p className="mt-8 text-xs text-gray-400 text-center max-w-xs">
-        Only authorized emails listed in the system will be granted access.
-      </p>
     </div>
   );
 };

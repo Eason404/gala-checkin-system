@@ -14,7 +14,7 @@ export enum PaymentStatus {
 export enum CheckInStatus {
   NotArrived = 'NotArrived',
   Arrived = 'Arrived',
-  Cancelled = 'Cancelled', // New status
+  Cancelled = 'Cancelled',
 }
 
 export enum PaymentMethod {
@@ -24,9 +24,14 @@ export enum PaymentMethod {
   None = 'None',
 }
 
+export interface Coupon {
+  code: string;   // 'VOLUNTEER', 'PERFORMER', 'VOLUNTEER_NO_LUNCH'
+  amount: number;
+}
+
 export interface Reservation {
-  id: string; // The visual ID (e.g. CNY26-1234)
-  firebaseDocId?: string; // The actual Firestore Document ID (for fast updates)
+  id: string;
+  firebaseDocId?: string;
   createdTime: number;
   ticketType: TicketType;
   contactName: string;
@@ -38,16 +43,24 @@ export interface Reservation {
   pricePerPerson: number;
   totalAmount: number;
   paidAmount: number;
+  discountAmount?: number; // Total discount value
+  couponCode?: string;     // Legacy: kept for backward compatibility
+  coupons?: Coupon[];      // New: Support multiple coupons
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
   checkInStatus: CheckInStatus;
   notes?: string;
-  // New field for Lottery Numbers (e.g., ["001", "002"])
-  lotteryNumbers?: string[]; 
+  lotteryNumbers?: string[];
+  isPerformer: boolean;
+  performanceUnit?: string;
+  // Audit fields
+  operatorId?: string;       // Who created this (e.g., 'PUBLIC', 'S1', 'A1')
+  lastModifiedBy?: string;   // Who last updated this (e.g., 'S2', 'A2')
 }
 
 export interface TicketConfig {
-  totalCapacity: number;
+  totalCapacity: number;     // Ticket Limit (Paying Adults)
+  totalHeadcountCap: number; // Headcount Limit (Adults + Children)
   earlyBirdCap: number;
   regularCap: number;
   walkInCap: number;
@@ -57,11 +70,12 @@ export interface Stats {
   totalReservations: number;
   totalPeople: number;
   earlyBirdCount: number;
-  regularCount: number; // Added
+  regularCount: number;
   walkInCount: number;
-  lunchBoxCount: number; // New: Based on total adults
+  lunchBoxCount: number;
   totalRevenueExpected: number;
   totalRevenueCollected: number;
   checkedInCount: number;
-  cancelledCount: number; // New stat
+  cancelledCount: number;
+  totalPerformersCount: number;
 }

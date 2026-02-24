@@ -25,7 +25,9 @@ describe('Validation Utils - Coverage Suite', () => {
       expect(validatePhone('508-555-012')).toBe(false); // 缺位
       expect(validatePhone('abc-def-ghij')).toBe(false); // 非数字
       expect(validatePhone('   ')).toBe(false); // 全空格
+      expect(validatePhone('')).toBe(false); // 空字符串
       expect(validatePhone('508-555-01234')).toBe(false); // 太长
+      expect(validatePhone('508-555-0123-')).toBe(false); // 结尾特殊字符
     });
   });
 
@@ -42,6 +44,7 @@ describe('Validation Utils - Coverage Suite', () => {
       expect(validateEmail('user@.com')).toBe(false);
       expect(validateEmail('user@com')).toBe(false);
       expect(validateEmail('user @example.com')).toBe(false); // 带空格
+      expect(validateEmail('user@example.com ')).toBe(false); // 结尾空格
       expect(validateEmail('')).toBe(false);
     });
   });
