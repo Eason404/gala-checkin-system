@@ -92,17 +92,28 @@ const StaffPortal: React.FC = () => {
     const count = selectedRes.totalPeople;
     const currentLottery = selectedRes.lotteryNumbers || [];
     const newLottery = [...currentLottery];
-    while (newLottery.length < count) newLottery.push(generateLotteryNumber());
-
-    const updates: Partial<Reservation> = {
-      checkInStatus: CheckInStatus.Arrived,
-      paymentStatus: PaymentStatus.Paid,
-      paymentMethod: PaymentMethod.Cash,
-      paidAmount: selectedRes.totalAmount,
-      lotteryNumbers: newLottery
-    };
-
+    
     try {
+      const reservations = await getReservations();
+      const existingNumbers = new Set<string>();
+      reservations.forEach(r => {
+        if (r.lotteryNumbers) {
+          r.lotteryNumbers.forEach(n => existingNumbers.add(n));
+        }
+      });
+
+      while (newLottery.length < count) {
+        newLottery.push(await generateLotteryNumber(existingNumbers));
+      }
+
+      const updates: Partial<Reservation> = {
+        checkInStatus: CheckInStatus.Arrived,
+        paymentStatus: PaymentStatus.Paid,
+        paymentMethod: PaymentMethod.Cash,
+        paidAmount: selectedRes.totalAmount,
+        lotteryNumbers: newLottery
+      };
+
       await updateReservation(selectedRes.id, updates, selectedRes.firebaseDocId);
       triggerHaptic([100, 50, 100]);
       setSelectedRes({ ...selectedRes, ...updates });
@@ -147,7 +158,7 @@ const StaffPortal: React.FC = () => {
       )}
 
       {mode === 'result' && selectedRes && (
-        <ReservationDetail selectedRes={selectedRes} setShowPayModal={setShowPayModal} setMode={setMode} />
+        <ReservationDetail selectedRes={selectedRes} setShowPayModal={setShowPayModal} setMode={setMode} setSelectedRes={setSelectedRes} />
       )}
 
       {showPayModal && selectedRes && (

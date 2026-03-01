@@ -1,7 +1,7 @@
 
 import { Reservation, TicketType, PaymentStatus, CheckInStatus, PaymentMethod, Stats, TicketConfig, Coupon } from '../types';
 import { db, analytics } from '../firebaseConfig';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy, Timestamp, setDoc, getDoc, limit } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy, Timestamp, setDoc, getDoc, limit, onSnapshot } from 'firebase/firestore';
 import { logEvent } from 'firebase/analytics';
 import { getCurrentUserCode } from './authService';
 
@@ -15,15 +15,35 @@ const generateId = (): string => {
   return 'CNY26-' + Math.floor(1000 + Math.random() * 9000).toString();
 };
 
-export const generateLotteryNumber = (): string => {
-  return Math.floor(100 + Math.random() * 899).toString(); 
+export const generateLotteryNumber = async (existingSet?: Set<string>): Promise<string> => {
+  let existingNumbers = existingSet;
+  
+  if (!existingNumbers) {
+    const reservations = await getReservations();
+    existingNumbers = new Set<string>();
+    reservations.forEach(r => {
+      if (r.lotteryNumbers) {
+        r.lotteryNumbers.forEach(n => existingNumbers!.add(n));
+      }
+    });
+  }
+
+  let num: string;
+  do {
+    num = Math.floor(100 + Math.random() * 899).toString();
+  } while (existingNumbers.has(num));
+  
+  // Add the newly generated number to the set to prevent duplicates in the same batch
+  existingNumbers.add(num);
+  
+  return num;
 };
 
 const mapDocToReservation = (docSnap: any): Reservation => {
   const data = docSnap.data();
   
   // Backward compatibility: If no 'coupons' array but has 'couponCode', create array
-  let coupons: Coupon[] = data.coupons || [];
+  let coupons: Coupon[] = Array.isArray(data.coupons) ? data.coupons : [];
   if (coupons.length === 0 && data.couponCode) {
     coupons.push({
         code: data.couponCode,
@@ -39,6 +59,11 @@ const mapDocToReservation = (docSnap: any): Reservation => {
     discountAmount: data.discountAmount || 0,
     couponCode: data.couponCode || '',
     coupons: coupons,
+    adultsCount: data.adultsCount || 0,
+    childrenCount: data.childrenCount || 0,
+    totalPeople: data.totalPeople || 0,
+    totalAmount: data.totalAmount || 0,
+    paidAmount: data.paidAmount || 0,
   } as Reservation;
 };
 
@@ -319,16 +344,25 @@ export const getRecentReservations = async (limitCount: number = 10): Promise<Re
 
 export const createReservation = async (data: Partial<Reservation>): Promise<Reservation> => {
   if (!data.contactName) throw new Error('MISSING_NAME');
-  const cleanPhone = (data.phoneNumber || '').replace(/\D/g, '');
+  
+  const rawPhone = (data.phoneNumber || '').replace(/\D/g, '');
+  if (!rawPhone) throw new Error('MISSING_PHONE');
+
+  // Normalize phone for duplicate check (handle US leading '1')
+  const possiblePhones = [rawPhone];
+  if (rawPhone.length === 11 && rawPhone.startsWith('1')) {
+      possiblePhones.push(rawPhone.substring(1));
+  } else if (rawPhone.length === 10) {
+      possiblePhones.push('1' + rawPhone);
+  }
 
   // *** DUPLICATE CHECK ***
   // Prevent creating a new reservation if the phone number already exists 
-  // and hasn't been cancelled.
-  const duplicateQuery = query(collection(db, COLLECTION_NAME), where('phoneNumber', '==', cleanPhone));
+  // Strict uniqueness: block if ANY record exists with this phone number, regardless of status.
+  const duplicateQuery = query(collection(db, COLLECTION_NAME), where('phoneNumber', 'in', possiblePhones));
   const duplicateSnapshot = await getDocs(duplicateQuery);
-  const hasActive = duplicateSnapshot.docs.some(d => d.data().checkInStatus !== CheckInStatus.Cancelled);
   
-  if (hasActive) {
+  if (!duplicateSnapshot.empty) {
       throw new Error('DUPLICATE_PHONE');
   }
   
@@ -343,7 +377,7 @@ export const createReservation = async (data: Partial<Reservation>): Promise<Res
     createdTime: Timestamp.now(), 
     ticketType: data.ticketType || TicketType.EarlyBird,
     contactName: data.contactName.trim(),
-    phoneNumber: cleanPhone,
+    phoneNumber: rawPhone, // Store the raw cleaned phone
     email: data.email,
     adultsCount: adults,
     childrenCount: children,
@@ -392,10 +426,12 @@ export const calculateStats = async (): Promise<Stats> => {
   const stats: Stats = {
     totalReservations: 0, totalPeople: 0, earlyBirdCount: 0, regularCount: 0, 
     walkInCount: 0, lunchBoxCount: 0, totalRevenueExpected: 0, 
-    totalRevenueCollected: 0, checkedInCount: 0, cancelledCount: 0, totalPerformersCount: 0
+    totalRevenueCollected: 0, checkedInCount: 0, cancelledCount: 0, totalPerformersCount: 0,
+    totalGuestsCount: 0, totalSponsorsCount: 0, totalVolunteersCount: 0, totalPerformerParentsCount: 0,
+    couponUsage: {}
   };
   reservations.forEach(r => {
-    if (r.checkInStatus === CheckInStatus.Cancelled) { stats.cancelledCount++; return; }
+    if (r.checkInStatus === CheckInStatus.Cancelled) { stats.cancelledCount += r.totalPeople; return; }
     stats.totalReservations++;
     stats.totalPeople += r.totalPeople;
     
@@ -413,8 +449,6 @@ export const calculateStats = async (): Promise<Stats> => {
     } 
     // Legacy check
     else if (r.couponCode === 'VOLUNTEER_NO_LUNCH') {
-        // If legacy "NO_LUNCH" entire order was considered no lunch? 
-        // Or assume 1 coupon = 1 person. Let's assume 1 person.
         lunchesForReservation--;
     }
 
@@ -423,10 +457,38 @@ export const calculateStats = async (): Promise<Stats> => {
 
     stats.totalRevenueExpected += r.totalAmount;
     stats.totalRevenueCollected += r.paidAmount;
-    if (r.isPerformer) stats.totalPerformersCount += r.totalPeople;
+    
+    // Demographics
+    const isSponsor = (r.coupons && r.coupons.some(c => c.code === 'SPONSOR')) || (typeof r.couponCode === 'string' && r.couponCode.includes('SPONSOR'));
+    const isVolunteer = (r.coupons && r.coupons.some(c => (c.code || '').includes('VOLUNTEER'))) || (typeof r.couponCode === 'string' && r.couponCode.includes('VOLUNTEER'));
+    const isPerformerParent = (r.coupons && r.coupons.some(c => c.code === 'PERFORMER_PARENTS')) || (typeof r.couponCode === 'string' && r.couponCode.includes('PERFORMER_PARENTS'));
+    
+    if (r.isPerformer) {
+        stats.totalPerformersCount += r.totalPeople;
+    } else if (isVolunteer) {
+        stats.totalVolunteersCount += r.totalPeople;
+    } else if (isSponsor) {
+        stats.totalSponsorsCount += r.totalPeople;
+    } else if (isPerformerParent) {
+        stats.totalPerformerParentsCount += r.totalPeople;
+    } else {
+        stats.totalGuestsCount += r.totalPeople;
+    }
+
     if (r.ticketType === TicketType.EarlyBird) stats.earlyBirdCount += r.adultsCount;
     if (r.ticketType === TicketType.Regular) stats.regularCount += r.adultsCount;
     if (r.checkInStatus === CheckInStatus.Arrived) stats.checkedInCount += r.totalPeople;
+
+    // Coupon Usage
+    if (r.coupons && r.coupons.length > 0) {
+      r.coupons.forEach(c => {
+        if (c.code) {
+          stats.couponUsage[c.code] = (stats.couponUsage[c.code] || 0) + 1;
+        }
+      });
+    } else if (typeof r.couponCode === 'string' && r.couponCode.trim() !== '') {
+      stats.couponUsage[r.couponCode] = (stats.couponUsage[r.couponCode] || 0) + 1;
+    }
   });
   return stats;
 };
@@ -436,7 +498,8 @@ const DEFAULT_CONFIG: TicketConfig = {
   totalHeadcountCap: 450, 
   earlyBirdCap: 300, 
   regularCap: 50, 
-  walkInCap: 50 
+  walkInCap: 50,
+  lotteryEnabled: false
 };
 
 export const getTicketConfig = async (): Promise<TicketConfig> => {
@@ -451,4 +514,16 @@ export const getTicketConfig = async (): Promise<TicketConfig> => {
 
 export const updateTicketConfig = async (config: TicketConfig): Promise<void> => {
   await setDoc(doc(db, SYSTEM_COLLECTION, CONFIG_DOC_ID), config, { merge: true });
+};
+
+export const updateLotteryState = async (state: any): Promise<void> => {
+  await setDoc(doc(db, SYSTEM_COLLECTION, 'lotteryState'), state, { merge: true });
+};
+
+export const subscribeToLotteryState = (callback: (state: any) => void) => {
+  return onSnapshot(doc(db, SYSTEM_COLLECTION, 'lotteryState'), (docSnap) => {
+    if (docSnap.exists()) {
+      callback(docSnap.data());
+    }
+  });
 };
