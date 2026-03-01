@@ -6,13 +6,13 @@ import { Stats, Reservation, CheckInStatus, TicketConfig } from '../types';
 import { getCurrentUserRole } from '../services/authService';
 
 // Sub-components
-import { StatsGrid } from './admin/StatsGrid';
-import { DailyStatsChart } from './admin/DailyStatsChart';
-import { CouponStats } from './admin/CouponStats';
-import { ReservationList } from './admin/ReservationList';
-import { ConfigModal } from './admin/modals/ConfigModal';
-import { DeleteModal } from './admin/modals/DeleteModal';
-import { DetailModal } from './admin/modals/DetailModal';
+import { StatsGrid } from '../components/admin/StatsGrid';
+import { DailyStatsChart } from '../components/admin/DailyStatsChart';
+import { CouponStats } from '../components/admin/CouponStats';
+import { ReservationList } from '../components/admin/ReservationList';
+import { ConfigModal } from '../components/admin/modals/ConfigModal';
+import { DeleteModal } from '../components/admin/modals/DeleteModal';
+import { DetailModal } from '../components/admin/modals/DetailModal';
 
 const ITEMS_PER_PAGE = 10;
 

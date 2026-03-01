@@ -2,13 +2,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getReservations, updateReservation, generateLotteryNumber } from '../services/dataService';
 import { Reservation, CheckInStatus, PaymentStatus, PaymentMethod } from '../types';
-import { StaffHeader } from './staff/StaffHeader';
-import { SearchSection } from './staff/SearchSection';
-import { ScannerOverlay } from './staff/ScannerOverlay';
-import { CheckInAlert } from './staff/CheckInAlert';
-import { ReservationDetail } from './staff/ReservationDetail';
-import { PaymentModal } from './staff/PaymentModal';
-import { SuccessView } from './staff/SuccessView';
+import { StaffHeader } from '../components/staff/StaffHeader';
+import { SearchSection } from '../components/staff/SearchSection';
+import { ScannerOverlay } from '../components/staff/ScannerOverlay';
+import { CheckInAlert } from '../components/staff/CheckInAlert';
+import { ReservationDetail } from '../components/staff/ReservationDetail';
+import { PaymentModal } from '../components/staff/PaymentModal';
+import { SuccessView } from '../components/staff/SuccessView';
 
 const StaffPortal: React.FC = () => {
   const [mode, setMode] = useState<'search' | 'result' | 'walkin' | 'scanner' | 'success' | 'already_checked_in'>('search');

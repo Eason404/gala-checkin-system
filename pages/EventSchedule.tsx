@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { ScheduleHeader } from './schedule/ScheduleHeader';
-import { TimelineSection } from './schedule/TimelineSection';
-import { ProgramSidebar } from './schedule/ProgramSidebar';
+import { ScheduleHeader } from '../components/schedule/ScheduleHeader';
+import { TimelineSection } from '../components/schedule/TimelineSection';
+import { ProgramSidebar } from '../components/schedule/ProgramSidebar';
 
 const EventSchedule: React.FC = () => {
   return (

@@ -8,13 +8,13 @@ import { CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import QRCode from 'qrcode';
 
 // Sub-components
-import { WaiverModal } from './registration/WaiverModal';
-import { RedEnvelope } from './registration/RedEnvelope';
-import { TicketSuccess } from './registration/TicketSuccess';
-import { StepOneTicketSelection } from './registration/StepOneTicketSelection';
-import { StepTwoForm } from './registration/StepTwoForm';
-import { ManagementTab } from './registration/ManagementTab';
-import { LiveTicker } from './registration/LiveTicker';
+import { WaiverModal } from '../components/registration/WaiverModal';
+import { RedEnvelope } from '../components/registration/RedEnvelope';
+import { TicketSuccess } from '../components/registration/TicketSuccess';
+import { StepOneTicketSelection } from '../components/registration/StepOneTicketSelection';
+import { StepTwoForm } from '../components/registration/StepTwoForm';
+import { ManagementTab } from '../components/registration/ManagementTab';
+import { LiveTicker } from '../components/registration/LiveTicker';
 
 const PublicRegistration: React.FC = () => {
   const [searchParams] = useSearchParams();
