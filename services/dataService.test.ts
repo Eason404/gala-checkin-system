@@ -6,112 +6,101 @@ declare var expect: any;
 declare var beforeEach: any;
 declare var jest: any;
 
-import { 
-  createReservation, 
-  calculateStats, 
-  updateReservation, 
-  getReservations, 
-  deleteReservation,
-  generateLotteryNumber,
-  getTicketConfig,
-  updateTicketConfig
-} from './dataService';
-import { TicketType, CheckInStatus, PaymentStatus } from '../types';
-
 // 内存数据库模拟
 let mockDb: any[] = [];
 let mockSystemConfig: any = {}; // Store for system/config docs
 
-// Firestore Mocks
-const mockAddDoc = jest.fn((colRef: any, data: any) => {
-  // Check if it's the 'mail' collection (Trigger Extension)
-  if (colRef.id === 'mail') {
-    return Promise.resolve({ id: 'mail_trigger_' + Math.random() });
-  }
+jest.mock('firebase/firestore', () => {
+  // Firestore Mocks
+  const mockAddDoc = jest.fn((colRef: any, data: any) => {
+    // Check if it's the 'mail' collection (Trigger Extension)
+    if (colRef.id === 'mail') {
+      return Promise.resolve({ id: 'mail_trigger_' + Math.random() });
+    }
 
-  // Normal reservations
-  const newDoc = { ...data, id: data.id || 'CNY26-TEST', firebaseDocId: 'doc_' + Math.random() };
-  mockDb.push(newDoc);
-  return Promise.resolve({ id: newDoc.firebaseDocId });
-});
-
-const mockGetDocs = jest.fn((q: any) => {
-  // Simply return all docs in mockDb for any query in this test suite
-  return Promise.resolve({
-    docs: mockDb.map(data => ({
-      id: data.firebaseDocId,
-      data: () => ({
-        ...data,
-        createdTime: { toMillis: () => data.createdTime || Date.now() }
-      }),
-      ref: { id: data.firebaseDocId }
-    })),
-    empty: mockDb.length === 0
+    // Normal reservations
+    const newDoc = { ...data, id: data.id || 'CNY26-TEST', firebaseDocId: 'doc_' + Math.random() };
+    mockDb.push(newDoc);
+    return Promise.resolve({ id: newDoc.firebaseDocId });
   });
-});
 
-const mockGetDoc = jest.fn((docRef: any) => {
-  // Handle system config
-  if (docRef.path.startsWith('system/')) {
-    const docId = docRef.id;
-    const data = mockSystemConfig[docId];
+  const mockGetDocs = jest.fn((q: any) => {
+    // Simply return all docs in mockDb for any query in this test suite
     return Promise.resolve({
-      exists: () => !!data,
-      data: () => data
+      docs: mockDb.map(data => ({
+        id: data.firebaseDocId,
+        data: () => ({
+          ...data,
+          createdTime: { toMillis: () => data.createdTime || Date.now() }
+        }),
+        ref: { id: data.firebaseDocId }
+      })),
+      empty: mockDb.length === 0
     });
-  }
-  return Promise.resolve({ exists: () => false });
-});
+  });
 
-const mockSetDoc = jest.fn((docRef: any, data: any, options: any) => {
-  if (docRef.path.startsWith('system/')) {
-    if (options?.merge) {
-      mockSystemConfig[docRef.id] = { ...mockSystemConfig[docRef.id], ...data };
-    } else {
-      mockSystemConfig[docRef.id] = data;
+  const mockGetDoc = jest.fn((docRef: any) => {
+    // Handle system config
+    if (docRef.path.startsWith('system/')) {
+      const docId = docRef.id;
+      const data = mockSystemConfig[docId];
+      return Promise.resolve({
+        exists: () => !!data,
+        data: () => data
+      });
+    }
+    return Promise.resolve({ exists: () => false });
+  });
+
+  const mockSetDoc = jest.fn((docRef: any, data: any, options: any) => {
+    if (docRef.path.startsWith('system/')) {
+      if (options?.merge) {
+        mockSystemConfig[docRef.id] = { ...mockSystemConfig[docRef.id], ...data };
+      } else {
+        mockSystemConfig[docRef.id] = data;
+      }
+      return Promise.resolve();
     }
     return Promise.resolve();
-  }
-  return Promise.resolve();
-});
+  });
 
-const mockUpdateDoc = jest.fn((docRef: any, updates: any) => {
-  const index = mockDb.findIndex(d => d.firebaseDocId === docRef.id);
-  if (index !== -1) {
-    mockDb[index] = { ...mockDb[index], ...updates };
-    return Promise.resolve();
-  }
-  return Promise.reject(new Error("Document not found"));
-});
+  const mockUpdateDoc = jest.fn((docRef: any, updates: any) => {
+    const index = mockDb.findIndex(d => d.firebaseDocId === docRef.id);
+    if (index !== -1) {
+      mockDb[index] = { ...mockDb[index], ...updates };
+      return Promise.resolve();
+    }
+    return Promise.reject(new Error("Document not found"));
+  });
 
-const mockDeleteDoc = jest.fn((docRef: any) => {
-  const index = mockDb.findIndex(d => d.firebaseDocId === docRef.id);
-  if (index !== -1) {
-    mockDb.splice(index, 1);
-    return Promise.resolve();
-  }
-  return Promise.reject(new Error("Document not found"));
-});
+  const mockDeleteDoc = jest.fn((docRef: any) => {
+    const index = mockDb.findIndex(d => d.firebaseDocId === docRef.id);
+    if (index !== -1) {
+      mockDb.splice(index, 1);
+      return Promise.resolve();
+    }
+    return Promise.reject(new Error("Document not found"));
+  });
 
-// Mock Firestore Module
-jest.mock('firebase/firestore', () => ({
-  getFirestore: jest.fn(),
-  collection: jest.fn((db, name) => ({ id: name, path: name })), // enhanced mock to check collection name
-  addDoc: mockAddDoc,
-  getDocs: mockGetDocs,
-  getDoc: mockGetDoc,
-  setDoc: mockSetDoc,
-  updateDoc: mockUpdateDoc,
-  deleteDoc: mockDeleteDoc,
-  doc: (db: any, col: string, id: string) => ({ id, path: `${col}/${id}` }),
-  query: jest.fn(),
-  where: jest.fn(),
-  orderBy: jest.fn(),
-  Timestamp: {
-    now: () => ({ toMillis: () => Date.now() }),
-    fromMillis: (ms: number) => ({ toMillis: () => ms })
-  }
-}));
+  return {
+    getFirestore: jest.fn(),
+    collection: jest.fn((db, name) => ({ id: name, path: name })), // enhanced mock to check collection name
+    addDoc: mockAddDoc,
+    getDocs: mockGetDocs,
+    getDoc: mockGetDoc,
+    setDoc: mockSetDoc,
+    updateDoc: mockUpdateDoc,
+    deleteDoc: mockDeleteDoc,
+    doc: (db: any, col: string, id: string) => ({ id, path: `${col}/${id}` }),
+    query: jest.fn(),
+    where: jest.fn(),
+    orderBy: jest.fn(),
+    Timestamp: {
+      now: () => ({ toMillis: () => Date.now() }),
+      fromMillis: (ms: number) => ({ toMillis: () => ms })
+    }
+  };
+});
 
 jest.mock('../firebaseConfig', () => ({
   db: {},
@@ -127,6 +116,18 @@ jest.mock('firebase/analytics', () => ({
 jest.mock('./authService', () => ({
   getCurrentUserCode: jest.fn(() => 'TEST_USER')
 }));
+
+import { 
+  createReservation, 
+  calculateStats, 
+  updateReservation, 
+  getReservations, 
+  deleteReservation,
+  generateLotteryNumber,
+  getTicketConfig,
+  updateTicketConfig
+} from './dataService';
+import { TicketType, CheckInStatus, PaymentStatus } from '../types';
 
 describe('DataService - Full Coverage Suite', () => {
   beforeEach(() => {

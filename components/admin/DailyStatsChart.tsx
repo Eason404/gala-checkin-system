@@ -1,8 +1,8 @@
 
 import React, { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Reservation, CheckInStatus } from '../../types';
-import { CalendarDays } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 interface DailyStatsChartProps {
   reservations: Reservation[];
@@ -10,7 +10,7 @@ interface DailyStatsChartProps {
 
 export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }) => {
   const data = useMemo(() => {
-    const stats: Record<string, { date: string; displayDate: string; adults: number; children: number }> = {};
+    const stats: Record<string, { date: string; displayDate: string; adults: number; children: number; total: number }> = {};
 
     reservations.forEach(res => {
       // Exclude cancelled reservations
@@ -24,11 +24,13 @@ export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }
           date: key,
           displayDate: dateObj.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }),
           adults: 0,
-          children: 0
+          children: 0,
+          total: 0
         };
       }
       stats[key].adults += res.adultsCount;
       stats[key].children += res.childrenCount;
+      stats[key].total += res.totalPeople;
     });
 
     return Object.values(stats)
@@ -38,25 +40,30 @@ export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }
   if (data.length === 0) return null;
 
   return (
-    <div className="bg-white p-6 sm:p-10 rounded-[2.5rem] shadow-lg border border-gray-100 animate-in fade-in slide-in-from-bottom-4">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="bg-cny-red/10 p-3 rounded-2xl">
-          <CalendarDays className="w-6 h-6 text-cny-red" />
-        </div>
+    <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-sm border border-gray-100">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-xl font-bold text-gray-900 tracking-tight">每日报名统计 Trend</h3>
-          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Adults & Children Registration</p>
+          <h3 className="text-lg font-bold text-gray-900 tracking-tight flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-cny-red" />
+            每日报名趋势
+          </h3>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Daily Registration Trend</p>
         </div>
       </div>
       
-      <div className="h-[400px] w-full select-none">
+      <div className="h-[240px] w-full select-none">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
+          <AreaChart
             data={data}
-            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-            barCategoryGap={24}
+            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+            <defs>
+              <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#D72638" stopOpacity={0.2}/>
+                <stop offset="95%" stopColor="#D72638" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
             <XAxis 
               dataKey="displayDate" 
               stroke="#9ca3af" 
@@ -66,20 +73,27 @@ export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }
               dy={10}
             />
             <YAxis 
-              stroke="#6b7280" 
-              fontSize={11} 
-              fontWeight={600}
+              stroke="#9ca3af" 
+              fontSize={10} 
               tickLine={false} 
               axisLine={false} 
+              tickFormatter={(value) => `${value}`}
             />
             <Tooltip 
-              cursor={{ fill: '#f9fafb' }}
-              contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', fontSize: '12px', fontWeight: 'bold' }}
+              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', fontSize: '12px', fontWeight: 'bold' }}
+              cursor={{ stroke: '#e5e7eb', strokeWidth: 2, strokeDasharray: '3 3' }}
             />
-            <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '12px', fontWeight: 'bold' }} />
-            <Bar dataKey="adults" name="成人 Adults" stackId="a" fill="#D72638" barSize={32} radius={[0, 0, 0, 0]} />
-            <Bar dataKey="children" name="儿童 Children" stackId="a" fill="#F59E0B" barSize={32} radius={[6, 6, 0, 0]} />
-          </BarChart>
+            <Area 
+              type="monotone" 
+              dataKey="total" 
+              name="新增人数 (New Registrations)" 
+              stroke="#D72638" 
+              strokeWidth={3} 
+              fillOpacity={1} 
+              fill="url(#colorTotal)" 
+              activeDot={{ r: 6, strokeWidth: 0, fill: '#D72638' }}
+            />
+          </AreaChart>
         </ResponsiveContainer>
       </div>
     </div>

@@ -64,6 +64,7 @@ export interface TicketConfig {
   earlyBirdCap: number;
   regularCap: number;
   walkInCap: number;
+  lotteryEnabled?: boolean;  // Feature flag for lottery
 }
 
 export interface Stats {
@@ -78,4 +79,9 @@ export interface Stats {
   checkedInCount: number;
   cancelledCount: number;
   totalPerformersCount: number;
+  totalGuestsCount: number;
+  totalSponsorsCount: number;
+  totalVolunteersCount: number;
+  totalPerformerParentsCount: number;
+  couponUsage: Record<string, number>;
 }

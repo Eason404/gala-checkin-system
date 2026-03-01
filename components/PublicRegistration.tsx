@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { createReservation, getReservations, updateReservation, sendCancellationEmail } from '../services/dataService';
-import { TicketType, CheckInStatus, Reservation } from '../types';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { createReservation, getReservations, updateReservation, sendCancellationEmail, getTicketConfig } from '../services/dataService';
+import { TicketType, CheckInStatus, Reservation, TicketConfig } from '../types';
 import { validatePhone, validateEmail } from '../utils/validation';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import QRCode from 'qrcode';
 
 // Sub-components
@@ -16,8 +17,14 @@ import { ManagementTab } from './registration/ManagementTab';
 import { LiveTicker } from './registration/LiveTicker';
 
 const PublicRegistration: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const isWalkIn = searchParams.get('type') === 'walkin';
+
   const [activeTab, setActiveTab] = useState<'register' | 'manage'>('register');
-  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+  const [currentStep, setCurrentStep] = useState<1 | 2>(isWalkIn ? 2 : 1);
+  const [config, setConfig] = useState<TicketConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
   
   // Registration Form State
   const [formData, setFormData] = useState({
@@ -27,7 +34,7 @@ const PublicRegistration: React.FC = () => {
     email: '',
     adults: 1,
     children: 0,
-    ticketType: TicketType.EarlyBird,
+    ticketType: isWalkIn ? TicketType.WalkIn : TicketType.EarlyBird,
     isPerformer: false,
     performanceUnit: ''
   });
@@ -53,6 +60,20 @@ const PublicRegistration: React.FC = () => {
   const currentPrice = formData.ticketType === TicketType.EarlyBird ? 15 : 20;
 
   useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const conf = await getTicketConfig();
+        setConfig(conf);
+      } catch (err) {
+        console.error("Failed to fetch config", err);
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+    fetchConfig();
+  }, []);
+
+  useEffect(() => {
     if (submitted && reservationId) {
       QRCode.toDataURL(reservationId, {
         width: 400,
@@ -70,7 +91,7 @@ const PublicRegistration: React.FC = () => {
           (entries) => {
             if (entries[0].isIntersecting) {
               setTimeout(() => {
-                setEarlyBirdProgress(80);
+                setEarlyBirdProgress(95);
               }, 400);
               observer.disconnect(); 
             }

@@ -5,8 +5,6 @@ declare var expect: any;
 declare var beforeEach: any;
 declare var jest: any;
 
-import { loginWithCode, logout, getCurrentUserRole, getCurrentUserCode } from './authService';
-
 // Mock Storage
 const mockStorage: Record<string, string> = {};
 
@@ -17,20 +15,24 @@ const mockAuthDb: Record<string, any> = {
   'STAFF456': { role: 'staff' }
 };
 
-const mockGetDoc = jest.fn((docRef: any) => {
-  const code = docRef.id; // We mocked doc() to return { id: code }
-  const data = mockAuthDb[code];
-  return Promise.resolve({
-    exists: () => !!data,
-    data: () => data
+jest.mock('firebase/firestore', () => {
+  const mockGetDoc = jest.fn((docRef: any) => {
+    const code = docRef.id; // We mocked doc() to return { id: code }
+    const data = mockAuthDb[code];
+    return Promise.resolve({
+      exists: () => !!data,
+      data: () => data
+    });
   });
+
+  return {
+    getFirestore: jest.fn(),
+    doc: jest.fn((db, col, id) => ({ id, path: `${col}/${id}` })),
+    getDoc: mockGetDoc
+  };
 });
 
-jest.mock('firebase/firestore', () => ({
-  getFirestore: jest.fn(),
-  doc: jest.fn((db, col, id) => ({ id, path: `${col}/${id}` })),
-  getDoc: mockGetDoc
-}));
+import { loginWithCode, logout, getCurrentUserRole, getCurrentUserCode } from './authService';
 
 describe('AuthService - Database based access', () => {
   beforeEach(() => {

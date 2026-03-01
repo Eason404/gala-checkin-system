@@ -1,15 +1,18 @@
 
 import React from 'react';
 import { Reservation, CheckInStatus, PaymentStatus } from '../../types';
-import { Search, Filter, Star, Mic2, MoreVertical, ChevronLeft, ChevronRight, Tag } from 'lucide-react';
+import { Search, Filter, Star, Mic2, MoreVertical, ChevronLeft, ChevronRight, Tag, Crown, Users } from 'lucide-react';
 
 interface ReservationListProps {
+  reservations: Reservation[];
   searchTerm: string;
   setSearchTerm: (val: string) => void;
   filterStatus: string;
   setFilterStatus: (val: string) => void;
   filterPerformer: string;
   setFilterPerformer: (val: string) => void;
+  filterCoupon: string;
+  setFilterCoupon: (val: string) => void;
   paginatedData: Reservation[];
   toggleSort: (key: 'contactName' | 'totalAmount' | 'createdTime') => void;
   setSelectedForAction: (res: Reservation) => void;
@@ -21,11 +24,39 @@ interface ReservationListProps {
 const ROW_HEIGHT = 88;
 
 export const ReservationList: React.FC<ReservationListProps> = ({
-  searchTerm, setSearchTerm, filterStatus, setFilterStatus,
-  filterPerformer, setFilterPerformer,
+  reservations, searchTerm, setSearchTerm, filterStatus, setFilterStatus,
+  filterPerformer, setFilterPerformer, filterCoupon, setFilterCoupon,
   paginatedData, toggleSort, setSelectedForAction,
   currentPage, setCurrentPage, totalPages
 }) => {
+  const adultCounts = React.useMemo(() => {
+    let performers = 0;
+    let volunteers = 0;
+    let guests = 0;
+    let sponsors = 0;
+    let total = 0;
+
+    reservations.forEach(r => {
+      if (r.checkInStatus === CheckInStatus.Cancelled) return;
+      
+      const isSponsor = (r.coupons && r.coupons.some(c => c.code === 'SPONSOR')) || (typeof r.couponCode === 'string' && r.couponCode.includes('SPONSOR'));
+      const isVolunteer = (r.coupons && r.coupons.some(c => (c.code || '').includes('VOLUNTEER'))) || (typeof r.couponCode === 'string' && r.couponCode.includes('VOLUNTEER'));
+      
+      total += r.adultsCount;
+      if (r.isPerformer) {
+        performers += r.adultsCount;
+      } else if (isVolunteer) {
+        volunteers += r.adultsCount;
+      } else if (isSponsor) {
+        sponsors += r.adultsCount;
+      } else {
+        guests += r.adultsCount;
+      }
+    });
+
+    return { total, performers, volunteers, guests, sponsors };
+  }, [reservations]);
+
   return (
     <div className="bg-white p-6 sm:p-10 rounded-[2.5rem] shadow-lg border border-gray-100 space-y-8">
       <div className="flex flex-col lg:flex-row gap-6 items-center">
@@ -40,6 +71,7 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                       <option value="all">所有状态 (All)</option>
                       <option value={CheckInStatus.NotArrived}>未签到</option>
                       <option value={CheckInStatus.Arrived}>已签到</option>
+                      <option value={CheckInStatus.Cancelled}>已取消</option>
                   </select>
               </div>
               <div className="flex items-center gap-2 bg-gray-50 px-5 py-3 rounded-2xl border border-gray-100">
@@ -48,9 +80,31 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                       <option value="all">所有人员 (All)</option>
                       <option value="yes">仅演职人员 (Performers)</option>
                       <option value="no">仅观众 (Guests)</option>
+                      <option value="sponsor">仅赞助商 (Sponsors)</option>
+                  </select>
+              </div>
+              <div className="flex items-center gap-2 bg-gray-50 px-5 py-3 rounded-2xl border border-gray-100">
+                  <Tag className="w-4 h-4 text-gray-400" />
+                  <select className="bg-transparent text-xs font-bold outline-none cursor-pointer" value={filterCoupon} onChange={e => setFilterCoupon(e.target.value)}>
+                      <option value="all">所有优惠 (All Coupons)</option>
+                      <option value="any">有优惠 (Any Coupon)</option>
+                      <option value="none">无优惠 (No Coupon)</option>
+                      <option value="SPONSOR">赞助商 (Sponsor)</option>
+                      <option value="VOLUNTEER">志愿者 (Volunteer)</option>
+                      <option value="PERFORMER">演职人员 (Performer)</option>
+                      <option value="CAST_CREW_PARENT">演职人员父母 (Parent)</option>
                   </select>
               </div>
           </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-gray-500 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+          <span className="text-gray-900 uppercase tracking-widest">成人人数统计 (Adults):</span>
+          <span className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">总计: {adultCounts.total}</span>
+          <span className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-purple-600">演职人员: {adultCounts.performers}</span>
+          <span className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-blue-600">志愿者: {adultCounts.volunteers}</span>
+          <span className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-yellow-600">赞助商: {adultCounts.sponsors}</span>
+          <span className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-green-600">观众: {adultCounts.guests}</span>
       </div>
 
       <div className="overflow-hidden rounded-[2rem] border border-gray-100">
@@ -72,6 +126,16 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                                 {res.isPerformer && (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cny-gold/20 text-cny-dark text-[10px] font-bold border border-cny-gold/40">
                                      <Star className="w-3 h-3 fill-cny-dark" /> 演职
+                                  </span>
+                                )}
+                                {((typeof res.couponCode === 'string' && res.couponCode.includes('SPONSOR')) || (res.coupons && res.coupons.some(c => c.code === 'SPONSOR'))) && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-[10px] font-bold border border-yellow-200">
+                                     <Crown className="w-3 h-3" /> 赞助商
+                                  </span>
+                                )}
+                                {((typeof res.couponCode === 'string' && res.couponCode.includes('CAST_CREW_PARENT')) || (res.coupons && res.coupons.some(c => c.code === 'CAST_CREW_PARENT'))) && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[10px] font-bold border border-pink-200">
+                                     <Users className="w-3 h-3" /> 演职父母
                                   </span>
                                 )}
                             </div>
@@ -106,8 +170,14 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                                 <div className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${res.paymentStatus === PaymentStatus.Paid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
                                     {res.paymentStatus === PaymentStatus.Paid ? '已付' : '未付'}
                                 </div>
-                                <div className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${res.checkInStatus === CheckInStatus.Arrived ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
-                                    {res.checkInStatus === CheckInStatus.Arrived ? '到场' : '待到场'}
+                                <div className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                    res.checkInStatus === CheckInStatus.Arrived ? 'bg-blue-100 text-blue-700' : 
+                                    res.checkInStatus === CheckInStatus.Cancelled ? 'bg-red-100 text-red-700' : 
+                                    'bg-gray-100 text-gray-400'
+                                }`}>
+                                    {res.checkInStatus === CheckInStatus.Arrived ? '到场' : 
+                                     res.checkInStatus === CheckInStatus.Cancelled ? '已取消' : 
+                                     '待到场'}
                                 </div>
                             </div>
                         </div>

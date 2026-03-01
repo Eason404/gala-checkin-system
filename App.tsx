@@ -3,6 +3,7 @@ import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-ro
 import PublicRegistration from './components/PublicRegistration';
 import StaffPortal from './components/StaffPortal';
 import AdminDashboard from './components/AdminDashboard';
+import LotteryWheel from './components/LotteryWheel';
 import ProtectedRoute from './components/ProtectedRoute';
 import EventSchedule from './components/EventSchedule';
 import { Ticket, Users, BarChart3, LogOut, CalendarDays, Home, Mail, Sparkles } from 'lucide-react';
@@ -53,6 +54,10 @@ const Navigation = memo(() => {
             <Link to="/admin" className={navClass('/admin')}>
               <BarChart3 className="w-4 h-4" />
               <span>后台统计</span>
+            </Link>
+            <Link to="/lottery" className={navClass('/lottery')}>
+              <Sparkles className="w-4 h-4" />
+              <span>抽奖</span>
             </Link>
             
             {ENABLE_AUTH && user && (
@@ -151,10 +156,14 @@ function App() {
               <Route 
                 path="/admin" 
                 element={
-                  <ProtectedRoute requiredRole="admin">
+                  <ProtectedRoute>
                     <AdminDashboard />
                   </ProtectedRoute>
                 } 
+              />
+              <Route 
+                path="/lottery" 
+                element={<LotteryWheel />} 
               />
             </Routes>
         </main>

@@ -18,7 +18,7 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[130] bg-red-900/40 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
-      <div className="bg-white max-w-sm w-full rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+      <div className="bg-white max-w-sm w-full max-h-[90vh] overflow-y-auto rounded-[2.5rem] shadow-2xl animate-in zoom-in duration-300">
         <div className="p-10 text-center">
           <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertTriangle className="w-10 h-10 text-red-500" />
