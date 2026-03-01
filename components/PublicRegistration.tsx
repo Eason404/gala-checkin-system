@@ -25,7 +25,7 @@ const PublicRegistration: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<1 | 2>(isWalkIn ? 2 : 1);
   const [config, setConfig] = useState<TicketConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
-  
+
   // Registration Form State
   const [formData, setFormData] = useState({
     firstName: '',
@@ -45,7 +45,7 @@ const PublicRegistration: React.FC = () => {
   const [reservationId, setReservationId] = useState('');
   const [qrCodeData, setQrCodeData] = useState<string>('');
   const [submitError, setSubmitError] = useState('');
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const [earlyBirdProgress, setEarlyBirdProgress] = useState(0);
 
   // Intersection Observer ref
@@ -53,7 +53,7 @@ const PublicRegistration: React.FC = () => {
 
   // Manage/Cancel State
   const [managePhone, setManagePhone] = useState('');
-  const [manageName, setManageName] = useState(''); 
+  const [manageName, setManageName] = useState('');
   const [myRes, setMyRes] = useState<Reservation | null>(null);
   const [lookupError, setLookupError] = useState('');
 
@@ -80,29 +80,29 @@ const PublicRegistration: React.FC = () => {
         margin: 2,
         color: { dark: '#000000', light: '#ffffff' },
       })
-      .then(url => setQrCodeData(url))
-      .catch(err => console.error(err));
+        .then(url => setQrCodeData(url))
+        .catch(err => console.error(err));
     }
   }, [submitted, reservationId]);
 
   useEffect(() => {
     if (currentStep === 1 && progressBarRef.current) {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            if (entries[0].isIntersecting) {
-              setTimeout(() => {
-                setEarlyBirdProgress(95);
-              }, 400);
-              observer.disconnect(); 
-            }
-          },
-          { threshold: 0.5 }
-        );
-        observer.observe(progressBarRef.current);
-        return () => observer.disconnect();
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            setTimeout(() => {
+              setEarlyBirdProgress(95);
+            }, 400);
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.5 }
+      );
+      observer.observe(progressBarRef.current);
+      return () => observer.disconnect();
     }
   }, [currentStep, activeTab]);
-  
+
   const triggerHaptic = (pattern: number | number[] = 10) => {
     if ('vibrate' in navigator) {
       navigator.vibrate(pattern);
@@ -153,28 +153,28 @@ const PublicRegistration: React.FC = () => {
 
     setLoading(true);
     try {
-        const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-        const newRes = await createReservation({
-          contactName: fullName,
-          phoneNumber: formData.phone,
-          email: formData.email,
-          adultsCount: Number(formData.adults),
-          childrenCount: Number(formData.children),
-          ticketType: formData.ticketType,
-          isPerformer: formData.isPerformer,
-          performanceUnit: formData.performanceUnit
-        });
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      const newRes = await createReservation({
+        contactName: fullName,
+        phoneNumber: formData.phone,
+        email: formData.email,
+        adultsCount: Number(formData.adults),
+        childrenCount: Number(formData.children),
+        ticketType: formData.ticketType,
+        isPerformer: formData.isPerformer,
+        performanceUnit: formData.performanceUnit
+      });
 
-        triggerHaptic([100, 50, 100]);
-        setReservationId(newRes.id);
-        setSubmitted(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      triggerHaptic([100, 50, 100]);
+      setReservationId(newRes.id);
+      setSubmitted(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-        if (err.message === 'DUPLICATE_PHONE') setSubmitError("该号码已报名。请切换到【管理预约】查询或取消。 (Phone used. Check 'Manage' tab)");
-        else setSubmitError("系统繁忙，请稍后再试 (Submission failed)");
-        triggerHaptic([50, 100, 50]);
+      if (err.message === 'DUPLICATE_PHONE') setSubmitError("该号码已报名。请切换到【管理预约】查询或取消。 (Phone used. Check 'Manage' tab)");
+      else setSubmitError("系统繁忙，请稍后再试 (Submission failed)");
+      triggerHaptic([50, 100, 50]);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -195,48 +195,48 @@ const PublicRegistration: React.FC = () => {
 
     setLoading(true);
     try {
-        const allReservations = await getReservations();
-        const cleanPhone = managePhone.replace(/\D/g, '');
-        const found = allReservations.find(r => 
-          r.phoneNumber.replace(/\D/g, '').includes(cleanPhone) && 
-          r.contactName.toLowerCase().includes(manageName.trim().toLowerCase()) &&
-          r.checkInStatus !== CheckInStatus.Cancelled
-        );
-        if (found) {
-          setMyRes(found);
-          triggerHaptic(50);
-        }
-        else setLookupError('未找到相关预约信息 (No record found)');
+      const allReservations = await getReservations();
+      const cleanPhone = managePhone.replace(/\D/g, '');
+      const found = allReservations.find(r =>
+        r.phoneNumber.replace(/\D/g, '').includes(cleanPhone) &&
+        r.contactName.toLowerCase().includes(manageName.trim().toLowerCase()) &&
+        r.checkInStatus !== CheckInStatus.Cancelled
+      );
+      if (found) {
+        setMyRes(found);
+        triggerHaptic(50);
+      }
+      else setLookupError('未找到相关预约信息 (No record found)');
     } catch (err) {
-        setLookupError('查询失败，请检查网络连接');
+      setLookupError('查询失败，请检查网络连接');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   const handleCancel = async () => {
     if (!myRes) return;
     if (window.confirm('确定要取消预约吗？此操作无法撤销。\nAre you sure you want to cancel?')) {
-        setLoading(true);
-        try {
-            await updateReservation(myRes.id, { checkInStatus: CheckInStatus.Cancelled }, myRes.firebaseDocId);
-            
-            // Send cancellation email
-            await sendCancellationEmail(myRes);
+      setLoading(true);
+      try {
+        await updateReservation(myRes.id, { checkInStatus: CheckInStatus.Cancelled }, myRes.firebaseDocId);
 
-            triggerHaptic([50, 50]);
-            
-            // Update UI state instead of nulling it out
-            setMyRes({
-                ...myRes,
-                checkInStatus: CheckInStatus.Cancelled
-            });
-            setLookupError('预约已成功取消 (Reservation Cancelled)');
-        } catch(e) {
-            setLookupError('取消失败，请重试');
-        } finally {
-            setLoading(false);
-        }
+        // Send cancellation email
+        await sendCancellationEmail(myRes);
+
+        triggerHaptic([50, 50]);
+
+        // Update UI state instead of nulling it out
+        setMyRes({
+          ...myRes,
+          checkInStatus: CheckInStatus.Cancelled
+        });
+        setLookupError('预约已成功取消 (Reservation Cancelled)');
+      } catch (e) {
+        setLookupError('取消失败，请重试');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -245,7 +245,18 @@ const PublicRegistration: React.FC = () => {
     setEnvelopeOpened(false);
     setReservationId('');
     setCurrentStep(1);
-    // Optional: clear form data if desired, or keep for convenience
+    setFormData({
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
+      adults: 1,
+      children: 0,
+      ticketType: isWalkIn ? TicketType.WalkIn : TicketType.EarlyBird,
+      isPerformer: false,
+      performanceUnit: ''
+    });
+    setAgreedToWaiver(false);
   };
 
   if (submitted && !envelopeOpened) {
@@ -254,7 +265,7 @@ const PublicRegistration: React.FC = () => {
 
   if (submitted && envelopeOpened) {
     return (
-      <TicketSuccess 
+      <TicketSuccess
         reservationId={reservationId}
         qrCodeData={qrCodeData}
         formData={formData}
@@ -268,23 +279,23 @@ const PublicRegistration: React.FC = () => {
     <div className="max-w-xl mx-auto space-y-12 pb-12">
       <LiveTicker />
 
-      <WaiverModal 
-        isOpen={showWaiverModal} 
-        onClose={() => setShowWaiverModal(false)} 
-        onConfirm={() => { setAgreedToWaiver(true); triggerHaptic(20); }} 
+      <WaiverModal
+        isOpen={showWaiverModal}
+        onClose={() => setShowWaiverModal(false)}
+        onConfirm={() => { setAgreedToWaiver(true); triggerHaptic(20); }}
       />
-      
+
       {/* Header Section */}
       <div className="text-center relative py-10">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none select-none">
-           <div className="text-[180px] font-serif text-cny-gold leading-none">马</div>
+          <div className="text-[180px] font-serif text-cny-gold leading-none">马</div>
         </div>
         <div className="relative z-10 flex flex-col items-center">
-            <div className="w-20 h-20 bg-cny-gold text-cny-dark rounded-3xl shadow-2xl flex items-center justify-center text-4xl font-serif font-black mb-8 rotate-3 festive-float border-2 border-white/20">福</div>
-            <h1 className="text-5xl sm:text-6xl font-bold text-white tracking-tighter mb-4 drop-shadow-xl">2026 Natick 春晚</h1>
-            <div className="flex items-center gap-4 px-6 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10">
-                <span className="text-cny-gold font-bold text-xs uppercase tracking-[0.3em]">Year of the Horse Gala</span>
-            </div>
+          <div className="w-20 h-20 bg-cny-gold text-cny-dark rounded-3xl shadow-2xl flex items-center justify-center text-4xl font-serif font-black mb-8 rotate-3 festive-float border-2 border-white/20">福</div>
+          <h1 className="text-5xl sm:text-6xl font-bold text-white tracking-tighter mb-4 drop-shadow-xl">2026 Natick 春晚</h1>
+          <div className="flex items-center gap-4 px-6 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10">
+            <span className="text-cny-gold font-bold text-xs uppercase tracking-[0.3em]">Year of the Horse Gala</span>
+          </div>
         </div>
       </div>
 
@@ -302,24 +313,24 @@ const PublicRegistration: React.FC = () => {
         <div className="space-y-6">
           {/* Progress Indicator */}
           <div className="flex items-center justify-center gap-4 mb-2">
-             <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${currentStep === 1 ? 'bg-cny-gold border-cny-gold text-cny-dark scale-110 shadow-lg' : 'bg-green-500 border-green-500 text-white'}`}>
-                  {currentStep > 1 ? <CheckCircle className="w-4 h-4" /> : '1'}
-                </div>
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${currentStep === 1 ? 'text-white' : 'text-white/40'}`}>选票 Pick Ticket</span>
-             </div>
-             <div className="w-8 h-px bg-white/10"></div>
-             <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${currentStep === 2 ? 'bg-cny-gold border-cny-gold text-cny-dark scale-110 shadow-lg' : 'border-white/20 text-white/20'}`}>
-                  2
-                </div>
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${currentStep === 2 ? 'text-white' : 'text-white/20'}`}>资料 Your Info</span>
-             </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${currentStep === 1 ? 'bg-cny-gold border-cny-gold text-cny-dark scale-110 shadow-lg' : 'bg-green-500 border-green-500 text-white'}`}>
+                {currentStep > 1 ? <CheckCircle className="w-4 h-4" /> : '1'}
+              </div>
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${currentStep === 1 ? 'text-white' : 'text-white/40'}`}>选票 Pick Ticket</span>
+            </div>
+            <div className="w-8 h-px bg-white/10"></div>
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${currentStep === 2 ? 'bg-cny-gold border-cny-gold text-cny-dark scale-110 shadow-lg' : 'border-white/20 text-white/20'}`}>
+                2
+              </div>
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${currentStep === 2 ? 'text-white' : 'text-white/20'}`}>资料 Your Info</span>
+            </div>
           </div>
 
           <div className="glass-card rounded-[3rem] shadow-2xl p-8 sm:p-12 border border-white/30 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-hidden">
             {currentStep === 1 ? (
-              <StepOneTicketSelection 
+              <StepOneTicketSelection
                 formData={formData}
                 setFormData={setFormData}
                 triggerHaptic={triggerHaptic}
@@ -328,7 +339,7 @@ const PublicRegistration: React.FC = () => {
                 earlyBirdProgress={earlyBirdProgress}
               />
             ) : (
-              <StepTwoForm 
+              <StepTwoForm
                 formData={formData}
                 setFormData={setFormData}
                 handleSubmit={handleSubmit}
@@ -345,7 +356,7 @@ const PublicRegistration: React.FC = () => {
           </div>
         </div>
       ) : (
-        <ManagementTab 
+        <ManagementTab
           manageName={manageName}
           setManageName={setManageName}
           managePhone={managePhone}
