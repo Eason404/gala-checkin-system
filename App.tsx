@@ -1,5 +1,5 @@
 import React, { useEffect, useState, memo } from 'react';
-import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import PublicRegistration from './pages/PublicRegistration';
 import StaffPortal from './pages/StaffPortal';
 import AdminDashboard from './pages/AdminDashboard';
@@ -10,6 +10,8 @@ import { Ticket, Users, BarChart3, LogOut, CalendarDays, Home, Mail, Sparkles } 
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { logout, ENABLE_AUTH } from './services/authService';
+
+export const ENABLE_REGISTRATION = false;
 
 const Navigation = memo(() => {
   const location = useLocation();
@@ -37,10 +39,12 @@ const Navigation = memo(() => {
           </Link>
 
           <div className="flex items-center gap-1 text-xs flex-shrink-0 whitespace-nowrap pr-2">
-            <Link to="/" className={navClass('/')}>
-              <Ticket className="w-4 h-4" />
-              <span>活动预约</span>
-            </Link>
+            {ENABLE_REGISTRATION && (
+              <Link to="/" className={navClass('/')}>
+                <Ticket className="w-4 h-4" />
+                <span>活动预约</span>
+              </Link>
+            )}
             <Link to="/schedule" className={navClass('/schedule')}>
               <CalendarDays className="w-4 h-4" />
               <span>流程安排</span>
@@ -96,13 +100,15 @@ const Navigation = memo(() => {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="sm:hidden fixed bottom-6 left-6 right-6 glass-dark rounded-[2.5rem] z-50 py-3 px-6 flex items-center justify-between shadow-2xl border border-white/5">
+      <nav className="sm:hidden fixed bottom-6 left-6 right-6 glass-dark rounded-[2.5rem] z-50 py-3 px-6 flex justify-around shadow-2xl border border-white/5">
         {/* Simplified Mobile Nav - Only User Tabs */}
-        <Link to="/" className="flex flex-col items-center transition-transform active:scale-90">
-          <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
-            <Home className="w-5 h-5" />
-          </div>
-        </Link>
+        {ENABLE_REGISTRATION && (
+          <Link to="/" className="flex flex-col items-center transition-transform active:scale-90">
+            <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
+              <Home className="w-5 h-5" />
+            </div>
+          </Link>
+        )}
         <Link to="/schedule" className="flex flex-col items-center transition-transform active:scale-90">
           <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/schedule' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
             <CalendarDays className="w-5 h-5" />
@@ -152,7 +158,8 @@ function App() {
         <Navigation />
         <main className="flex-grow px-4 pt-24 sm:pt-32 pb-12 max-w-6xl mx-auto w-full relative z-10">
           <Routes>
-            <Route path="/" element={<PublicRegistration />} />
+            <Route path="/" element={ENABLE_REGISTRATION ? <PublicRegistration /> : <Navigate to="/schedule" replace />} />
+            <Route path="/walkin" element={<PublicRegistration forceWalkIn={true} />} />
             <Route path="/schedule" element={<EventSchedule />} />
             <Route
               path="/staff"
