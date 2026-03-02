@@ -82,7 +82,8 @@ const AdminDashboard: React.FC = () => {
     return reservations.filter(r => {
       const matchSearch = (r.contactName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (r.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.phoneNumber || '').includes(searchTerm);
+        (r.phoneNumber || '').includes(searchTerm) ||
+        (r.performanceUnit || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchStatus = filterStatus === 'all' || r.checkInStatus === filterStatus;
       const matchPayment = filterPayment === 'all' || r.paymentStatus === filterPayment;
       const isSponsor = (typeof r.couponCode === 'string' && r.couponCode.includes('SPONSOR')) || (r.coupons && r.coupons.some(c => c.code === 'SPONSOR'));
