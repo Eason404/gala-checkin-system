@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { getReservations, updateReservation, generateLotteryNumber } from '../services/dataService';
+import PublicRegistration from './PublicRegistration';
 import { Reservation, CheckInStatus, PaymentStatus, PaymentMethod } from '../types';
 import { StaffHeader } from '../components/staff/StaffHeader';
 import { SearchSection } from '../components/staff/SearchSection';
@@ -9,9 +10,10 @@ import { CheckInAlert } from '../components/staff/CheckInAlert';
 import { ReservationDetail } from '../components/staff/ReservationDetail';
 import { PaymentModal } from '../components/staff/PaymentModal';
 import { SuccessView } from '../components/staff/SuccessView';
+import { StaffDashboard } from '../components/staff/StaffDashboard';
 
 const StaffPortal: React.FC = () => {
-  const [mode, setMode] = useState<'search' | 'result' | 'walkin' | 'scanner' | 'success' | 'already_checked_in'>('search');
+  const [mode, setMode] = useState<'search' | 'result' | 'walkin' | 'scanner' | 'success' | 'already_checked_in' | 'dashboard'>('search');
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [searchPhone, setSearchPhone] = useState('');
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
@@ -20,7 +22,7 @@ const StaffPortal: React.FC = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
   const [cashTendered, setCashTendered] = useState('');
-  
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const cashInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,7 +55,7 @@ const StaffPortal: React.FC = () => {
     setLoading(true);
     const data = await getReservations();
     const isId = term.toUpperCase().startsWith('CNY26-');
-    const found = data.find(r => 
+    const found = data.find(r =>
       (isId ? r.id === term.toUpperCase() : r.phoneNumber.includes(term))
     );
     setLoading(false);
@@ -92,7 +94,7 @@ const StaffPortal: React.FC = () => {
     const count = selectedRes.totalPeople;
     const currentLottery = selectedRes.lotteryNumbers || [];
     const newLottery = [...currentLottery];
-    
+
     try {
       const reservations = await getReservations();
       const existingNumbers = new Set<string>();
@@ -139,7 +141,7 @@ const StaffPortal: React.FC = () => {
       <StaffHeader setMode={setMode} triggerHaptic={triggerHaptic} />
 
       {mode === 'search' && (
-        <SearchSection 
+        <SearchSection
           searchInputRef={searchInputRef}
           searchPhone={searchPhone}
           setSearchPhone={setSearchPhone}
@@ -147,6 +149,14 @@ const StaffPortal: React.FC = () => {
           setShowScanner={setShowScanner}
           errorMsg={errorMsg}
         />
+      )}
+
+      {mode === 'dashboard' && (
+        <StaffDashboard reservations={reservations} onClose={() => setMode('search')} />
+      )}
+
+      {mode === 'walkin' && (
+        <PublicRegistration forceWalkIn={true} onClose={() => setMode('search')} />
       )}
 
       {showScanner && (
@@ -162,7 +172,7 @@ const StaffPortal: React.FC = () => {
       )}
 
       {showPayModal && selectedRes && (
-        <PaymentModal 
+        <PaymentModal
           selectedRes={selectedRes}
           cashInputRef={cashInputRef}
           cashTendered={cashTendered}

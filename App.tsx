@@ -29,14 +29,14 @@ const Navigation = memo(() => {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 hidden sm:block">
-        <div className="glass-dark px-2 py-2 rounded-[2rem] flex items-center gap-2 shadow-2xl border border-white/10 backdrop-blur-2xl">
-          <Link to="/" className="flex items-center gap-3 px-4 mr-4 group">
+      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 hidden sm:block max-w-[95vw]">
+        <div className="glass-dark px-2 py-2 rounded-[2rem] flex items-center gap-2 shadow-2xl border border-white/10 backdrop-blur-2xl overflow-x-auto no-scrollbar">
+          <Link to="/" className="flex items-center gap-3 px-4 mr-4 group flex-shrink-0 whitespace-nowrap">
             <div className="w-8 h-8 bg-cny-gold text-cny-dark flex items-center justify-center font-serif font-black rounded-xl shadow-lg rotate-3 group-hover:rotate-0 transition-transform">福</div>
             <span className="text-white font-black tracking-tight text-sm">Natick 2026</span>
           </Link>
 
-          <div className="flex items-center gap-1 text-xs">
+          <div className="flex items-center gap-1 text-xs flex-shrink-0 whitespace-nowrap pr-2">
             <Link to="/" className={navClass('/')}>
               <Ticket className="w-4 h-4" />
               <span>活动预约</span>
@@ -45,46 +45,59 @@ const Navigation = memo(() => {
               <CalendarDays className="w-4 h-4" />
               <span>流程安排</span>
             </Link>
-            <div className="h-4 w-px bg-white/10 mx-2"></div>
-            <Link to="/staff" className={navClass('/staff')}>
-              <Users className="w-4 h-4" />
-              <span>工作人员</span>
-            </Link>
-            <Link to="/admin" className={navClass('/admin')}>
-              <BarChart3 className="w-4 h-4" />
-              <span>后台统计</span>
-            </Link>
             <Link to="/lottery" className={navClass('/lottery')}>
               <Sparkles className="w-4 h-4" />
               <span>抽奖</span>
             </Link>
 
+            <>
+              <div className="w-px h-6 bg-white/10 mx-1 flex-shrink-0"></div>
+              <Link to="/staff" className={navClass('/staff')}>
+                <Users className="w-4 h-4" />
+                <span className="hidden md:inline">工作人员</span>
+              </Link>
+              <Link to="/admin" className={navClass('/admin')}>
+                <BarChart3 className="w-4 h-4" />
+                <span className="hidden md:inline">后台</span>
+              </Link>
+            </>
+
             {ENABLE_AUTH && user && (
-              <button onClick={logout} className="ml-2 text-white/40 hover:text-white p-2 rounded-xl transition-colors">
+              <button onClick={logout} className="ml-2 text-white/40 hover:text-white p-2 rounded-xl transition-colors flex-shrink-0">
                 <LogOut className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
       </nav>
-
-      {/* Mobile Top Header */}
-      <div className="sm:hidden fixed top-0 left-0 right-0 z-50 p-4">
-        <div className="glass-dark rounded-2xl p-4 flex items-center justify-between shadow-xl">
-          <div className="flex items-center gap-3">
+      {/* Mobile Top Header (Shows on smaller screens) */}
+      <div className="sm:hidden fixed top-0 left-0 right-0 z-40 p-4 pointer-events-none">
+        <div className="glass-dark rounded-2xl p-4 flex items-center justify-between shadow-xl pointer-events-auto">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <div className="bg-cny-gold text-cny-dark font-serif font-black rounded-lg w-8 h-8 flex items-center justify-center text-lg shadow-md">福</div>
-            <span className="text-white font-black tracking-tight text-lg">Natick 春晚 2026</span>
+            <span className="text-white font-black tracking-tight text-lg">Natick 春晚</span>
           </div>
-          {ENABLE_AUTH && user && (
-            <button onClick={logout} className="text-white/40 p-2">
-              <LogOut className="w-5 h-5" />
-            </button>
-          )}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <>
+              <Link to="/staff" className="text-[10px] font-black uppercase tracking-tighter text-white/40 border border-white/10 px-2 py-1 rounded-lg">
+                Staff
+              </Link>
+              <Link to="/admin" className="text-[10px] font-black uppercase tracking-tighter text-white/40 border border-white/10 px-2 py-1 rounded-lg">
+                Admin
+              </Link>
+            </>
+            {ENABLE_AUTH && user && (
+              <button onClick={logout} className="text-white/40 p-2">
+                <LogOut className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Mobile Bottom Navigation */}
       <nav className="sm:hidden fixed bottom-6 left-6 right-6 glass-dark rounded-[2.5rem] z-50 py-3 px-6 flex items-center justify-between shadow-2xl border border-white/5">
+        {/* Simplified Mobile Nav - Only User Tabs */}
         <Link to="/" className="flex flex-col items-center transition-transform active:scale-90">
           <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
             <Home className="w-5 h-5" />
@@ -95,14 +108,9 @@ const Navigation = memo(() => {
             <CalendarDays className="w-5 h-5" />
           </div>
         </Link>
-        <Link to="/staff" className="flex flex-col items-center transition-transform active:scale-90">
-          <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/staff' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
-            <Users className="w-5 h-5" />
-          </div>
-        </Link>
-        <Link to="/admin" className="flex flex-col items-center transition-transform active:scale-90">
-          <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/admin' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
-            <BarChart3 className="w-5 h-5" />
+        <Link to="/lottery" className="flex flex-col items-center transition-transform active:scale-90">
+          <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/lottery' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
+            <Sparkles className="w-5 h-5" />
           </div>
         </Link>
       </nav>
@@ -127,8 +135,10 @@ const Footer = memo(() => (
           <Mail className="w-3 h-3" />
           Email Us
         </a>
-        <div className="text-[8px] font-black text-white/10 uppercase tracking-[0.4em]">
-          © 2026 NATICK CHINESE COMMUNITY
+        <div className="flex flex-col items-center gap-2 mt-4">
+          <div className="text-[8px] font-black text-white/10 uppercase tracking-[0.4em]">
+            © 2026 NATICK CHINESE COMMUNITY
+          </div>
         </div>
       </div>
     </div>

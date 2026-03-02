@@ -4,7 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { createReservation, getReservations, updateReservation, sendCancellationEmail, getTicketConfig } from '../services/dataService';
 import { TicketType, CheckInStatus, Reservation, TicketConfig } from '../types';
 import { validatePhone, validateEmail } from '../utils/validation';
-import { CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle, AlertCircle, ArrowRight, Ticket } from 'lucide-react';
 import QRCode from 'qrcode';
 
 // Sub-components
@@ -16,10 +16,15 @@ import { StepTwoForm } from '../components/registration/StepTwoForm';
 import { ManagementTab } from '../components/registration/ManagementTab';
 import { LiveTicker } from '../components/registration/LiveTicker';
 
-const PublicRegistration: React.FC = () => {
+interface PublicRegistrationProps {
+  forceWalkIn?: boolean;
+  onClose?: () => void;
+}
+
+const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = false, onClose }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const isWalkIn = searchParams.get('type') === 'walkin';
+  const isWalkIn = forceWalkIn || searchParams.get('type') === 'walkin';
 
   const [activeTab, setActiveTab] = useState<'register' | 'manage'>('register');
   const [currentStep, setCurrentStep] = useState<1 | 2>(isWalkIn ? 2 : 1);
@@ -270,8 +275,40 @@ const PublicRegistration: React.FC = () => {
         qrCodeData={qrCodeData}
         formData={formData}
         currentPrice={currentPrice}
-        onReset={resetForm}
+        onReset={onClose || resetForm}
       />
+    );
+  }
+
+  if (forceWalkIn) {
+    return (
+      <div className="animate-in fade-in duration-500">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <Ticket className="text-cny-gold w-5 h-5" /> 现场购票录入
+          </h2>
+          {onClose && (
+            <button onClick={onClose} className="px-4 py-2 bg-white/10 text-white/60 rounded-xl text-xs font-bold hover:bg-white/20 transition-all">
+              取消返回 Close
+            </button>
+          )}
+        </div>
+        <div className="glass-card rounded-[3rem] shadow-2xl p-8 sm:p-12 border border-white/30 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-hidden">
+          <StepTwoForm
+            formData={formData}
+            setFormData={setFormData}
+            handleSubmit={handleSubmit}
+            loading={loading}
+            submitError={submitError}
+            agreedToWaiver={agreedToWaiver}
+            setAgreedToWaiver={setAgreedToWaiver}
+            setShowWaiverModal={setShowWaiverModal}
+            handlePrevStep={onClose || handlePrevStep}
+            triggerHaptic={triggerHaptic}
+            currentPrice={currentPrice}
+          />
+        </div>
+      </div>
     );
   }
 

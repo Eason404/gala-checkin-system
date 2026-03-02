@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Reservation, CheckInStatus } from '../../types';
 import { TrendingUp } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }
 
       const dateObj = new Date(res.createdTime);
       const key = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
-      
+
       if (!stats[key]) {
         stats[key] = {
           date: key,
@@ -50,50 +50,48 @@ export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }
           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Daily Registration Trend</p>
         </div>
       </div>
-      
+
       <div className="h-[240px] w-full select-none">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
+          <BarChart
             data={data}
             margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
           >
-            <defs>
-              <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#D72638" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="#D72638" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-            <XAxis 
-              dataKey="displayDate" 
-              stroke="#9ca3af" 
-              fontSize={10} 
-              tickLine={false} 
-              axisLine={false} 
+            <XAxis
+              dataKey="displayDate"
+              stroke="#9ca3af"
+              fontSize={10}
+              tickLine={false}
+              axisLine={false}
               dy={10}
             />
-            <YAxis 
-              stroke="#9ca3af" 
-              fontSize={10} 
-              tickLine={false} 
-              axisLine={false} 
+            <YAxis
+              stroke="#9ca3af"
+              fontSize={10}
+              tickLine={false}
+              axisLine={false}
               tickFormatter={(value) => `${value}`}
             />
-            <Tooltip 
+            <Tooltip
               contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', fontSize: '12px', fontWeight: 'bold' }}
-              cursor={{ stroke: '#e5e7eb', strokeWidth: 2, strokeDasharray: '3 3' }}
+              cursor={{ fill: '#f3f4f6' }}
             />
-            <Area 
-              type="monotone" 
-              dataKey="total" 
-              name="新增人数 (New Registrations)" 
-              stroke="#D72638" 
-              strokeWidth={3} 
-              fillOpacity={1} 
-              fill="url(#colorTotal)" 
-              activeDot={{ r: 6, strokeWidth: 0, fill: '#D72638' }}
+            <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px' }} />
+            <Bar
+              dataKey="adults"
+              name="成人 (Adults)"
+              stackId="a"
+              fill="#D72638"
             />
-          </AreaChart>
+            <Bar
+              dataKey="children"
+              name="儿童 (Children)"
+              stackId="a"
+              fill="#FCE7BB"
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
