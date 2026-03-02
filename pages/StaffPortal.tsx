@@ -156,7 +156,18 @@ const StaffPortal: React.FC = () => {
       )}
 
       {mode === 'walkin' && (
-        <PublicRegistration forceWalkIn={true} onClose={() => setMode('search')} />
+        <PublicRegistration
+          forceWalkIn={true}
+          onClose={(newRes) => {
+            if (newRes) {
+              setSelectedRes(newRes);
+              setMode('result');
+              setShowPayModal(true);
+            } else {
+              setMode('search');
+            }
+          }}
+        />
       )}
 
       {showScanner && (

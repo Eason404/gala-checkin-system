@@ -17,7 +17,7 @@ import { LiveTicker } from '../components/registration/LiveTicker';
 
 interface PublicRegistrationProps {
   forceWalkIn?: boolean;
-  onClose?: () => void;
+  onClose?: (newReservation?: Reservation) => void;
 }
 
 const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = false, onClose }) => {
@@ -163,6 +163,13 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
       });
 
       triggerHaptic([100, 50, 100]);
+
+      // If we are in Staff Walk-in mode, bypass the Red Envelope and pass data back immediately
+      if (forceWalkIn && onClose) {
+        onClose(newRes);
+        return;
+      }
+
       setReservationId(newRes.id);
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -238,7 +245,7 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
             agreedToWaiver={agreedToWaiver}
             setAgreedToWaiver={setAgreedToWaiver}
             setShowWaiverModal={setShowWaiverModal}
-            handlePrevStep={onClose || handlePrevStep}
+            handlePrevStep={onClose ? () => onClose() : handlePrevStep}
             triggerHaptic={triggerHaptic}
             currentPrice={currentPrice}
           />
