@@ -1,24 +1,25 @@
-# Firebase CI/CD Manual Setup Steps 🚀
+# Firebase CI/CD Setup 🚀
 
-I've created the configuration files, but there are **two final manual steps** you need to perform in the GitHub UI to enable the automated deployment.
+Automated deployment is configured via GitHub Actions. Here's how it works and how to set it up.
 
-### 1. Set up your GitHub Secret (Token Method)
-This is the most reliable method and avoids complex permission errors.
-1. Done! You already ran `firebase login:ci` and got the token.
-2. **Add to GitHub**:
-   - Go to your repository on GitHub.
-   - Click **Settings** (top bar).
-   - Click **Secrets and variables** (left sidebar) -> **Actions**.
-   - Click **New repository secret** (the green button).
+## Setup: GitHub Secret
+
+1. Generate a Firebase CI token:
+   ```bash
+   firebase login:ci
+   ```
+2. Add the token to GitHub:
+   - Go to your repository → **Settings** → **Secrets and variables** → **Actions**.
+   - Click **New repository secret**.
    - **Name**: `FIREBASE_TOKEN`
-   - **Value**: Paste the long token you just generated.
+   - **Value**: Paste the token.
 
-### 2. (Optional) Service Account Method
-*Ignore this unless you specifically need advanced Cloud IAM features. The token method above is enough for deployment.*
+## Deployment Workflow
 
----
+| Trigger | Action |
+| :--- | :--- |
+| Push to `main` | Automatic deploy to production (live site) |
+| Pull Request | Preview URL generated for testing |
+| Manual | Run `npm run build && firebase deploy` locally |
 
-## How to use this from now on:
-- **Automatic**: Every time you `git push` to `main`, it will deploy to the live site.
-- **Preview**: Every Pull Request will automatically get a "Preview URL" so you can test changes before merging.
-- **Manual**: You can still run `npm run build && firebase deploy` locally if you have the Firebase CLI installed and logged in.
+> **Note:** The `ci-cd-test` branch is used for testing CI/CD changes before merging to `main`.
