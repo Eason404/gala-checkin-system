@@ -58,15 +58,17 @@ export const StepTwoForm: React.FC<StepTwoProps> = ({
           </div>
           <div className="space-y-2">
             <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">请填写真实姓名和联系方式</h4>
+            <h5 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Please provide real contact info</h5>
             <p className="text-xs text-gray-600 font-medium leading-relaxed">
-              为了保障您的抽奖权益及快速现场核销，请确保提供您的<span className="text-cny-red font-black">真实姓名</span>。我们承诺您的个人资料仅用于本次活动预约。
+              为了保障您的抽奖权益及快速现场核销，请确保提供您的<span className="text-cny-red font-black">真实姓名</span>。我们承诺您的个人资料仅用于本次活动预约。<br />
+              <span className="text-[10px] opacity-80 mt-1 block">To ensure your raffle eligibility and fast check-in, please provide your <span className="font-bold">Real Name</span>. Your data is strictly used for this event registration.</span>
             </p>
             <div className="flex gap-4 pt-1">
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-cny-red uppercase tracking-tighter">
-                <Gift className="w-3.5 h-3.5" /> 抽奖唯一凭证
+                <Gift className="w-3.5 h-3.5" /> 抽奖唯一凭证 Unique Raffle Ticket
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-cny-red uppercase tracking-tighter">
-                <Zap className="w-3.5 h-3.5" /> 快速签到通道
+                <Zap className="w-3.5 h-3.5" /> 快速签到通道 Fast Pass
               </div>
             </div>
           </div>
@@ -76,11 +78,11 @@ export const StepTwoForm: React.FC<StepTwoProps> = ({
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-1">姓 Last Name <span className="text-cny-red">*</span></label>
-          <input required className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-cny-red/5 focus:bg-white transition-all font-bold" value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} placeholder="例: Zhang" />
+          <input required className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-cny-red/5 focus:bg-white transition-all font-bold" value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} placeholder="例(e.g.): Zhang" />
         </div>
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-1">名 First Name <span className="text-cny-red">*</span></label>
-          <input required className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-cny-red/5 focus:bg-white transition-all font-bold" value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} placeholder="例: San" />
+          <input required className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-cny-red/5 focus:bg-white transition-all font-bold" value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} placeholder="例(e.g.): San" />
         </div>
       </div>
 
@@ -96,16 +98,21 @@ export const StepTwoForm: React.FC<StepTwoProps> = ({
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-1">电子邮箱 Email <span className="text-cny-red">*</span></label>
           <div className="relative">
             <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-            <input type="email" required className="w-full pl-12 pr-5 py-5 bg-gray-50 border border-gray-100 rounded-3xl font-bold focus:ring-4 focus:ring-cny-red/5 focus:bg-white transition-all" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="用于接收确认邮件" />
+            <input type="email" required className="w-full pl-12 pr-5 py-5 bg-gray-50 border border-gray-100 rounded-3xl font-bold focus:ring-4 focus:ring-cny-red/5 focus:bg-white transition-all" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="用于接收确认邮件 / For confirmation email" />
           </div>
         </div>
       </div>
 
       <div className="p-6 bg-cny-gold/10 rounded-[2.5rem] border-2 border-cny-gold/20 space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-cny-gold p-2 rounded-xl"><Star className="w-4 h-4 text-cny-red fill-cny-red" /></div>
-            <p className="text-sm font-black text-gray-900 uppercase tracking-tighter">表演人员身份确认 <span className="text-cny-red">*</span></p>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <div className="bg-cny-gold p-2 rounded-xl"><Star className="w-4 h-4 text-cny-red fill-cny-red" /></div>
+              <p className="text-sm font-black text-gray-900 uppercase tracking-tighter">包含表演人员 Includes Performer(s) <span className="text-cny-red">*</span></p>
+            </div>
+            <p className="text-[10px] text-gray-500 font-bold ml-11">
+              (包括为参演子女代报 / Including parents registering for child performers)
+            </p>
           </div>
           <div className="flex items-center gap-1 bg-white/50 p-1 rounded-2xl border border-cny-gold/10">
             <button type="button" onClick={() => { setFormData({ ...formData, isPerformer: false, performanceUnit: '' }); triggerHaptic(10); }} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${!formData.isPerformer ? 'bg-gray-200 text-gray-700' : 'text-gray-400'}`}>否 NO</button>
@@ -114,8 +121,8 @@ export const StepTwoForm: React.FC<StepTwoProps> = ({
         </div>
         {formData.isPerformer && (
           <div className="animate-in slide-in-from-top-2 duration-300 space-y-2">
-            <label className="text-[10px] font-black text-cny-red uppercase tracking-[0.2em] px-1">表演单位 / 节目名称 <span className="text-cny-red">*</span></label>
-            <input required className="w-full p-4 bg-white border border-cny-gold/30 rounded-2xl font-bold text-sm" value={formData.performanceUnit} onChange={e => setFormData({ ...formData, performanceUnit: e.target.value })} placeholder="如：中文学校舞蹈组" />
+            <label className="text-[10px] font-black text-cny-red uppercase tracking-[0.2em] px-1">表演单位 / 节目名称 Performance Unit / Program <span className="text-cny-red">*</span></label>
+            <input required className="w-full p-4 bg-white border border-cny-gold/30 rounded-2xl font-bold text-sm" value={formData.performanceUnit} onChange={e => setFormData({ ...formData, performanceUnit: e.target.value })} placeholder="如：中文学校舞蹈组 e.g., Natick Chinese School Dance" />
           </div>
         )}
       </div>
@@ -165,7 +172,7 @@ export const StepTwoForm: React.FC<StepTwoProps> = ({
             </div>
             <div className="mt-3 flex items-center gap-2 opacity-60">
               <Ticket className="w-3 h-3" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">现场支付 · 仅限现金</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-center mt-1">现场支付 · 仅限现金 <br />Pay on site (Cash Only)</span>
             </div>
           </div>
 
