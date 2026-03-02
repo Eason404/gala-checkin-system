@@ -224,18 +224,24 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
 
   if (forceWalkIn) {
     return (
-      <div className="animate-in fade-in duration-500">
+      <div className="animate-in fade-in duration-500 relative">
+        <WaiverModal
+          isOpen={showWaiverModal}
+          onClose={() => setShowWaiverModal(false)}
+          onConfirm={() => { setAgreedToWaiver(true); triggerHaptic(20); }}
+        />
+
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Ticket className="text-cny-gold w-5 h-5" /> 现场购票录入
           </h2>
           {onClose && (
-            <button onClick={onClose} className="px-4 py-2 bg-white/10 text-white/60 rounded-xl text-xs font-bold hover:bg-white/20 transition-all">
+            <button onClick={onClose} className="px-4 py-2 bg-white/10 text-white/60 rounded-xl text-xs font-bold hover:bg-white/20 transition-all z-10 relative">
               取消返回 Close
             </button>
           )}
         </div>
-        <div className="glass-card rounded-[3rem] shadow-2xl p-8 sm:p-12 border border-white/30 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-hidden">
+        <div className="glass-card rounded-[3rem] shadow-2xl p-8 sm:p-12 border border-white/30 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-hidden relative z-0">
           <StepTwoForm
             formData={formData}
             setFormData={setFormData}
