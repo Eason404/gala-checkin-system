@@ -1,7 +1,6 @@
 import React from 'react';
 import { ScheduleHeader } from '../components/schedule/ScheduleHeader';
 import { TimelineSection } from '../components/schedule/TimelineSection';
-import { ProgramSidebar } from '../components/schedule/ProgramSidebar';
 import { Ticket, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -35,10 +34,7 @@ const EventSchedule: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-12">
-        <TimelineSection />
-        <ProgramSidebar />
-      </div>
+      <TimelineSection />
     </div>
   );
 };

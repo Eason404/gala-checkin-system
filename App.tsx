@@ -7,7 +7,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import LotteryWheel from './components/LotteryWheel';
 import ProtectedRoute from './components/ProtectedRoute';
 import EventSchedule from './pages/EventSchedule';
-import { Ticket, Users, BarChart3, LogOut, CalendarDays, Home, Mail, Sparkles } from 'lucide-react';
+import ProgramList from './pages/ProgramList';
+import { Ticket, Users, BarChart3, LogOut, CalendarDays, Home, Mail, Sparkles, Music2 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { logout, ENABLE_AUTH } from './services/authService';
@@ -49,6 +50,10 @@ const Navigation = memo(() => {
             <Link to="/schedule" className={navClass('/schedule')}>
               <CalendarDays className="w-4 h-4" />
               <span>流程安排</span>
+            </Link>
+            <Link to="/program" className={navClass('/program')}>
+              <Music2 className="w-4 h-4" />
+              <span>节目单</span>
             </Link>
             <Link to="/lottery" className={navClass('/lottery')}>
               <Sparkles className="w-4 h-4" />
@@ -115,6 +120,11 @@ const Navigation = memo(() => {
             <CalendarDays className="w-5 h-5" />
           </div>
         </Link>
+        <Link to="/program" className="flex flex-col items-center transition-transform active:scale-90">
+          <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/program' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
+            <Music2 className="w-5 h-5" />
+          </div>
+        </Link>
         <Link to="/lottery" className="flex flex-col items-center transition-transform active:scale-90">
           <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/lottery' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
             <Sparkles className="w-5 h-5" />
@@ -164,6 +174,7 @@ function App() {
             <Route path="/walkin" element={<PublicRegistration forceWalkIn={true} />} />
             <Route path="/manage" element={<ManageReservation />} />
             <Route path="/schedule" element={<EventSchedule />} />
+            <Route path="/program" element={<ProgramList />} />
             <Route
               path="/staff"
               element={

@@ -1,5 +1,6 @@
 import React from 'react';
-import { MapPin, ShoppingBag, Utensils, Music } from 'lucide-react';
+import { MapPin, ShoppingBag, Utensils, Music, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const TimelineSection: React.FC = () => {
   const scheduleItems = [
@@ -34,12 +35,13 @@ export const TimelineSection: React.FC = () => {
       locationZh: '学校礼堂',
       locationEn: 'Natick High School Auditorium',
       icon: <Music className="w-6 h-6" />,
-      color: 'bg-cny-red'
+      color: 'bg-cny-red',
+      showProgramLink: true
     }
   ];
 
   return (
-    <div className="md:col-span-2 space-y-10">
+    <div className="space-y-10">
       <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
         <div className="w-2 h-8 bg-cny-red rounded-full"></div>
         流程安排 <span className="text-gray-400 font-bold text-xs ml-2 tracking-widest uppercase">AGENDA</span>
@@ -68,12 +70,24 @@ export const TimelineSection: React.FC = () => {
                 <div className="hidden sm:block w-px bg-gray-100"></div>
                 <p className="text-gray-500 text-[14px] leading-relaxed font-medium flex-1">{item.descEn}</p>
               </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-                <div className="flex items-center gap-2 text-xs font-bold text-gray-400 bg-gray-50 w-fit px-4 py-2 rounded-full border border-gray-100">
-                  <MapPin className="w-4 h-4 text-cny-red/40" /> {item.locationZh}
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-gray-400 bg-gray-50 w-fit px-4 py-2 rounded-full border border-gray-100">
+                    <MapPin className="w-4 h-4 text-cny-red/40" /> {item.locationZh}
+                  </div>
+                  <div className="hidden sm:block text-gray-300">•</div>
+                  <span className="text-xs font-bold text-gray-400 px-2">{item.locationEn}</span>
                 </div>
-                <div className="hidden sm:block text-gray-300">•</div>
-                <span className="text-xs font-bold text-gray-400 px-2">{item.locationEn}</span>
+
+                {item.showProgramLink && (
+                  <Link
+                    to="/program"
+                    className="flex items-center gap-2 bg-cny-red/5 hover:bg-cny-red text-cny-red hover:text-white px-5 py-2.5 rounded-2xl transition-all font-bold text-sm shadow-sm hover:shadow-lg hover:shadow-cny-red/20 group/btn"
+                  >
+                    查看节目单 (View Program)
+                    <ChevronRight className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" />
+                  </Link>
+                )}
               </div>
             </div>
           </div>
