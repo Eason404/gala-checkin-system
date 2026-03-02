@@ -11,8 +11,21 @@ const SYSTEM_COLLECTION = 'system';
 const CONFIG_DOC_ID = 'ticketConfig';
 const OFFICIAL_EMAIL = 'natickchineseassociation@gmail.com';
 
-const generateId = (): string => {
-  return 'CNY26-' + Math.floor(1000 + Math.random() * 9000).toString();
+const generateId = async (): Promise<string> => {
+  let id: string;
+  let exists = true;
+
+  // Keep generating until we find a unique ID
+  while (exists) {
+    id = 'CNY26-' + Math.floor(1000 + Math.random() * 9000).toString();
+    const docRef = doc(db, COLLECTION_NAME, id);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) {
+      exists = false;
+      return id;
+    }
+  }
+  return ''; // Should not reach here
 };
 
 export const generateLotteryNumber = async (existingSet?: Set<string>): Promise<string> => {
@@ -373,8 +386,10 @@ export const createReservation = async (data: Partial<Reservation>): Promise<Res
   const adults = data.adultsCount || 0;
   const children = data.childrenCount || 0;
 
+  const reservationId = await generateId();
+
   const newReservationData = {
-    id: generateId(),
+    id: reservationId,
     createdTime: Timestamp.now(),
     ticketType: ticketType,
     contactName: data.contactName.trim(),
@@ -398,8 +413,11 @@ export const createReservation = async (data: Partial<Reservation>): Promise<Res
     operatorId: currentOperator // Track who created this
   };
 
-  const docRef = await addDoc(collection(db, COLLECTION_NAME), newReservationData);
-  const result = { ...newReservationData, firebaseDocId: docRef.id, createdTime: Date.now() } as unknown as Reservation;
+  // Use the generated ID as the Firestore document ID for extra safety and predictable lookups
+  const docRef = doc(db, COLLECTION_NAME, reservationId);
+  await setDoc(docRef, newReservationData);
+
+  const result = { ...newReservationData, firebaseDocId: reservationId, createdTime: Date.now() } as unknown as Reservation;
   sendConfirmationEmail(result).catch(console.error);
   return result;
 };
@@ -422,8 +440,8 @@ export const deleteReservation = async (firebaseDocId: string): Promise<void> =>
   await deleteDoc(doc(db, COLLECTION_NAME, firebaseDocId));
 };
 
-export const calculateStats = async (): Promise<Stats> => {
-  const reservations = await getReservations();
+export const calculateStats = async (existingReservations?: Reservation[]): Promise<Stats> => {
+  const reservations = existingReservations || await getReservations();
   const stats: Stats = {
     totalReservations: 0, totalPeople: 0, earlyBirdCount: 0, regularCount: 0,
     walkInCount: 0, lunchBoxCount: 0, totalRevenueExpected: 0,

@@ -55,6 +55,15 @@ jest.mock('firebase/firestore', () => {
         data: () => data
       });
     }
+    // Handle reservations for generateId loop and createReservation
+    if (docRef.path.startsWith('reservations/')) {
+      const docId = docRef.id;
+      const data = mockDb.find(d => d.id === docId || d.firebaseDocId === docId);
+      return Promise.resolve({
+        exists: () => !!data,
+        data: () => data
+      });
+    }
     return Promise.resolve({ exists: () => false });
   });
 
@@ -64,6 +73,16 @@ jest.mock('firebase/firestore', () => {
         mockSystemConfig[docRef.id] = { ...mockSystemConfig[docRef.id], ...data };
       } else {
         mockSystemConfig[docRef.id] = data;
+      }
+      return Promise.resolve();
+    }
+    if (docRef.path.startsWith('reservations/')) {
+      const docId = docRef.id;
+      const index = mockDb.findIndex(d => d.firebaseDocId === docId || d.id === docId);
+      if (index !== -1) {
+        mockDb[index] = { ...mockDb[index], ...data };
+      } else {
+        mockDb.push({ ...data, firebaseDocId: docId });
       }
       return Promise.resolve();
     }
@@ -266,6 +285,47 @@ describe('DataService - Full Coverage Suite', () => {
     test('抽奖号码生成应为 3 位数字字符串', async () => {
       const num = await generateLotteryNumber();
       expect(num).toMatch(/^\d{3}$/);
+    });
+  });
+
+  describe('Duplicate Prevention', () => {
+    test('Should throw error for duplicate phone number', async () => {
+      await createReservation({
+        contactName: 'First',
+        phoneNumber: '5081112222',
+        adultsCount: 1
+      });
+
+      await expect(createReservation({
+        contactName: 'Second',
+        phoneNumber: '508-111-2222', // Formatted differently but same normalization
+        adultsCount: 1
+      })).rejects.toThrow('DUPLICATE_PHONE');
+    });
+
+    test('Should handle ID collision and retry (Simulated via mock)', async () => {
+      // Pre-fill mockDb with an ID
+      mockDb.push({ id: 'CNY26-1234', firebaseDocId: 'CNY26-1234' });
+
+      // Override Math.random to return something that results in 1234 first, then 5678
+      let callCount = 0;
+      const originalRandom = Math.random;
+      Math.random = jest.fn(() => {
+        callCount++;
+        // 1000 + R * 9000 = ID => R = (ID - 1000) / 9000
+        if (callCount === 1) return (1234 - 1000) / 9000;
+        return (5678 - 1000) / 9000;
+      });
+
+      const res = await createReservation({
+        contactName: 'RetryTester',
+        phoneNumber: '9990001111',
+        adultsCount: 1
+      });
+
+      expect(res.id).toBe('CNY26-5678');
+      expect(res.id).not.toBe('CNY26-1234');
+      Math.random = originalRandom;
     });
   });
 });
