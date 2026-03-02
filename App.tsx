@@ -160,6 +160,7 @@ function App() {
         <main className="flex-grow px-4 pt-24 sm:pt-32 pb-12 max-w-6xl mx-auto w-full relative z-10">
           <Routes>
             <Route path="/" element={ENABLE_REGISTRATION ? <PublicRegistration /> : <Navigate to="/schedule" replace />} />
+            <Route path="/registration-temp" element={<PublicRegistration />} />
             <Route path="/walkin" element={<PublicRegistration forceWalkIn={true} />} />
             <Route path="/manage" element={<ManageReservation />} />
             <Route path="/schedule" element={<EventSchedule />} />
