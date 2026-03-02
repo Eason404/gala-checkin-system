@@ -16,9 +16,14 @@ const EventSchedule: React.FC = () => {
           <Ticket className="w-8 h-8" />
         </div>
         <div className="relative z-10 text-center sm:text-left">
-          <h3 className="text-2xl sm:text-3xl font-black text-cny-gold mb-3 tracking-tight drop-shadow-md">【 现场售票 Walk-ins Welcome 】</h3>
-          <p className="text-white/95 font-medium leading-relaxed text-base sm:text-lg">
-            Join us on event day! <strong className="text-cny-gold text-xl bg-cny-dark/30 px-3 py-1 rounded-lg shadow-inner inline-block mt-2 sm:mt-0">$20 admission</strong> includes full access to crafting, amazing performances, and an authentic Chinese lunch.
+          <h3 className="text-2xl sm:text-3xl font-black text-cny-gold mb-3 tracking-tight drop-shadow-md">
+            【 早鸟票已售罄 · 欢迎现场购票 】<br className="sm:hidden" />
+            <span className="text-xl sm:text-2xl sm:ml-2 drop-shadow-md">Walk-ins Welcome!</span>
+          </h3>
+          <p className="text-white/95 font-medium leading-relaxed text-[15px] sm:text-[17px]">
+            感谢您的支持！早鸟票已售罄，欢迎活动当天现场购票。<br className="hidden sm:block" />
+            Thank you for your support! Early bird tickets are sold out. Join us on event day! <br className="hidden sm:block" />
+            <strong className="text-cny-gold text-lg sm:text-xl bg-cny-dark/30 px-3 py-1 rounded-lg shadow-inner inline-block mt-3 sm:mt-2">$20 admission</strong> includes full access to crafting, amazing performances, and an authentic Chinese lunch.
           </p>
         </div>
       </div>
