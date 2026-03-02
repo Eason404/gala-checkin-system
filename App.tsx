@@ -1,6 +1,7 @@
 import React, { useEffect, useState, memo } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import PublicRegistration from './pages/PublicRegistration';
+import ManageReservation from './pages/ManageReservation';
 import StaffPortal from './pages/StaffPortal';
 import AdminDashboard from './pages/AdminDashboard';
 import LotteryWheel from './components/LotteryWheel';
@@ -160,6 +161,7 @@ function App() {
           <Routes>
             <Route path="/" element={ENABLE_REGISTRATION ? <PublicRegistration /> : <Navigate to="/schedule" replace />} />
             <Route path="/walkin" element={<PublicRegistration forceWalkIn={true} />} />
+            <Route path="/manage" element={<ManageReservation />} />
             <Route path="/schedule" element={<EventSchedule />} />
             <Route
               path="/staff"

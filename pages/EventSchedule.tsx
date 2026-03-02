@@ -2,7 +2,8 @@ import React from 'react';
 import { ScheduleHeader } from '../components/schedule/ScheduleHeader';
 import { TimelineSection } from '../components/schedule/TimelineSection';
 import { ProgramSidebar } from '../components/schedule/ProgramSidebar';
-import { Ticket } from 'lucide-react';
+import { Ticket, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const EventSchedule: React.FC = () => {
   return (
@@ -20,11 +21,17 @@ const EventSchedule: React.FC = () => {
             【 早鸟票已售罄 · 欢迎现场购票 】<br className="sm:hidden" />
             <span className="text-xl sm:text-2xl sm:ml-2 drop-shadow-md">Walk-ins Welcome!</span>
           </h3>
-          <p className="text-white/95 font-medium leading-relaxed text-[15px] sm:text-[17px]">
+          <p className="text-white/95 font-medium leading-relaxed text-[15px] sm:text-[17px] mb-4">
             感谢您的支持！早鸟票已售罄，欢迎活动当天现场购票。<br className="hidden sm:block" />
             Thank you for your support! Early bird tickets are sold out. Join us on event day! <br className="hidden sm:block" />
             <strong className="text-cny-gold text-lg sm:text-xl bg-cny-dark/30 px-3 py-1 rounded-lg shadow-inner inline-block mt-3 sm:mt-2">$20 admission</strong> includes full access to crafting, amazing performances, and an authentic Chinese lunch.
           </p>
+          <div className="flex justify-center sm:justify-start">
+            <Link to="/manage" className="group flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-2 rounded-xl transition-all border border-white/20 backdrop-blur-md shadow-lg font-bold">
+              <Search className="w-4 h-4" />
+              查询/取消我的预约 (Manage Reservation)
+            </Link>
+          </div>
         </div>
       </div>
 

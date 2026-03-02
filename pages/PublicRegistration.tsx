@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { createReservation, getReservations, updateReservation, sendCancellationEmail, getTicketConfig } from '../services/dataService';
 import { TicketType, CheckInStatus, Reservation, TicketConfig } from '../types';
 import { validatePhone, validateEmail } from '../utils/validation';
@@ -13,7 +13,6 @@ import { RedEnvelope } from '../components/registration/RedEnvelope';
 import { TicketSuccess } from '../components/registration/TicketSuccess';
 import { StepOneTicketSelection } from '../components/registration/StepOneTicketSelection';
 import { StepTwoForm } from '../components/registration/StepTwoForm';
-import { ManagementTab } from '../components/registration/ManagementTab';
 import { LiveTicker } from '../components/registration/LiveTicker';
 
 interface PublicRegistrationProps {
@@ -26,7 +25,6 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
   const navigate = useNavigate();
   const isWalkIn = forceWalkIn || searchParams.get('type') === 'walkin';
 
-  const [activeTab, setActiveTab] = useState<'register' | 'manage'>('register');
   const [currentStep, setCurrentStep] = useState<1 | 2>(isWalkIn ? 2 : 1);
   const [config, setConfig] = useState<TicketConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
@@ -55,12 +53,6 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
 
   // Intersection Observer ref
   const progressBarRef = useRef<HTMLDivElement>(null);
-
-  // Manage/Cancel State
-  const [managePhone, setManagePhone] = useState('');
-  const [manageName, setManageName] = useState('');
-  const [myRes, setMyRes] = useState<Reservation | null>(null);
-  const [lookupError, setLookupError] = useState('');
 
   const currentPrice = formData.ticketType === TicketType.EarlyBird ? 15 : 20;
 
@@ -106,7 +98,7 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
       observer.observe(progressBarRef.current);
       return () => observer.disconnect();
     }
-  }, [currentStep, activeTab]);
+  }, [currentStep]);
 
   const triggerHaptic = (pattern: number | number[] = 10) => {
     if ('vibrate' in navigator) {
@@ -186,63 +178,6 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
   const openEnvelope = () => {
     setEnvelopeOpened(true);
     triggerHaptic([30, 20, 100]);
-  };
-
-  const handleLookup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLookupError('');
-    setMyRes(null);
-
-    if (!manageName.trim() || !managePhone.trim()) {
-      setLookupError('请完整填写姓名和电话');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const allReservations = await getReservations();
-      const cleanPhone = managePhone.replace(/\D/g, '');
-      const found = allReservations.find(r =>
-        r.phoneNumber.replace(/\D/g, '').includes(cleanPhone) &&
-        r.contactName.toLowerCase().includes(manageName.trim().toLowerCase()) &&
-        r.checkInStatus !== CheckInStatus.Cancelled
-      );
-      if (found) {
-        setMyRes(found);
-        triggerHaptic(50);
-      }
-      else setLookupError('未找到相关预约信息 (No record found)');
-    } catch (err) {
-      setLookupError('查询失败，请检查网络连接');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancel = async () => {
-    if (!myRes) return;
-    if (window.confirm('确定要取消预约吗？此操作无法撤销。\nAre you sure you want to cancel?')) {
-      setLoading(true);
-      try {
-        await updateReservation(myRes.id, { checkInStatus: CheckInStatus.Cancelled }, myRes.firebaseDocId);
-
-        // Send cancellation email
-        await sendCancellationEmail(myRes);
-
-        triggerHaptic([50, 50]);
-
-        // Update UI state instead of nulling it out
-        setMyRes({
-          ...myRes,
-          checkInStatus: CheckInStatus.Cancelled
-        });
-        setLookupError('预约已成功取消 (Reservation Cancelled)');
-      } catch (e) {
-        setLookupError('取消失败，请重试');
-      } finally {
-        setLoading(false);
-      }
-    }
   };
 
   const resetForm = () => {
@@ -336,75 +271,58 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="glass-dark rounded-full p-2 flex border border-white/10 shadow-2xl">
-        <button onClick={() => { setActiveTab('register'); setCurrentStep(1); triggerHaptic(10); }} className={`flex-1 py-4 rounded-full font-bold text-xs tracking-widest uppercase transition-all duration-500 ${activeTab === 'register' ? 'bg-cny-gold text-cny-dark shadow-xl' : 'text-white/40 hover:text-white'}`}>
-          登记预约 Register
-        </button>
-        <button onClick={() => { setActiveTab('manage'); triggerHaptic(10); }} className={`flex-1 py-4 rounded-full font-bold text-xs tracking-widest uppercase transition-all duration-500 ${activeTab === 'manage' ? 'bg-cny-gold text-cny-dark shadow-xl' : 'text-white/40 hover:text-white'}`}>
-          管理预约 Manage
-        </button>
+      {/* Link to Manage Portal replacing the tabs */}
+      <div className="flex justify-center mt-2 mb-8">
+        <Link to="/manage" className="text-sm font-bold text-white/60 hover:text-white underline underline-offset-4 decoration-white/30 transition-all flex items-center gap-2">
+          查询或取消已有的预约 (Manage your reservation) <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
 
-      {activeTab === 'register' ? (
-        <div className="space-y-6">
-          {/* Progress Indicator */}
-          <div className="flex items-center justify-center gap-4 mb-2">
-            <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${currentStep === 1 ? 'bg-cny-gold border-cny-gold text-cny-dark scale-110 shadow-lg' : 'bg-green-500 border-green-500 text-white'}`}>
-                {currentStep > 1 ? <CheckCircle className="w-4 h-4" /> : '1'}
-              </div>
-              <span className={`text-[10px] font-bold uppercase tracking-widest ${currentStep === 1 ? 'text-white' : 'text-white/40'}`}>选票 Pick Ticket</span>
+      <div className="space-y-6">
+        {/* Progress Indicator */}
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${currentStep === 1 ? 'bg-cny-gold border-cny-gold text-cny-dark scale-110 shadow-lg' : 'bg-green-500 border-green-500 text-white'}`}>
+              {currentStep > 1 ? <CheckCircle className="w-4 h-4" /> : '1'}
             </div>
-            <div className="w-8 h-px bg-white/10"></div>
-            <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${currentStep === 2 ? 'bg-cny-gold border-cny-gold text-cny-dark scale-110 shadow-lg' : 'border-white/20 text-white/20'}`}>
-                2
-              </div>
-              <span className={`text-[10px] font-bold uppercase tracking-widest ${currentStep === 2 ? 'text-white' : 'text-white/20'}`}>资料 Your Info</span>
-            </div>
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${currentStep === 1 ? 'text-white' : 'text-white/40'}`}>选票 Pick Ticket</span>
           </div>
-
-          <div className="glass-card rounded-[3rem] shadow-2xl p-8 sm:p-12 border border-white/30 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-hidden">
-            {currentStep === 1 ? (
-              <StepOneTicketSelection
-                formData={formData}
-                setFormData={setFormData}
-                triggerHaptic={triggerHaptic}
-                handleNextStep={handleNextStep}
-                progressBarRef={progressBarRef}
-                earlyBirdProgress={earlyBirdProgress}
-              />
-            ) : (
-              <StepTwoForm
-                formData={formData}
-                setFormData={setFormData}
-                handleSubmit={handleSubmit}
-                loading={loading}
-                submitError={submitError}
-                agreedToWaiver={agreedToWaiver}
-                setAgreedToWaiver={setAgreedToWaiver}
-                setShowWaiverModal={setShowWaiverModal}
-                handlePrevStep={handlePrevStep}
-                triggerHaptic={triggerHaptic}
-                currentPrice={currentPrice}
-              />
-            )}
+          <div className="w-8 h-px bg-white/10"></div>
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${currentStep === 2 ? 'bg-cny-gold border-cny-gold text-cny-dark scale-110 shadow-lg' : 'border-white/20 text-white/20'}`}>
+              2
+            </div>
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${currentStep === 2 ? 'text-white' : 'text-white/20'}`}>资料 Your Info</span>
           </div>
         </div>
-      ) : (
-        <ManagementTab
-          manageName={manageName}
-          setManageName={setManageName}
-          managePhone={managePhone}
-          setManagePhone={setManagePhone}
-          loading={loading}
-          handleLookup={handleLookup}
-          myRes={myRes}
-          lookupError={lookupError}
-          onCancel={handleCancel}
-        />
-      )}
+
+        <div className="glass-card rounded-[3rem] shadow-2xl p-8 sm:p-12 border border-white/30 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-hidden">
+          {currentStep === 1 ? (
+            <StepOneTicketSelection
+              formData={formData}
+              setFormData={setFormData}
+              triggerHaptic={triggerHaptic}
+              handleNextStep={handleNextStep}
+              progressBarRef={progressBarRef}
+              earlyBirdProgress={earlyBirdProgress}
+            />
+          ) : (
+            <StepTwoForm
+              formData={formData}
+              setFormData={setFormData}
+              handleSubmit={handleSubmit}
+              loading={loading}
+              submitError={submitError}
+              agreedToWaiver={agreedToWaiver}
+              setAgreedToWaiver={setAgreedToWaiver}
+              setShowWaiverModal={setShowWaiverModal}
+              handlePrevStep={handlePrevStep}
+              triggerHaptic={triggerHaptic}
+              currentPrice={currentPrice}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 };
