@@ -40,7 +40,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({ selectedRe
       setIsEditing(false);
     } catch (e) {
       console.error("Failed to update reservation", e);
-      alert("更新失败，请重试");
+      alert("更新失败，请重试 Update Failed. Try again.");
     } finally {
       setIsSaving(false);
     }
@@ -56,63 +56,63 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({ selectedRe
               <p className="text-sm font-bold text-gray-400 font-mono tracking-tight mt-1">{selectedRes.phoneNumber} · {selectedRes.id}</p>
             </div>
             <div className="text-right">
-              <div className="text-xs font-bold text-gray-300 uppercase mb-1 tracking-wider">应收 (Total)</div>
+              <div className="text-xs font-bold text-gray-300 uppercase mb-1 tracking-wider">应收 <span className="text-sm ml-1">Total Due</span></div>
               <div className="text-4xl font-bold text-cny-red tracking-tighter">${selectedRes.totalAmount}</div>
             </div>
           </div>
 
           <div className="flex justify-between items-center pt-2">
-             <h4 className="text-sm font-bold text-gray-900">人数信息 Party Size</h4>
-             {isAdmin && (
-               !isEditing ? (
-                   <button onClick={() => setIsEditing(true)} className="text-xs font-bold text-cny-red hover:text-cny-dark uppercase tracking-widest bg-cny-red/10 px-3 py-1.5 rounded-full">
-                       修改 Edit
-                   </button>
-               ) : (
-                   <button onClick={handleSave} disabled={isSaving} className="text-xs font-bold text-white bg-cny-red hover:bg-cny-dark uppercase tracking-widest px-4 py-1.5 rounded-full flex items-center gap-1">
-                       {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} 保存 Save
-                   </button>
-               )
-             )}
+            <h4 className="text-sm font-bold text-gray-900">人数信息 Party Size</h4>
+            {isAdmin && (
+              !isEditing ? (
+                <button onClick={() => setIsEditing(true)} className="text-xs font-bold text-cny-red hover:text-cny-dark uppercase tracking-widest bg-cny-red/10 px-3 py-1.5 rounded-full">
+                  修改 <span className="ml-1 text-sm">Edit</span>
+                </button>
+              ) : (
+                <button onClick={handleSave} disabled={isSaving} className="text-xs font-bold text-white bg-cny-red hover:bg-cny-dark uppercase tracking-widest px-4 py-1.5 rounded-full flex items-center gap-1">
+                  {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} 保存 <span className="ml-1 text-sm">Save</span>
+                </button>
+              )
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col items-center justify-center relative">
               <span className="text-[10px] font-bold text-gray-400 uppercase block mb-2 tracking-widest absolute top-3 left-4">成人 Adults</span>
               {isEditing ? (
-                  <div className="flex items-center gap-3 mt-4">
-                      <button onClick={() => setAdults(Math.max(0, adults - 1))} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:scale-95"><Minus className="w-4 h-4" /></button>
-                      <span className="text-2xl font-black w-8 text-center">{adults}</span>
-                      <button onClick={() => setAdults(adults + 1)} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:scale-95"><Plus className="w-4 h-4" /></button>
-                  </div>
+                <div className="flex items-center gap-3 mt-4">
+                  <button onClick={() => setAdults(Math.max(0, adults - 1))} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:scale-95"><Minus className="w-4 h-4" /></button>
+                  <span className="text-2xl font-black w-8 text-center">{adults}</span>
+                  <button onClick={() => setAdults(adults + 1)} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:scale-95"><Plus className="w-4 h-4" /></button>
+                </div>
               ) : (
-                  <span className="text-3xl font-black mt-4">{selectedRes.adultsCount}</span>
+                <span className="text-3xl font-black mt-4">{selectedRes.adultsCount}</span>
               )}
             </div>
             <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col items-center justify-center relative">
               <span className="text-[10px] font-bold text-gray-400 uppercase block mb-2 tracking-widest absolute top-3 left-4">儿童 Kids</span>
               {isEditing ? (
-                  <div className="flex items-center gap-3 mt-4">
-                      <button onClick={() => setChildren(Math.max(0, children - 1))} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:scale-95"><Minus className="w-4 h-4" /></button>
-                      <span className="text-2xl font-black w-8 text-center">{children}</span>
-                      <button onClick={() => setChildren(children + 1)} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:scale-95"><Plus className="w-4 h-4" /></button>
-                  </div>
+                <div className="flex items-center gap-3 mt-4">
+                  <button onClick={() => setChildren(Math.max(0, children - 1))} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:scale-95"><Minus className="w-4 h-4" /></button>
+                  <span className="text-2xl font-black w-8 text-center">{children}</span>
+                  <button onClick={() => setChildren(children + 1)} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:scale-95"><Plus className="w-4 h-4" /></button>
+                </div>
               ) : (
-                  <span className="text-3xl font-black mt-4">{selectedRes.childrenCount}</span>
+                <span className="text-3xl font-black mt-4">{selectedRes.childrenCount}</span>
               )}
             </div>
           </div>
 
-          <button 
-            onClick={() => setShowPayModal(true)} 
+          <button
+            onClick={() => setShowPayModal(true)}
             disabled={isEditing || isSaving}
             className="w-full py-5 bg-cny-red text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl active:scale-[0.98] transition-all hover:bg-cny-dark disabled:opacity-50 disabled:active:scale-100"
           >
-            <Banknote className="w-6 h-6" /> 收款并签到
+            <Banknote className="w-6 h-6" /> 收款并签到 <span className="text-xl ml-1 font-black">Pay & Check-in</span>
           </button>
-          
-          <button onClick={() => setMode('search')} className="w-full py-3 text-gray-400 font-bold text-xs uppercase tracking-[0.2em] hover:text-gray-600">
-            返回重试 Back
+
+          <button onClick={() => setMode('search')} className="w-full py-4 text-gray-500 font-bold text-sm uppercase tracking-widest hover:bg-gray-100 rounded-2xl transition border border-gray-200 mt-4 active:scale-95 shadow-sm">
+            返回 <span className="text-lg text-gray-700 ml-1 font-black">Back</span>
           </button>
         </div>
       </div>

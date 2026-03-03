@@ -37,13 +37,13 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ reservations, on
         <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Users className="text-cny-gold w-5 h-5" /> 我的工作台 (My Stats)
+                    <Users className="text-cny-gold w-5 h-5" /> 我的工作台 My Stats
                 </h2>
                 <button
                     onClick={onClose}
                     className="text-white/40 hover:text-white transition-colors"
                 >
-                    返回 (Back)
+                    返回 Back
                 </button>
             </div>
 
@@ -52,7 +52,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ reservations, on
                     <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-4">
                         <CheckCircle2 className="w-6 h-6" />
                     </div>
-                    <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">已签到人数</p>
+                    <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">已签到 Checked In</p>
                     <p className="text-3xl font-black text-white">{stats.totalPeopleCheckedIn}</p>
                     <p className="text-[10px] text-white/40 mt-1">People Checked-in</p>
                 </div>
@@ -61,7 +61,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ reservations, on
                     <div className="w-12 h-12 rounded-2xl bg-cny-gold/20 text-cny-gold flex items-center justify-center mb-4">
                         <DollarSign className="w-6 h-6" />
                     </div>
-                    <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">已收现金</p>
+                    <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">实收现金 Cash Collected</p>
                     <p className="text-3xl font-black text-cny-gold">${stats.totalCashCollected}</p>
                     <p className="text-[10px] text-white/40 mt-1">Cash Collected</p>
                 </div>
@@ -75,7 +75,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ reservations, on
             <div className="space-y-3">
                 {stats.recentCheckIns.length === 0 ? (
                     <div className="glass-dark p-8 rounded-3xl text-center border border-white/5">
-                        <p className="text-white/40 text-sm">暂无签到记录</p>
+                        <p className="text-white/40 text-sm">暂无记录 No Records</p>
                         <p className="text-white/20 text-xs mt-1">No check-ins yet</p>
                     </div>
                 ) : (

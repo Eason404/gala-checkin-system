@@ -236,7 +236,7 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
             <Ticket className="text-cny-gold w-5 h-5" /> 现场购票录入 (Staff Walk-in Registration)
           </h2>
           {onClose && (
-            <button onClick={onClose} className="px-4 py-2 bg-white/10 text-white/60 rounded-xl text-xs font-bold hover:bg-white/20 transition-all z-10 relative">
+            <button onClick={() => onClose()} className="px-4 py-2 bg-white/10 text-white/60 rounded-xl text-xs font-bold hover:bg-white/20 transition-all z-10 relative">
               取消返回 Close
             </button>
           )}

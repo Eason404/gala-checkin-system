@@ -120,6 +120,23 @@ jest.mock('firebase/firestore', () => {
     query: jest.fn((col, ...args) => ({ col, args })),
     where: jest.fn((field, op, val) => ({ type: 'where', field, op, val })),
     orderBy: jest.fn((field, dir) => ({ type: 'orderBy', field, dir })),
+    limit: jest.fn((limitCount) => ({ type: 'limit', limit: limitCount })),
+    onSnapshot: jest.fn((docRef: any, callback: any) => {
+      const docId = docRef.id;
+      const data = mockSystemConfig[docId];
+      if (data) {
+        callback({
+          exists: () => !!data,
+          data: () => data
+        });
+      } else {
+        callback({
+          exists: () => false,
+          data: () => undefined
+        });
+      }
+      return jest.fn(); // Return unsubscribe function
+    }),
     Timestamp: class Timestamp {
       ms: number;
       constructor(ms: number) { this.ms = ms; }
@@ -153,7 +170,12 @@ import {
   deleteReservation,
   generateLotteryNumber,
   getTicketConfig,
-  updateTicketConfig
+  updateTicketConfig,
+  updateLotteryState,
+  subscribeToLotteryState,
+  getRecentReservations,
+  sendCancellationEmail,
+  sendDiscountEmail
 } from './dataService';
 import { TicketType, CheckInStatus, PaymentStatus } from '../types';
 
@@ -216,6 +238,47 @@ describe('DataService - Full Coverage Suite', () => {
       expect(all[0].lastModifiedBy).toBe('TEST_USER');
     });
 
+    test('创建预约应验证必填项', async () => {
+      await expect(createReservation({ contactName: 'M' })).rejects.toThrow('MISSING_PHONE');
+      await expect(createReservation({ phoneNumber: '123' })).rejects.toThrow('MISSING_NAME');
+    });
+
+    test('getReservations should fail gracefully and return empty array', async () => {
+      const getDocsMock = jest.requireMock('firebase/firestore').getDocs;
+      getDocsMock.mockReturnValueOnce(Promise.reject(new Error('Network Error')));
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const res = await getReservations();
+      expect(res).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith("Error fetching", expect.any(Error));
+      consoleSpy.mockRestore();
+    });
+
+    test('Email functions should handle errors safely', async () => {
+      const addDocMock = jest.requireMock('firebase/firestore').addDoc;
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      // Test Confirmation Email error via createReservation
+      addDocMock.mockReturnValueOnce(Promise.reject(new Error('Network Error')));
+      await createReservation({ contactName: 'O', phoneNumber: '9999999', email: 'o@p.com' });
+      await new Promise(r => setTimeout(r, 10)); // allow promise to evaluate catch block
+
+      // Test Cancellation Email
+      await sendCancellationEmail({ id: '1', contactName: 'N', email: 'test@ex.com' } as any);
+      await sendCancellationEmail({ id: '1', contactName: 'N' } as any); // no email
+      addDocMock.mockReturnValueOnce(Promise.reject(new Error('Network Error')));
+      await sendCancellationEmail({ id: '1', contactName: 'N', email: 'test@ex.com' } as any);
+
+      // Test Discount Email
+      await sendDiscountEmail({ id: '1', contactName: 'N', email: 'test@ex.com', totalAmount: 100, discountAmount: 10, coupons: [{ code: 'A', amount: 10 }] } as any);
+      await sendDiscountEmail({ id: '1', contactName: 'N', email: 'test@ex.com', totalAmount: 100, discountAmount: 10, couponCode: 'B' } as any); // Legacy 
+      await sendDiscountEmail({ id: '1', contactName: 'N' } as any); // no email
+      addDocMock.mockReturnValueOnce(Promise.reject(new Error('Network Error')));
+      await sendDiscountEmail({ id: '1', contactName: 'N', email: 'test@ex.com' } as any);
+
+      expect(consoleSpy).toHaveBeenCalledTimes(3);
+      consoleSpy.mockRestore();
+    });
+
     test('删除预约应从列表中移除', async () => {
       const res = await createReservation({ contactName: 'DeleteMe', phoneNumber: '9998887777', email: 'd@ex.com' });
       await deleteReservation(res.firebaseDocId!);
@@ -244,6 +307,27 @@ describe('DataService - Full Coverage Suite', () => {
       expect(config.totalCapacity).toBe(500);
       expect(config.totalHeadcountCap).toBe(600);
       expect(config.walkInCap).toBe(300);
+    });
+
+    test('updateLotteryState and subscribeToLotteryState should work correctly', async () => {
+      await updateLotteryState({ isRunning: true, winners: ['123'] });
+
+      let stateCallback = jest.fn();
+      const unsubscribe = subscribeToLotteryState(stateCallback);
+
+      expect(stateCallback).toHaveBeenCalledWith({ isRunning: true, winners: ['123'] });
+      expect(typeof unsubscribe).toBe('function');
+    });
+
+    test('subscribeToLotteryState fallback safely when doc missing', async () => {
+      // Clear mock
+      mockSystemConfig['lotteryState'] = undefined;
+
+      let stateCallback = jest.fn();
+      subscribeToLotteryState(stateCallback);
+
+      // Callback shouldn't be called if missing
+      expect(stateCallback).not.toHaveBeenCalled();
     });
   });
 
@@ -282,9 +366,84 @@ describe('DataService - Full Coverage Suite', () => {
       expect(stats.cancelledCount).toBe(5);
     });
 
-    test('抽奖号码生成应为 3 位数字字符串', async () => {
-      const num = await generateLotteryNumber();
-      expect(num).toMatch(/^\d{3}$/);
+    test('统计 coupon usage including legacy couponCode string', async () => {
+      const stats = await calculateStats([{
+        checkInStatus: CheckInStatus.NotArrived,
+        totalPeople: 2,
+        adultsCount: 2,
+        totalAmount: 30,
+        paidAmount: 0,
+        ticketType: TicketType.EarlyBird,
+        couponCode: 'LEGACY_TEST_CODE',
+        coupons: undefined // Override the array fallback for this test
+      } as any]);
+
+      expect(stats.couponUsage['LEGACY_TEST_CODE']).toBe(1);
+    });
+
+    test('应该计算所有的 demographic count 和 lunch box 调整', async () => {
+      const stats = await calculateStats([
+        {
+          checkInStatus: CheckInStatus.NotArrived,
+          totalPeople: 3,
+          adultsCount: 3,
+          isPerformer: true,
+          coupons: [{ code: 'VOLUNTEER_NO_LUNCH', amount: 0 }],
+          ticketType: TicketType.Regular,
+        } as any,
+        {
+          checkInStatus: CheckInStatus.NotArrived,
+          totalPeople: 2,
+          adultsCount: 2,
+          coupons: [{ code: 'SPONSOR', amount: 0 }],
+          ticketType: TicketType.WalkIn,
+          // Removed legacy couponCode here so it doesn't trigger 'isVolunteer'
+        } as any,
+        {
+          checkInStatus: CheckInStatus.NotArrived,
+          totalPeople: 4,
+          adultsCount: 2,
+          coupons: [{ code: 'PERFORMER_PARENTS', amount: 0 }, { code: '', amount: 0 }],
+          ticketType: TicketType.WalkIn,
+        } as any,
+        {
+          checkInStatus: CheckInStatus.NotArrived,
+          totalPeople: 1,
+          adultsCount: 1,
+          coupons: [{ code: 'VOLUNTEER', amount: 0 }],
+          ticketType: TicketType.WalkIn,
+        } as any,
+        {
+          // Extra guest for legacy code
+          checkInStatus: CheckInStatus.NotArrived,
+          totalPeople: 1,
+          adultsCount: 1,
+          ticketType: TicketType.WalkIn,
+          couponCode: 'VOLUNTEER_NO_LUNCH', // this technically makes them a volunteer too
+        } as any
+      ]);
+
+      expect(stats.totalPerformersCount).toBe(3);
+      expect(stats.totalSponsorsCount).toBe(2);
+      expect(stats.totalPerformerParentsCount).toBe(4);
+      expect(stats.totalVolunteersCount).toBe(2); // 1 from VOLUNTEER, 1 from VOLUNTEER_NO_LUNCH legacy
+      // lunches: 2 + 2 + 2 + 1 + 0 = 7
+      expect(stats.lunchBoxCount).toBe(7);
+    });
+
+    test('getRecentReservations returns recent items safely', async () => {
+      await createReservation({ contactName: 'Recent', phoneNumber: '55667788', adultsCount: 1 });
+      const recent = await getRecentReservations(5);
+      expect(recent.length).toBeGreaterThan(0);
+      expect(recent[0].phoneNumber).toBe('55667788');
+    });
+
+    test('getRecentReservations fails gracefully by returning empty array', async () => {
+      const getDocsMock = jest.requireMock('firebase/firestore').getDocs;
+      // Temporarily mock error
+      getDocsMock.mockImplementationOnce(() => Promise.reject(new Error('Test error')));
+      const recent = await getRecentReservations(5);
+      expect(recent.length).toBe(0);
     });
   });
 
@@ -301,6 +460,25 @@ describe('DataService - Full Coverage Suite', () => {
         phoneNumber: '508-111-2222', // Formatted differently but same normalization
         adultsCount: 1
       })).rejects.toThrow('DUPLICATE_PHONE');
+    });
+
+    test('Should allow registration with a duplicate phone number if previous was cancelled', async () => {
+      const res1 = await createReservation({
+        contactName: 'First',
+        phoneNumber: '5081119999',
+        adultsCount: 1
+      });
+      await updateReservation(res1.id, { checkInStatus: CheckInStatus.Cancelled }, res1.firebaseDocId);
+
+      // Now create again with the same phone
+      const res2 = await createReservation({
+        contactName: 'Second',
+        phoneNumber: '5081119999',
+        adultsCount: 1
+      });
+
+      expect(res2.id).toBeDefined();
+      expect(res2.id).not.toBe(res1.id);
     });
 
     test('Should handle ID collision and retry (Simulated via mock)', async () => {

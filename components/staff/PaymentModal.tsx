@@ -15,7 +15,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   selectedRes, cashInputRef, cashTendered, setCashTendered, handleFamilyCheckIn, setShowPayModal
 }) => {
   const changeDue = Number(cashTendered) - selectedRes.totalAmount;
-  
+
   return (
     <div className="fixed inset-0 bg-cny-dark/90 backdrop-blur-xl z-[110] flex items-center justify-center p-6 animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
@@ -26,9 +26,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         <div className="p-8 space-y-6">
           <div>
             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">实收现金 Cash Received</label>
-            <input 
+            <input
               ref={cashInputRef}
-              type="number" 
+              type="number"
               className="w-full p-5 bg-gray-50 rounded-2xl font-bold text-3xl border-2 border-transparent focus:border-cny-red outline-none text-center"
               value={cashTendered}
               onChange={e => setCashTendered(e.target.value)}
@@ -41,14 +41,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               ${Math.max(0, changeDue)}
             </div>
           </div>
-          <button 
+          <button
             disabled={Number(cashTendered) < selectedRes.totalAmount}
             onClick={handleFamilyCheckIn}
             className="w-full py-6 bg-cny-red text-white rounded-2xl font-bold text-xl shadow-xl disabled:opacity-30 disabled:grayscale transition-all hover:bg-cny-dark active:scale-95"
           >
-            确认收款并完成签到
+            确认收款并完成签到 <span className="text-2xl ml-1 font-black">Confirm Pay & Check-in</span>
           </button>
-          <button onClick={() => setShowPayModal(false)} className="w-full text-xs font-bold text-gray-300 uppercase tracking-widest hover:text-gray-500">取消 Cancel</button>
+          <button onClick={() => setShowPayModal(false)} className="w-full py-4 text-gray-500 font-bold text-sm uppercase tracking-widest hover:bg-gray-100 rounded-2xl transition border border-gray-200 mt-2 active:scale-95 shadow-sm">取消 <span className="text-base text-gray-700 ml-1 font-black">Cancel</span></button>
         </div>
       </div>
     </div>

@@ -370,12 +370,16 @@ export const createReservation = async (data: Partial<Reservation>): Promise<Res
   }
 
   // *** DUPLICATE CHECK ***
-  // Prevent creating a new reservation if the phone number already exists 
-  // Strict uniqueness: block if ANY record exists with this phone number, regardless of status.
+  // Prevent creating a new reservation if an active (non-cancelled) record with the phone number already exists 
   const duplicateQuery = query(collection(db, COLLECTION_NAME), where('phoneNumber', 'in', possiblePhones));
   const duplicateSnapshot = await getDocs(duplicateQuery);
 
-  if (!duplicateSnapshot.empty) {
+  // Filter out cancelled records
+  const activeDuplicates = duplicateSnapshot.docs.filter(
+    (doc) => doc.data().checkInStatus !== CheckInStatus.Cancelled
+  );
+
+  if (activeDuplicates.length > 0) {
     throw new Error('DUPLICATE_PHONE');
   }
 
