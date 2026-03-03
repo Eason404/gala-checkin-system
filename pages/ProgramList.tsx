@@ -12,17 +12,17 @@ interface Performance {
 
 const performances: Performance[] = [
     { typeZh: '歌舞', typeEn: 'Group Singing', titleZh: '我和我的祖国', titleEn: 'My Motherland and Me', artistZh: 'Natick中老年华人居民', artistEn: 'Natick Residents' },
-    { typeZh: '四重奏', typeEn: 'Quartet', titleZh: '莫扎特的嬉游曲 + 圣-桑 天鹅', titleEn: 'Mozart Divertimento + Saint-Saëns Swan', artistZh: 'Monica Li, Angelina Huang, Nina Li, Daming Li', artistEn: '' },
     { typeZh: '朗诵', typeEn: 'Poetry Recitation', titleZh: '水调歌头·明月几时有', titleEn: 'Prelude to Water Melody: When Will the Moon Be Clear and Bright?', artistZh: 'Sunrise Montessori', artistEn: '' },
     { typeZh: '京剧', typeEn: 'Beijing Opera', titleZh: '《野猪林》选段', titleEn: 'Excerpt of Wild Boar Forest', artistZh: '波士顿京剧协会', artistEn: 'Boston Beijing Opera Association' },
     { typeZh: '独舞', typeEn: 'Solo Dance', titleZh: '《鸣唱的鸟儿》', titleEn: 'The Warbling Bird', artistZh: 'Evelyn Wangler', artistEn: '' },
     { typeZh: '团唱', typeEn: 'Group Singing', titleZh: '身边', titleEn: 'By Your Side', artistZh: '张龙, 姜晖', artistEn: 'Long Zhang, Hui Jiang' },
-    { typeZh: '团舞', typeEn: 'Group Dance', titleZh: '獨一無二', titleEn: 'Style', artistZh: 'CJTDreamDance梦舞团', artistEn: 'CJTDreamDance' },
-    { typeZh: '歌曲串烧', typeEn: 'Song Medley', titleZh: '听我说谢谢你 + 帽衫 + 恭喜恭喜', titleEn: 'Chinese Song Medley', artistZh: 'Natick 初中部学生', artistEn: 'Natick Middle School Chinese Class' },
-    { typeZh: '团舞', typeEn: 'Group Dance', titleZh: '葡萄熟了', titleEn: 'When the Grapes Are Ripe', artistZh: '天使舞团', artistEn: 'Angel Dance' },
+    { typeZh: '四重奏', typeEn: 'Quartet', titleZh: '莫扎特的嬉游曲 + 圣-桑 天鹅', titleEn: 'Mozart Divertimento + Saint-Saëns Swan', artistZh: 'NeoWave音乐工作室', artistEn: 'NeoWave Music Studio' },
+    { typeZh: '歌曲串烧', typeEn: 'Song Medley', titleZh: '听我说谢谢你 + 帽衫 + 恭喜恭喜', titleEn: 'Chinese Song Medley', artistZh: 'Natick初中中文班', artistEn: 'Natick Middle School Chinese Class' },
+    { typeZh: '团舞', typeEn: 'Group Dance', titleZh: '独一无二', titleEn: 'Style', artistZh: 'CJTDreamDance梦舞团', artistEn: 'CJTDreamDance' },
     { typeZh: '乐器', typeEn: 'Instrument', titleZh: '茉莉芬芳', titleEn: 'Fragrance of Jasmine', artistZh: '江浅之, 胡舍余', artistEn: 'Qianzhi Jiang, Sheyu Hu' },
+    { typeZh: '团舞', typeEn: 'Group Dance', titleZh: '葡萄熟了', titleEn: 'When the Grapes Are Ripe', artistZh: '天使舞团', artistEn: 'Angel Dance' },
     { typeZh: '独唱', typeEn: 'Singing', titleZh: '大鱼', titleEn: 'The Giant Fish', artistZh: '余佩文', artistEn: 'Peiwen Yu' },
-    { typeZh: '街舞串烧', typeEn: 'Street Dance Medley', titleZh: '街舞串烧', titleEn: 'Street Dance Medley', artistZh: 'Abostract 舞团', artistEn: 'Abostract Dance Team' },
+    { typeZh: '团舞', typeEn: 'Group Dance', titleZh: '街舞串烧', titleEn: 'Street Dance Medley', artistZh: 'Abostract 舞团', artistEn: 'Abostract Dance Team' },
     { typeZh: '男高音独唱', typeEn: 'Tenor Solo', titleZh: '我的太阳', titleEn: 'My Sun', artistZh: '新世界音乐舞蹈学校', artistEn: 'New World Music & Dance School' },
     { typeZh: '诗歌', typeEn: 'Recitation', titleZh: '中文语言艺术', titleEn: 'Chinese Language Art', artistZh: 'Thriving Kids Academy (TKA)', artistEn: 'TKA' },
     { typeZh: '独舞', typeEn: 'Solo Dance', titleZh: '盛世敦煌', titleEn: 'Glorious DunHuang', artistZh: '傅静雯舞苑', artistEn: 'FJW Dance Academy' },
@@ -58,6 +58,7 @@ const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }
                 className="grid transition-transform duration-500"
                 style={{
                     transformStyle: 'preserve-3d',
+                    WebkitTransformStyle: 'preserve-3d',
                     transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
                 }}
             >
@@ -67,15 +68,19 @@ const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }
                     style={{
                         gridArea: '1 / 1',
                         backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
                     }}
                 >
                     {/* Sidebar: Program Type Section */}
                     <div
-                        className="w-10 flex-shrink-0 flex flex-col items-center justify-between py-3 text-white shadow-[inset_-2px_0_6px_rgba(0,0,0,0.2)] border-r border-cny-gold/20"
+                        className="w-12 sm:w-14 flex-shrink-0 flex flex-col items-center justify-between py-3 text-white shadow-[inset_-2px_0_6px_rgba(0,0,0,0.2)] border-r border-cny-gold/20"
                         style={{ backgroundColor: colorHex }}
                     >
                         <span className="text-[10px] font-black opacity-80">{idx + 1}</span>
-                        <span className="text-[12px] font-bold font-serif [writing-mode:vertical-lr] tracking-widest drop-shadow-md">
+                        <span
+                            className="text-[12px] font-bold font-serif tracking-widest drop-shadow-md"
+                            style={{ writingMode: 'vertical-rl', WebkitWritingMode: 'vertical-rl' }}
+                        >
                             {perf.typeZh}
                         </span>
                     </div>
@@ -113,14 +118,18 @@ const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }
                     style={{
                         gridArea: '1 / 1',
                         backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
                         transform: 'rotateY(180deg)',
                     }}
                 >
                     {/* Sidebar: Label Header */}
                     <div
-                        className="w-10 flex-shrink-0 flex flex-col items-center justify-center py-3 text-cny-gold bg-black/20 shadow-[inset_-2px_0_6px_rgba(0,0,0,0.2)] border-r border-cny-gold/20"
+                        className="w-12 sm:w-14 flex-shrink-0 flex flex-col items-center justify-center py-3 text-cny-gold bg-black/20 shadow-[inset_-2px_0_6px_rgba(0,0,0,0.2)] border-r border-cny-gold/20"
                     >
-                        <span className="text-[9px] font-black uppercase [writing-mode:vertical-lr] rotate-180 tracking-[0.2em] opacity-80 drop-shadow-sm">
+                        <span
+                            className="text-[9px] font-black uppercase rotate-180 tracking-[0.2em] opacity-80 drop-shadow-sm"
+                            style={{ writingMode: 'vertical-rl', WebkitWritingMode: 'vertical-rl' }}
+                        >
                             Performers
                         </span>
                     </div>
@@ -146,7 +155,7 @@ const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }
                                 P-{idx + 1}
                             </div>
                             {displayArtistEn && (
-                                <div className="text-[11px] font-medium font-sans text-white/80 leading-snug break-words truncate line-clamp-2">
+                                <div className="text-[11px] font-medium font-sans text-white/80 leading-snug break-words line-clamp-2">
                                     {displayArtistEn}
                                 </div>
                             )}
