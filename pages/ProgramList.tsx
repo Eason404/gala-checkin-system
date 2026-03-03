@@ -75,7 +75,7 @@ const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }
                         style={{ backgroundColor: colorHex }}
                     >
                         <span className="text-[10px] font-black opacity-80">{idx + 1}</span>
-                        <span className="text-[12px] font-bold font-serif [writing-mode:vertical-lr] rotate-180 tracking-widest drop-shadow-md">
+                        <span className="text-[12px] font-bold font-serif [writing-mode:vertical-lr] tracking-widest drop-shadow-md">
                             {perf.typeZh}
                         </span>
                     </div>
