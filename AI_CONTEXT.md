@@ -23,15 +23,7 @@ To elevate the user experience for the Year of the Horse, the system follows the
 
 ---
 
-## 2. Tech Stack & Architecture
-*   **Framework:** React 19.
-*   **Styling:** Tailwind CSS + Glassmorphism.
-*   **Data Persistence:** Google Firebase Firestore (Live).
-*   **Authentication:** Code-based role access via Firestore.
-
----
-
-## 3. Pricing & Validation Rules
+## 2. Pricing & Validation Rules
 
 *   **Early Bird Ticket:** $15 (Limited Quantity / Time).
 *   **Regular Ticket:** $20.
@@ -45,6 +37,22 @@ To elevate the user experience for the Year of the Horse, the system follows the
 
 ---
 
-## 4. Data Models
+## 3. Application Routes
 
-Refer to `DESIGN_FIREBASE_MIGRATION.md` for the complete Firestore Schema and field definitions.
+| Route | Component | Purpose |
+| :--- | :--- | :--- |
+| `/` | `PublicRegistration` | New attendee registration (disabled when `ENABLE_REGISTRATION = false`) |
+| `/walkin` | `PublicRegistration` | Walk-in registration (skips ticket selection) |
+| `/manage` | `ManageReservation` | Lookup and cancel existing reservations |
+| `/schedule` | `EventSchedule` | Event day schedule and "Manage Reservation" entry point |
+| `/staff` | `StaffPortal` | Staff check-in, payment processing, lottery number assignment |
+| `/admin` | `AdminDashboard` | Real-time analytics, CSV export |
+| `/lottery` | `LotteryWheel` | Interactive prize drawing wheel |
+
+---
+
+## 4. Security Notes
+
+*   **Registration Toggle**: `ENABLE_REGISTRATION` in `App.tsx` globally disables public registration.
+*   **Reservation Lookup**: Requires exact phone number (digits only) and exact full name or first name match. Partial matches are rejected.
+*   **Staff/Admin Access**: Protected by access code authentication via the `access_keys` Firestore collection.

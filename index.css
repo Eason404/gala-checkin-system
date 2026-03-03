@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #8a1c26;
+    background-image: radial-gradient(circle at top right, #D72638, transparent),
+      radial-gradient(circle at bottom left, #4a0d13, transparent);
+    background-attachment: fixed;
+    /* Prevent bounce scroll on iOS */
+    overscroll-behavior-y: none;
+}
+
+/* Simple Loading Spinner for initial load */
+#app-loader {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #FCE7BB;
+    font-family: serif;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 0;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes float {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    50% {
+        transform: translate3d(0, -10px, 0);
+    }
+
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.festive-float {
+    animation: float 4s ease-in-out infinite;
+    will-change: transform;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(252, 231, 187, 0.4);
+}
+
+.glass-dark {
+    background: rgba(60, 10, 15, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 252, 231, 0.15);
+}
+
+@keyframes burst {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.animate-burst {
+    animation: burst 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #FCE7BB;
+    opacity: 0;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #D72638;
+    border-radius: 10px;
+}

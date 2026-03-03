@@ -25,17 +25,23 @@ jest.mock('firebase/firestore', () => {
   });
 
   const mockGetDocs = jest.fn((q: any) => {
-    // Simply return all docs in mockDb for any query in this test suite
+    let filteredDb = [...mockDb];
+    if (q && q.args) {
+      const whereClause = q.args.find((a: any) => a && a.type === 'where');
+      if (whereClause && whereClause.field === 'phoneNumber') {
+        filteredDb = filteredDb.filter(d => whereClause.val.includes(d.phoneNumber));
+      }
+    }
     return Promise.resolve({
-      docs: mockDb.map(data => ({
+      docs: filteredDb.map(data => ({
         id: data.firebaseDocId,
         data: () => ({
           ...data,
-          createdTime: { toMillis: () => data.createdTime || Date.now() }
+          createdTime: data.createdTime
         }),
         ref: { id: data.firebaseDocId }
       })),
-      empty: mockDb.length === 0
+      empty: filteredDb.length === 0
     });
   });
 
@@ -44,6 +50,15 @@ jest.mock('firebase/firestore', () => {
     if (docRef.path.startsWith('system/')) {
       const docId = docRef.id;
       const data = mockSystemConfig[docId];
+      return Promise.resolve({
+        exists: () => !!data,
+        data: () => data
+      });
+    }
+    // Handle reservations for generateId loop and createReservation
+    if (docRef.path.startsWith('reservations/')) {
+      const docId = docRef.id;
+      const data = mockDb.find(d => d.id === docId || d.firebaseDocId === docId);
       return Promise.resolve({
         exists: () => !!data,
         data: () => data
@@ -58,6 +73,16 @@ jest.mock('firebase/firestore', () => {
         mockSystemConfig[docRef.id] = { ...mockSystemConfig[docRef.id], ...data };
       } else {
         mockSystemConfig[docRef.id] = data;
+      }
+      return Promise.resolve();
+    }
+    if (docRef.path.startsWith('reservations/')) {
+      const docId = docRef.id;
+      const index = mockDb.findIndex(d => d.firebaseDocId === docId || d.id === docId);
+      if (index !== -1) {
+        mockDb[index] = { ...mockDb[index], ...data };
+      } else {
+        mockDb.push({ ...data, firebaseDocId: docId });
       }
       return Promise.resolve();
     }
@@ -92,12 +117,15 @@ jest.mock('firebase/firestore', () => {
     updateDoc: mockUpdateDoc,
     deleteDoc: mockDeleteDoc,
     doc: (db: any, col: string, id: string) => ({ id, path: `${col}/${id}` }),
-    query: jest.fn(),
-    where: jest.fn(),
-    orderBy: jest.fn(),
-    Timestamp: {
-      now: () => ({ toMillis: () => Date.now() }),
-      fromMillis: (ms: number) => ({ toMillis: () => ms })
+    query: jest.fn((col, ...args) => ({ col, args })),
+    where: jest.fn((field, op, val) => ({ type: 'where', field, op, val })),
+    orderBy: jest.fn((field, dir) => ({ type: 'orderBy', field, dir })),
+    Timestamp: class Timestamp {
+      ms: number;
+      constructor(ms: number) { this.ms = ms; }
+      toMillis() { return this.ms; }
+      static now() { return new Timestamp(Date.now()); }
+      static fromMillis(ms: number) { return new Timestamp(ms); }
     }
   };
 });
@@ -117,11 +145,11 @@ jest.mock('./authService', () => ({
   getCurrentUserCode: jest.fn(() => 'TEST_USER')
 }));
 
-import { 
-  createReservation, 
-  calculateStats, 
-  updateReservation, 
-  getReservations, 
+import {
+  createReservation,
+  calculateStats,
+  updateReservation,
+  getReservations,
   deleteReservation,
   generateLotteryNumber,
   getTicketConfig,
@@ -157,9 +185,9 @@ describe('DataService - Full Coverage Suite', () => {
         email: 'valid@email.com',
         adultsCount: 1
       });
-      
+
       // Check if addDoc was called for the 'mail' collection
-      const calls = mockAddDoc.mock.calls;
+      const calls = require('firebase/firestore').addDoc.mock.calls;
       const mailCall = calls.find((c: any) => c[0].id === 'mail');
       expect(mailCall).toBeDefined();
       expect(mailCall[1].to).toContain('valid@email.com');
@@ -182,7 +210,7 @@ describe('DataService - Full Coverage Suite', () => {
     test('更新预约状态应生效', async () => {
       const res = await createReservation({ contactName: 'UpdateMe', phoneNumber: '1112223333', email: 'u@ex.com' });
       await updateReservation(res.id, { checkInStatus: CheckInStatus.Arrived }, res.firebaseDocId);
-      
+
       const all = await getReservations();
       expect(all[0].checkInStatus).toBe(CheckInStatus.Arrived);
       expect(all[0].lastModifiedBy).toBe('TEST_USER');
@@ -191,7 +219,7 @@ describe('DataService - Full Coverage Suite', () => {
     test('删除预约应从列表中移除', async () => {
       const res = await createReservation({ contactName: 'DeleteMe', phoneNumber: '9998887777', email: 'd@ex.com' });
       await deleteReservation(res.firebaseDocId!);
-      
+
       const all = await getReservations();
       expect(all.length).toBe(0);
     });
@@ -221,13 +249,13 @@ describe('DataService - Full Coverage Suite', () => {
 
   describe('Business Logic & Stats', () => {
     test('不同票种价格应正确应用 (EarlyBird: $15, Regular: $20)', async () => {
-      const early = await createReservation({ 
-        contactName: 'Early', phoneNumber: '111', email: 'e@a.com', ticketType: TicketType.EarlyBird, adultsCount: 1 
+      const early = await createReservation({
+        contactName: 'Early', phoneNumber: '111', email: 'e@a.com', ticketType: TicketType.EarlyBird, adultsCount: 1
       });
       expect(early.totalAmount).toBe(15);
 
-      const regular = await createReservation({ 
-        contactName: 'Reg', phoneNumber: '222', email: 'r@a.com', ticketType: TicketType.Regular, adultsCount: 1 
+      const regular = await createReservation({
+        contactName: 'Reg', phoneNumber: '222', email: 'r@a.com', ticketType: TicketType.Regular, adultsCount: 1
       });
       expect(regular.totalAmount).toBe(20);
     });
@@ -235,7 +263,7 @@ describe('DataService - Full Coverage Suite', () => {
     test('统计应正确计算各项指标 (已签到 vs 未签到 vs 已取消)', async () => {
       // 1. 普通未签到
       await createReservation({ contactName: 'Normal', phoneNumber: '1', adultsCount: 2, ticketType: TicketType.Regular }); // +$40
-      
+
       // 2. 已签到
       const arrived = await createReservation({ contactName: 'Arrived', phoneNumber: '2', adultsCount: 1, ticketType: TicketType.EarlyBird, paidAmount: 15 }); // +$15
       await updateReservation(arrived.id, { checkInStatus: CheckInStatus.Arrived }, arrived.firebaseDocId);
@@ -243,20 +271,61 @@ describe('DataService - Full Coverage Suite', () => {
       // 3. 已取消 (不应计入 Revenue 和 Headcount)
       const cancelled = await createReservation({ contactName: 'Cancel', phoneNumber: '3', adultsCount: 5, ticketType: TicketType.Regular });
       await updateReservation(cancelled.id, { checkInStatus: CheckInStatus.Cancelled }, cancelled.firebaseDocId);
-      
+
       const stats = await calculateStats();
-      
+
       expect(stats.totalReservations).toBe(2); // Cancelled excluded
       expect(stats.totalPeople).toBe(3); // 2 + 1
       expect(stats.totalRevenueExpected).toBe(55); // 40 + 15
       expect(stats.totalRevenueCollected).toBe(15); // Arrived one paid
       expect(stats.checkedInCount).toBe(1); // Only the arrived one
-      expect(stats.cancelledCount).toBe(1);
+      expect(stats.cancelledCount).toBe(5);
     });
 
-    test('抽奖号码生成应为 3 位数字字符串', () => {
-      const num = generateLotteryNumber();
+    test('抽奖号码生成应为 3 位数字字符串', async () => {
+      const num = await generateLotteryNumber();
       expect(num).toMatch(/^\d{3}$/);
+    });
+  });
+
+  describe('Duplicate Prevention', () => {
+    test('Should throw error for duplicate phone number', async () => {
+      await createReservation({
+        contactName: 'First',
+        phoneNumber: '5081112222',
+        adultsCount: 1
+      });
+
+      await expect(createReservation({
+        contactName: 'Second',
+        phoneNumber: '508-111-2222', // Formatted differently but same normalization
+        adultsCount: 1
+      })).rejects.toThrow('DUPLICATE_PHONE');
+    });
+
+    test('Should handle ID collision and retry (Simulated via mock)', async () => {
+      // Pre-fill mockDb with an ID
+      mockDb.push({ id: 'CNY26-1234', firebaseDocId: 'CNY26-1234' });
+
+      // Override Math.random to return something that results in 1234 first, then 5678
+      let callCount = 0;
+      const originalRandom = Math.random;
+      Math.random = jest.fn(() => {
+        callCount++;
+        // 1000 + R * 9000 = ID => R = (ID - 1000) / 9000
+        if (callCount === 1) return (1234 - 1000) / 9000;
+        return (5678 - 1000) / 9000;
+      });
+
+      const res = await createReservation({
+        contactName: 'RetryTester',
+        phoneNumber: '9990001111',
+        adultsCount: 1
+      });
+
+      expect(res.id).toBe('CNY26-5678');
+      expect(res.id).not.toBe('CNY26-1234');
+      Math.random = originalRandom;
     });
   });
 });

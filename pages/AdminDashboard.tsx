@@ -3,16 +3,18 @@ import { Download, Loader2, RefreshCw, Activity, Settings } from 'lucide-react';
 import React, { useEffect, useState, useMemo } from 'react';
 import { calculateStats, getReservations, updateReservation, deleteReservation, getTicketConfig, updateTicketConfig, sendCancellationEmail } from '../services/dataService';
 import { Stats, Reservation, CheckInStatus, TicketConfig } from '../types';
+import { db } from '../firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getCurrentUserRole } from '../services/authService';
 
 // Sub-components
-import { StatsGrid } from './admin/StatsGrid';
-import { DailyStatsChart } from './admin/DailyStatsChart';
-import { CouponStats } from './admin/CouponStats';
-import { ReservationList } from './admin/ReservationList';
-import { ConfigModal } from './admin/modals/ConfigModal';
-import { DeleteModal } from './admin/modals/DeleteModal';
-import { DetailModal } from './admin/modals/DetailModal';
+import { StatsGrid } from '../components/admin/StatsGrid';
+import { DailyStatsChart } from '../components/admin/DailyStatsChart';
+import { CouponStats } from '../components/admin/CouponStats';
+import { ReservationList } from '../components/admin/ReservationList';
+import { ConfigModal } from '../components/admin/modals/ConfigModal';
+import { DeleteModal } from '../components/admin/modals/DeleteModal';
+import { DetailModal } from '../components/admin/modals/DetailModal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -32,37 +34,39 @@ const AdminDashboard: React.FC = () => {
   const [filterCoupon, setFilterCoupon] = useState<string>('all');
   const [sortKey, setSortKey] = useState<'contactName' | 'totalAmount' | 'createdTime'>('createdTime');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedForAction, setSelectedForAction] = useState<Reservation | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
-  const [editConfig, setEditConfig] = useState<TicketConfig>({ 
-    totalCapacity: 400, 
-    totalHeadcountCap: 450, 
-    earlyBirdCap: 300, 
-    regularCap: 50, 
-    walkInCap: 50 
+  const [editConfig, setEditConfig] = useState<TicketConfig>({
+    totalCapacity: 400,
+    totalHeadcountCap: 450,
+    earlyBirdCap: 300,
+    regularCap: 50,
+    walkInCap: 50
   });
 
   const fetchData = async () => {
     setRefreshing(true);
     try {
-        const [fetchedStats, fetchedReservations, fetchedConfig] = await Promise.all([
-            calculateStats(),
-            getReservations(),
-            getTicketConfig()
-        ]);
-        setStats(fetchedStats);
-        setReservations(fetchedReservations);
-        setConfig(fetchedConfig);
-        setEditConfig(fetchedConfig);
+      const fetchedReservations = await getReservations();
+
+      const [fetchedStats, fetchedConfig] = await Promise.all([
+        calculateStats(fetchedReservations),
+        getTicketConfig()
+      ]);
+
+      setStats(fetchedStats);
+      setReservations(fetchedReservations);
+      setConfig(fetchedConfig);
+      setEditConfig(fetchedConfig);
     } catch (e) {
-        console.error("Failed to load dashboard data", e);
+      console.error("Failed to load dashboard data", e);
     } finally {
-        setLoading(false);
-        setRefreshing(false);
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -76,24 +80,25 @@ const AdminDashboard: React.FC = () => {
 
   const filteredData = useMemo(() => {
     return reservations.filter(r => {
-      const matchSearch = (r.contactName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (r.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (r.phoneNumber || '').includes(searchTerm);
+      const matchSearch = (r.contactName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (r.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (r.phoneNumber || '').includes(searchTerm) ||
+        (r.performanceUnit || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchStatus = filterStatus === 'all' || r.checkInStatus === filterStatus;
       const matchPayment = filterPayment === 'all' || r.paymentStatus === filterPayment;
       const isSponsor = (typeof r.couponCode === 'string' && r.couponCode.includes('SPONSOR')) || (r.coupons && r.coupons.some(c => c.code === 'SPONSOR'));
       const isPerformerParent = (typeof r.couponCode === 'string' && r.couponCode.includes('PERFORMER_PARENTS')) || (r.coupons && r.coupons.some(c => c.code === 'PERFORMER_PARENTS'));
-      const matchPerformer = filterPerformer === 'all' || 
-                             (filterPerformer === 'yes' ? r.isPerformer : 
-                              filterPerformer === 'no' ? !r.isPerformer : 
-                              filterPerformer === 'sponsor' ? isSponsor : 
-                              filterPerformer === 'performer_parents' ? isPerformerParent : true);
-      
+      const matchPerformer = filterPerformer === 'all' ||
+        (filterPerformer === 'yes' ? r.isPerformer :
+          filterPerformer === 'no' ? !r.isPerformer :
+            filterPerformer === 'sponsor' ? isSponsor :
+              filterPerformer === 'performer_parents' ? isPerformerParent : true);
+
       const hasAnyCoupon = (r.coupons && r.coupons.length > 0) || (typeof r.couponCode === 'string' && r.couponCode.trim() !== '');
       const matchCoupon = filterCoupon === 'all' ||
-                          (filterCoupon === 'any' ? hasAnyCoupon :
-                           filterCoupon === 'none' ? !hasAnyCoupon :
-                           ((r.coupons && r.coupons.some(c => c.code === filterCoupon)) || (typeof r.couponCode === 'string' && r.couponCode.includes(filterCoupon))));
+        (filterCoupon === 'any' ? hasAnyCoupon :
+          filterCoupon === 'none' ? !hasAnyCoupon :
+            ((r.coupons && r.coupons.some(c => c.code === filterCoupon)) || (typeof r.couponCode === 'string' && r.couponCode.includes(filterCoupon))));
 
       return matchSearch && matchStatus && matchPayment && matchPerformer && matchCoupon;
     }).sort((a, b) => {
@@ -122,17 +127,17 @@ const AdminDashboard: React.FC = () => {
     try {
       // 1. Update Status in DB
       await updateReservation(selectedForAction.id, { checkInStatus: CheckInStatus.Cancelled }, selectedForAction.firebaseDocId);
-      
+
       // 2. Send Email Notification
       await sendCancellationEmail(selectedForAction);
 
       await fetchData();
       setSelectedForAction(null);
-    } catch (e) { 
-        console.error(e); 
-        alert("取消失败 / Cancel failed");
-    } finally { 
-        setActionLoading(false); 
+    } catch (e) {
+      console.error(e);
+      alert("取消失败 / Cancel failed");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -142,12 +147,12 @@ const AdminDashboard: React.FC = () => {
     try {
       let docId = selectedForAction.firebaseDocId;
       if (!docId) {
-          const q = query(collection(db, 'reservations'), where('id', '==', selectedForAction.id));
-          const snapshot = await getDocs(q);
-          docId = snapshot.docs[0]?.id;
+        const q = query(collection(db, 'reservations'), where('id', '==', selectedForAction.id));
+        const snapshot = await getDocs(q);
+        docId = snapshot.docs[0]?.id;
       }
       if (docId) {
-          await deleteReservation(docId);
+        await deleteReservation(docId);
       }
       await fetchData();
       setShowConfirmDelete(false);
@@ -170,18 +175,18 @@ const AdminDashboard: React.FC = () => {
   const downloadCSV = () => {
     const headers = ['ID', 'Name', 'Phone', 'Type', 'Adults', 'Children', 'Performer', 'Unit', 'Operator', 'LastModifiedBy', 'Amount', 'Status'];
     const rows = filteredData.map(r => [
-        r.id, 
-        r.contactName, 
-        r.phoneNumber, 
-        r.ticketType, 
-        r.adultsCount, 
-        r.childrenCount, 
-        r.isPerformer ? 'YES' : 'NO', 
-        r.performanceUnit || '',
-        r.operatorId || 'N/A', 
-        r.lastModifiedBy || 'N/A', 
-        r.totalAmount, 
-        r.checkInStatus
+      r.id,
+      r.contactName,
+      r.phoneNumber,
+      r.ticketType,
+      r.adultsCount,
+      r.childrenCount,
+      r.isPerformer ? 'YES' : 'NO',
+      r.performanceUnit || '',
+      r.operatorId || 'N/A',
+      r.lastModifiedBy || 'N/A',
+      r.totalAmount,
+      r.checkInStatus
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
     const link = document.createElement("a");
@@ -194,8 +199,8 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-20 px-4 antialiased animate-in fade-in duration-700">
-      
-      <ConfigModal 
+
+      <ConfigModal
         showConfigModal={showConfigModal}
         setShowConfigModal={setShowConfigModal}
         editConfig={editConfig}
@@ -203,7 +208,7 @@ const AdminDashboard: React.FC = () => {
         handleSaveConfig={handleSaveConfig}
       />
 
-      <DeleteModal 
+      <DeleteModal
         showConfirmDelete={showConfirmDelete}
         setShowConfirmDelete={setShowConfirmDelete}
         selectedForAction={selectedForAction}
@@ -211,7 +216,7 @@ const AdminDashboard: React.FC = () => {
         actionLoading={actionLoading}
       />
 
-      <DetailModal 
+      <DetailModal
         selectedForAction={selectedForAction}
         setSelectedForAction={setSelectedForAction}
         showConfirmDelete={showConfirmDelete}
@@ -225,7 +230,7 @@ const AdminDashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-10 rounded-[2.5rem] shadow-xl border border-gray-100">
         <div className="flex items-center gap-6">
           <div className="bg-cny-red p-5 rounded-3xl shadow-lg">
-             <Activity className="text-white w-8 h-8" />
+            <Activity className="text-white w-8 h-8" />
           </div>
           <div>
             <h2 className="text-3xl font-bold text-gray-900 tracking-tight">数据中心 Dashboard</h2>
@@ -235,15 +240,15 @@ const AdminDashboard: React.FC = () => {
         <div className="flex gap-4 w-full md:w-auto">
           {isAdmin && (
             <button onClick={() => setShowConfigModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-50 border border-gray-100 px-8 py-4 rounded-2xl text-sm font-bold hover:bg-gray-100 transition">
-               <Settings className="w-4 h-4" /> 库存设置
+              <Settings className="w-4 h-4" /> 库存设置
             </button>
           )}
           <button onClick={fetchData} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-50 border border-gray-100 px-8 py-4 rounded-2xl text-sm font-bold hover:bg-gray-100 transition">
-             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> 刷新
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> 刷新
           </button>
           {isAdmin && (
             <button onClick={downloadCSV} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-cny-dark text-white px-8 py-4 rounded-2xl text-sm font-bold hover:shadow-lg transition">
-               <Download className="w-4 h-4" /> 导出报表
+              <Download className="w-4 h-4" /> 导出报表
             </button>
           )}
         </div>
@@ -256,7 +261,7 @@ const AdminDashboard: React.FC = () => {
       <DailyStatsChart reservations={reservations} />
 
       {isAdmin && (
-        <ReservationList 
+        <ReservationList
           reservations={reservations}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}

@@ -11,13 +11,26 @@ const SYSTEM_COLLECTION = 'system';
 const CONFIG_DOC_ID = 'ticketConfig';
 const OFFICIAL_EMAIL = 'natickchineseassociation@gmail.com';
 
-const generateId = (): string => {
-  return 'CNY26-' + Math.floor(1000 + Math.random() * 9000).toString();
+const generateId = async (): Promise<string> => {
+  let id: string;
+  let exists = true;
+
+  // Keep generating until we find a unique ID
+  while (exists) {
+    id = 'CNY26-' + Math.floor(1000 + Math.random() * 9000).toString();
+    const docRef = doc(db, COLLECTION_NAME, id);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) {
+      exists = false;
+      return id;
+    }
+  }
+  return ''; // Should not reach here
 };
 
 export const generateLotteryNumber = async (existingSet?: Set<string>): Promise<string> => {
   let existingNumbers = existingSet;
-  
+
   if (!existingNumbers) {
     const reservations = await getReservations();
     existingNumbers = new Set<string>();
@@ -32,22 +45,22 @@ export const generateLotteryNumber = async (existingSet?: Set<string>): Promise<
   do {
     num = Math.floor(100 + Math.random() * 899).toString();
   } while (existingNumbers.has(num));
-  
+
   // Add the newly generated number to the set to prevent duplicates in the same batch
   existingNumbers.add(num);
-  
+
   return num;
 };
 
 const mapDocToReservation = (docSnap: any): Reservation => {
   const data = docSnap.data();
-  
+
   // Backward compatibility: If no 'coupons' array but has 'couponCode', create array
   let coupons: Coupon[] = Array.isArray(data.coupons) ? data.coupons : [];
   if (coupons.length === 0 && data.couponCode) {
     coupons.push({
-        code: data.couponCode,
-        amount: data.discountAmount || 0
+      code: data.couponCode,
+      amount: data.discountAmount || 0
     });
   }
 
@@ -71,9 +84,9 @@ const sendConfirmationEmail = async (reservation: any) => {
   if (!reservation.email || !reservation.email.includes('@')) return;
 
   try {
-    const totalDue = reservation.totalAmount; 
+    const totalDue = reservation.totalAmount;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${reservation.id}`;
-    
+
     const emailHtml = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #f0f0f0;">
         <!-- Header -->
@@ -250,11 +263,11 @@ export const sendDiscountEmail = async (reservation: Reservation) => {
 
   try {
     const totalDue = reservation.totalAmount;
-    
+
     // Build coupons list string
-    const couponsList = reservation.coupons 
-        ? reservation.coupons.map(c => `${c.code.replace(/_/g, ' ')} (-$${c.amount})`).join('<br/>') 
-        : (reservation.couponCode || 'Discount');
+    const couponsList = reservation.coupons
+      ? reservation.coupons.map(c => `${c.code.replace(/_/g, ' ')} (-$${c.amount})`).join('<br/>')
+      : (reservation.couponCode || 'Discount');
 
     // Email Template for Discount
     const emailHtml = `
@@ -344,16 +357,16 @@ export const getRecentReservations = async (limitCount: number = 10): Promise<Re
 
 export const createReservation = async (data: Partial<Reservation>): Promise<Reservation> => {
   if (!data.contactName) throw new Error('MISSING_NAME');
-  
+
   const rawPhone = (data.phoneNumber || '').replace(/\D/g, '');
   if (!rawPhone) throw new Error('MISSING_PHONE');
 
   // Normalize phone for duplicate check (handle US leading '1')
   const possiblePhones = [rawPhone];
   if (rawPhone.length === 11 && rawPhone.startsWith('1')) {
-      possiblePhones.push(rawPhone.substring(1));
+    possiblePhones.push(rawPhone.substring(1));
   } else if (rawPhone.length === 10) {
-      possiblePhones.push('1' + rawPhone);
+    possiblePhones.push('1' + rawPhone);
   }
 
   // *** DUPLICATE CHECK ***
@@ -361,21 +374,24 @@ export const createReservation = async (data: Partial<Reservation>): Promise<Res
   // Strict uniqueness: block if ANY record exists with this phone number, regardless of status.
   const duplicateQuery = query(collection(db, COLLECTION_NAME), where('phoneNumber', 'in', possiblePhones));
   const duplicateSnapshot = await getDocs(duplicateQuery);
-  
+
   if (!duplicateSnapshot.empty) {
-      throw new Error('DUPLICATE_PHONE');
+    throw new Error('DUPLICATE_PHONE');
   }
-  
+
   const currentOperator = getCurrentUserCode();
 
-  let price = data.ticketType === TicketType.EarlyBird ? 15 : 20;
+  const ticketType = data.ticketType || TicketType.EarlyBird;
+  let price = ticketType === TicketType.EarlyBird ? 15 : 20;
   const adults = data.adultsCount || 0;
   const children = data.childrenCount || 0;
 
+  const reservationId = await generateId();
+
   const newReservationData = {
-    id: generateId(), 
-    createdTime: Timestamp.now(), 
-    ticketType: data.ticketType || TicketType.EarlyBird,
+    id: reservationId,
+    createdTime: Timestamp.now(),
+    ticketType: ticketType,
     contactName: data.contactName.trim(),
     phoneNumber: rawPhone, // Store the raw cleaned phone
     email: data.email,
@@ -397,21 +413,24 @@ export const createReservation = async (data: Partial<Reservation>): Promise<Res
     operatorId: currentOperator // Track who created this
   };
 
-  const docRef = await addDoc(collection(db, COLLECTION_NAME), newReservationData);
-  const result = { ...newReservationData, firebaseDocId: docRef.id, createdTime: Date.now() } as unknown as Reservation;
+  // Use the generated ID as the Firestore document ID for extra safety and predictable lookups
+  const docRef = doc(db, COLLECTION_NAME, reservationId);
+  await setDoc(docRef, newReservationData);
+
+  const result = { ...newReservationData, firebaseDocId: reservationId, createdTime: Date.now() } as unknown as Reservation;
   sendConfirmationEmail(result).catch(console.error);
   return result;
 };
 
 export const updateReservation = async (publicId: string, updates: Partial<Reservation>, firebaseDocId?: string): Promise<void> => {
   const currentOperator = getCurrentUserCode();
-  const docRef = firebaseDocId 
+  const docRef = firebaseDocId
     ? doc(db, COLLECTION_NAME, firebaseDocId)
     : (await getDocs(query(collection(db, COLLECTION_NAME), where('id', '==', publicId)))).docs[0]?.ref;
-  
+
   if (docRef) {
-    await updateDoc(docRef, { 
-      ...updates, 
+    await updateDoc(docRef, {
+      ...updates,
       lastModifiedBy: currentOperator // Track who updated this
     });
   }
@@ -421,11 +440,11 @@ export const deleteReservation = async (firebaseDocId: string): Promise<void> =>
   await deleteDoc(doc(db, COLLECTION_NAME, firebaseDocId));
 };
 
-export const calculateStats = async (): Promise<Stats> => {
-  const reservations = await getReservations();
+export const calculateStats = async (existingReservations?: Reservation[]): Promise<Stats> => {
+  const reservations = existingReservations || await getReservations();
   const stats: Stats = {
-    totalReservations: 0, totalPeople: 0, earlyBirdCount: 0, regularCount: 0, 
-    walkInCount: 0, lunchBoxCount: 0, totalRevenueExpected: 0, 
+    totalReservations: 0, totalPeople: 0, earlyBirdCount: 0, regularCount: 0,
+    walkInCount: 0, lunchBoxCount: 0, totalRevenueExpected: 0,
     totalRevenueCollected: 0, checkedInCount: 0, cancelledCount: 0, totalPerformersCount: 0,
     totalGuestsCount: 0, totalSponsorsCount: 0, totalVolunteersCount: 0, totalPerformerParentsCount: 0,
     couponUsage: {}
@@ -434,22 +453,22 @@ export const calculateStats = async (): Promise<Stats> => {
     if (r.checkInStatus === CheckInStatus.Cancelled) { stats.cancelledCount += r.totalPeople; return; }
     stats.totalReservations++;
     stats.totalPeople += r.totalPeople;
-    
+
     // --- LUNCH LOGIC UPDATED ---
     // Start with all adults needing lunch
     let lunchesForReservation = r.adultsCount;
-    
+
     // Check multiple coupons
     if (r.coupons && r.coupons.length > 0) {
-        r.coupons.forEach(c => {
-            if (c.code === 'VOLUNTEER_NO_LUNCH') {
-                lunchesForReservation--;
-            }
-        });
-    } 
+      r.coupons.forEach(c => {
+        if (c.code === 'VOLUNTEER_NO_LUNCH') {
+          lunchesForReservation--;
+        }
+      });
+    }
     // Legacy check
     else if (r.couponCode === 'VOLUNTEER_NO_LUNCH') {
-        lunchesForReservation--;
+      lunchesForReservation--;
     }
 
     stats.lunchBoxCount += Math.max(0, lunchesForReservation);
@@ -457,22 +476,22 @@ export const calculateStats = async (): Promise<Stats> => {
 
     stats.totalRevenueExpected += r.totalAmount;
     stats.totalRevenueCollected += r.paidAmount;
-    
+
     // Demographics
     const isSponsor = (r.coupons && r.coupons.some(c => c.code === 'SPONSOR')) || (typeof r.couponCode === 'string' && r.couponCode.includes('SPONSOR'));
     const isVolunteer = (r.coupons && r.coupons.some(c => (c.code || '').includes('VOLUNTEER'))) || (typeof r.couponCode === 'string' && r.couponCode.includes('VOLUNTEER'));
     const isPerformerParent = (r.coupons && r.coupons.some(c => c.code === 'PERFORMER_PARENTS')) || (typeof r.couponCode === 'string' && r.couponCode.includes('PERFORMER_PARENTS'));
-    
+
     if (r.isPerformer) {
-        stats.totalPerformersCount += r.totalPeople;
+      stats.totalPerformersCount += r.totalPeople;
     } else if (isVolunteer) {
-        stats.totalVolunteersCount += r.totalPeople;
+      stats.totalVolunteersCount += r.totalPeople;
     } else if (isSponsor) {
-        stats.totalSponsorsCount += r.totalPeople;
+      stats.totalSponsorsCount += r.totalPeople;
     } else if (isPerformerParent) {
-        stats.totalPerformerParentsCount += r.totalPeople;
+      stats.totalPerformerParentsCount += r.totalPeople;
     } else {
-        stats.totalGuestsCount += r.totalPeople;
+      stats.totalGuestsCount += r.totalPeople;
     }
 
     if (r.ticketType === TicketType.EarlyBird) stats.earlyBirdCount += r.adultsCount;
@@ -493,11 +512,11 @@ export const calculateStats = async (): Promise<Stats> => {
   return stats;
 };
 
-const DEFAULT_CONFIG: TicketConfig = { 
-  totalCapacity: 400, 
-  totalHeadcountCap: 450, 
-  earlyBirdCap: 300, 
-  regularCap: 50, 
+const DEFAULT_CONFIG: TicketConfig = {
+  totalCapacity: 400,
+  totalHeadcountCap: 450,
+  earlyBirdCap: 300,
+  regularCap: 50,
   walkInCap: 50,
   lotteryEnabled: false
 };

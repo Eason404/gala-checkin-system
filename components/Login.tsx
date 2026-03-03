@@ -17,28 +17,28 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (code.length < 6) return; // Enforce minimum 6 characters
-    
+
     setLoading(true);
     setErrorType('NONE');
 
     try {
-        const result = await loginWithCode(code);
-        if (result.success) {
-            window.location.reload();
+      const result = await loginWithCode(code);
+      if (result.success) {
+        window.location.reload();
+      } else {
+        if (result.error === 'NOT_FOUND') {
+          setErrorType('INVALID');
+        } else if (result.error === 'PERMISSION_DENIED') {
+          setErrorType('DB_EMPTY');
         } else {
-            if (result.error === 'NOT_FOUND') {
-                setErrorType('INVALID');
-            } else if (result.error === 'PERMISSION_DENIED') {
-                setErrorType('DB_EMPTY');
-            } else {
-                setErrorType('ERROR');
-            }
-            setLoading(false);
-            if (navigator.vibrate) navigator.vibrate([50, 100, 50]);
+          setErrorType('ERROR');
         }
-    } catch (err) {
-        setErrorType('ERROR');
         setLoading(false);
+        if (navigator.vibrate) navigator.vibrate([50, 100, 50]);
+      }
+    } catch (err) {
+      setErrorType('ERROR');
+      setLoading(false);
     }
   };
 
@@ -48,45 +48,46 @@ const Login: React.FC = () => {
         <div className="bg-red-50 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
           <KeyRound className="w-10 h-10 text-cny-red" />
         </div>
-        
+
         <h2 className="text-3xl font-black text-gray-900 mb-2">内部通道</h2>
         <p className="text-gray-400 mb-10 text-xs font-bold uppercase tracking-widest">STAFF ACCESS ONLY</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="relative">
-              <input
-                ref={inputRef}
-                type={showPassword ? "text" : "password"}
-                placeholder="输入安全口令 (至少6位)"
-                className={`w-full p-6 bg-gray-50 border-2 rounded-[2rem] text-center font-black text-xl tracking-widest outline-none transition-all
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="输入安全口令 (至少6位)"
+              className={`w-full p-6 bg-gray-50 border-2 rounded-[2rem] text-center font-black text-xl tracking-widest outline-none transition-all
                   ${errorType !== 'NONE' ? 'border-red-200 text-red-600' : 'border-gray-100 focus:border-cny-red'}`}
-                value={code}
-                onChange={e => setCode(e.target.value.trim())} 
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-2"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-
-            {errorType === 'INVALID' && (
-              <p className="text-red-500 font-bold text-xs flex items-center justify-center gap-2">
-                <AlertCircle className="w-4 h-4" /> 口令错误或未授权
-              </p>
-            )}
-
+              value={code}
+              onChange={e => setCode(e.target.value.trim())}
+              disabled={loading}
+            />
             <button
-              type="submit"
-              disabled={loading || code.length < 6}
-              className="w-full bg-gray-900 text-white font-black py-6 rounded-[2rem] shadow-xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-30"
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-2"
+              tabIndex={-1}
             >
-              {loading ? <Loader2 className="animate-spin" /> : "安全登录 LOGIN"}
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
+          </div>
+
+          {errorType === 'INVALID' && (
+            <p className="text-red-500 font-bold text-xs flex items-center justify-center gap-2">
+              <AlertCircle className="w-4 h-4" /> 口令错误或未授权
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || code.length < 6}
+            className="w-full bg-gray-900 text-white font-black py-6 rounded-[2rem] shadow-xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-30"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : "安全登录 LOGIN"}
+          </button>
         </form>
 
         {/* 数据库配置急救引导 (仅在出错时显示) */}
