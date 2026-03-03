@@ -64,9 +64,8 @@ const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }
             >
                 {/* Front (Title) */}
                 <div
-                    className="bg-gradient-to-r from-cny-red to-red-900 rounded-2xl shadow-md flex border border-cny-gold/30 overflow-hidden min-h-[110px]"
+                    className="col-start-1 row-start-1 w-full h-full bg-gradient-to-r from-cny-red to-red-900 rounded-2xl shadow-md flex border border-cny-gold/30 overflow-hidden min-h-[110px] [backface-visibility:hidden] [-webkit-backface-visibility:hidden] transform-gpu translate-z-0"
                     style={{
-                        gridArea: '1 / 1',
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
                     }}
@@ -114,9 +113,8 @@ const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }
 
                 {/* Back (Artist/Performers) */}
                 <div
-                    className="bg-gradient-to-r from-red-900 to-cny-dark rounded-2xl shadow-md flex border border-cny-gold/30 overflow-hidden min-h-[110px]"
+                    className="col-start-1 row-start-1 w-full h-full bg-gradient-to-r from-red-900 to-cny-dark rounded-2xl shadow-md flex border border-cny-gold/30 overflow-hidden min-h-[110px] [backface-visibility:hidden] [-webkit-backface-visibility:hidden] transform-gpu translate-z-0"
                     style={{
-                        gridArea: '1 / 1',
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
                         transform: 'rotateY(180deg)',
