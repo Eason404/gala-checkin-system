@@ -55,10 +55,17 @@ const StaffPortal: React.FC = () => {
     setLoading(true);
     const data = await getReservations();
     const isId = term.toUpperCase().startsWith('CNY26-');
-    const found = data.find(r =>
+    const matchedRecords = data.filter(r =>
       (isId ? r.id === term.toUpperCase() : r.phoneNumber.includes(term))
     );
     setLoading(false);
+
+    // Prioritize active records (NotArrived or Arrived) over Cancelled records
+    let found = matchedRecords.find(r => r.checkInStatus !== CheckInStatus.Cancelled);
+    if (!found && matchedRecords.length > 0) {
+      // Fallback to cancelled if only cancelled exist
+      found = matchedRecords[0];
+    }
 
     if (found) {
       if (found.checkInStatus === CheckInStatus.Cancelled) {

@@ -7,7 +7,7 @@ interface CouponStatsProps {
 }
 
 export const CouponStats: React.FC<CouponStatsProps> = ({ stats }) => {
-  const couponEntries = Object.entries(stats.couponUsage || {}).sort((a, b) => b[1] - a[1]);
+  const couponEntries = Object.entries(stats.couponUsage || {}).sort((a, b) => (b[1] as number) - (a[1] as number));
 
   if (couponEntries.length === 0) {
     return null;
@@ -24,7 +24,7 @@ export const CouponStats: React.FC<CouponStatsProps> = ({ stats }) => {
           <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Coupon Usage Analytics</p>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {couponEntries.map(([code, count]) => (
           <div key={code} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col items-center justify-center text-center hover:bg-purple-50 hover:border-purple-100 transition-colors">
