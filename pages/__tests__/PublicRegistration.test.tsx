@@ -35,6 +35,10 @@ jest.mock('firebase/auth', () => ({
 // Mock dependencies
 jest.mock('../../services/dataService');
 jest.mock('qrcode', () => ({
+    __esModule: true,
+    default: {
+        toDataURL: jest.fn().mockResolvedValue('data:image/png;base64,mockqrcodedata')
+    },
     toDataURL: jest.fn().mockResolvedValue('data:image/png;base64,mockqrcodedata')
 }));
 
@@ -74,7 +78,7 @@ describe('PublicRegistration Component', () => {
         it('renders Walk-in specific layout when forceWalkIn is true', async () => {
             renderComponent({ forceWalkIn: true });
 
-            expect(await screen.findByText('现场购票录入')).toBeInTheDocument();
+            expect(await screen.findByText('现场购票录入 (Staff Walk-in Registration)')).toBeInTheDocument();
             // "取消返回 Close" is only rendered if onClose prop is passed
 
             // Should skip Step 1 and go straight to Step 2 form
@@ -89,6 +93,96 @@ describe('PublicRegistration Component', () => {
             expect(await screen.findByText('请填写真实姓名和联系方式')).toBeInTheDocument();
             // Wait to ensure it skipped to step 2
             expect(screen.queryByText('1 成人 (12岁以上)')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Form Interactions & Submission', () => {
+        beforeEach(() => {
+            (dataService.createReservation as jest.Mock).mockResolvedValue({ id: 'test-res-id' });
+        });
+
+        it('navigates between steps correctly', async () => {
+            renderComponent();
+
+            // Step 1
+            expect(await screen.findByText(/选票 Pick Ticket/i)).toBeInTheDocument();
+
+            // Proceed to Step 2
+            const continueButton = screen.getByText('确认票种并继续 Continue').closest('button');
+            fireEvent.click(continueButton!);
+
+            // Step 2
+            expect(await screen.findByText('请填写真实姓名和联系方式')).toBeInTheDocument();
+
+            // Go back
+            const allButtons = screen.getAllByRole('button');
+            const backButton = allButtons[allButtons.length - 2];
+            fireEvent.click(backButton);
+
+            expect(await screen.findByText('确认票种并继续 Continue')).toBeInTheDocument();
+        });
+
+        it('handles successful form submission', async () => {
+            renderComponent({ forceWalkIn: true });
+
+            const lastNameInput = await screen.findByPlaceholderText('例(e.g.): Zhang');
+            fireEvent.change(lastNameInput, { target: { value: 'Smith' } });
+
+            const firstNameInput = screen.getByPlaceholderText('例(e.g.): San');
+            fireEvent.change(firstNameInput, { target: { value: 'John' } });
+
+            const phoneInput = screen.getByPlaceholderText('508-xxx-xxxx');
+            fireEvent.change(phoneInput, { target: { value: '508-123-4567' } });
+
+            const emailInput = screen.getByPlaceholderText('用于接收确认邮件 / For confirmation email');
+            fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+
+            const waiverCheckbox = screen.getByRole('checkbox');
+            fireEvent.click(waiverCheckbox);
+
+            const submitButtons = screen.getAllByRole('button');
+            const submitButton = submitButtons[submitButtons.length - 1]; // "立即提交预约 Submit"
+
+            fireEvent.click(submitButton);
+
+            expect(dataService.createReservation).toHaveBeenCalledWith(expect.objectContaining({
+                contactName: 'John Smith',
+                phoneNumber: '508-123-4567',
+                email: 'test@example.com',
+                ticketType: TicketType.WalkIn,
+            }));
+
+            // wait for the Red Envelope
+            expect(await screen.findByText('点击开启好运 | Tap to Open')).toBeInTheDocument();
+
+            // click to open envelope
+            fireEvent.click(screen.getByText('福'));
+
+            // verify TicketSuccess
+            expect(await screen.findByText(/注册下一位/)).toBeInTheDocument();
+        });
+
+        it('shows error on duplicate phone', async () => {
+            (dataService.createReservation as jest.Mock).mockRejectedValue(new Error('DUPLICATE_PHONE'));
+            renderComponent({ forceWalkIn: true });
+
+            const lastNameInput = await screen.findByPlaceholderText('例(e.g.): Zhang');
+            fireEvent.change(lastNameInput, { target: { value: 'Smith' } });
+            const firstNameInput = screen.getByPlaceholderText('例(e.g.): San');
+            fireEvent.change(firstNameInput, { target: { value: 'John' } });
+            const phoneInput = screen.getByPlaceholderText('508-xxx-xxxx');
+            fireEvent.change(phoneInput, { target: { value: '508-123-4567' } });
+            const emailInput = screen.getByPlaceholderText('用于接收确认邮件 / For confirmation email');
+            fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+
+            const waiverCheckbox = screen.getByRole('checkbox');
+            fireEvent.click(waiverCheckbox);
+
+            const submitButtons = screen.getAllByRole('button');
+            const submitButton = submitButtons[submitButtons.length - 1];
+            fireEvent.click(submitButton);
+
+            expect(await screen.findByText(/该号码已报名/)).toBeInTheDocument();
         });
     });
 });

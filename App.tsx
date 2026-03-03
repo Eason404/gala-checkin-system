@@ -44,31 +44,31 @@ const Navigation = memo(() => {
             {ENABLE_REGISTRATION && (
               <Link to="/" className={navClass('/')}>
                 <Ticket className="w-4 h-4" />
-                <span>活动预约</span>
+                <span>活动预约 (Registration)</span>
               </Link>
             )}
             <Link to="/schedule" className={navClass('/schedule')}>
               <CalendarDays className="w-4 h-4" />
-              <span>流程安排</span>
+              <span>流程安排 (Schedule)</span>
             </Link>
             <Link to="/program" className={navClass('/program')}>
               <Music2 className="w-4 h-4" />
-              <span>节目单</span>
+              <span>节目单 (Program)</span>
             </Link>
             <Link to="/lottery" className={navClass('/lottery')}>
               <Sparkles className="w-4 h-4" />
-              <span>抽奖</span>
+              <span>抽奖 (Lottery)</span>
             </Link>
 
             <>
               <div className="w-px h-6 bg-white/10 mx-1 flex-shrink-0"></div>
               <Link to="/staff" className={navClass('/staff')}>
                 <Users className="w-4 h-4" />
-                <span className="hidden md:inline">工作人员</span>
+                <span className="hidden md:inline">工作人员 (Staff)</span>
               </Link>
               <Link to="/admin" className={navClass('/admin')}>
                 <BarChart3 className="w-4 h-4" />
-                <span className="hidden md:inline">后台</span>
+                <span className="hidden md:inline">后台 (Admin)</span>
               </Link>
             </>
 
@@ -83,9 +83,9 @@ const Navigation = memo(() => {
       {/* Mobile Top Header (Shows on smaller screens) */}
       <div className="sm:hidden fixed top-0 left-0 right-0 z-40 p-4 pointer-events-none">
         <div className="glass-dark rounded-2xl p-4 flex items-center justify-between shadow-xl pointer-events-auto">
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="bg-cny-gold text-cny-dark font-serif font-black rounded-lg w-8 h-8 flex items-center justify-center text-lg shadow-md">福</div>
-            <span className="text-white font-black tracking-tight text-lg">Natick 春晚</span>
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <div className="bg-cny-gold text-cny-dark font-serif font-black rounded-lg w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-base sm:text-lg shadow-md">福</div>
+            <span className="text-white font-black tracking-tight text-base sm:text-lg">Natick 春晚</span>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <>
@@ -144,13 +144,13 @@ const Footer = memo(() => (
         <div className="h-px bg-white flex-1"></div>
       </div>
 
-      <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Hosted By</p>
-      <p className="font-bold text-white/80 text-sm mb-8">Natick High School Chinese Club</p>
+      <p className="text-white/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] mb-3 sm:mb-4">Hosted By / 指导单位</p>
+      <p className="font-bold text-white/80 text-xs sm:text-sm mb-6 sm:mb-8">Natick High School Chinese Club / Natick高中中文俱乐部</p>
 
       <div className="pt-6 border-t border-white/5 space-y-4">
         <a href="mailto:natickchineseassociation@gmail.com" className="inline-flex items-center gap-2 text-white/30 hover:text-cny-gold transition-colors text-[10px] font-black uppercase tracking-widest">
           <Mail className="w-3 h-3" />
-          Email Us
+          Email Us / 联系我们
         </a>
         <div className="flex flex-col items-center gap-2 mt-4">
           <div className="text-[8px] font-black text-white/10 uppercase tracking-[0.4em]">

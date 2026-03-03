@@ -27,7 +27,7 @@ const LotteryWheel: React.FC = () => {
   const [showPhone, setShowPhone] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState(PRIZE_TIERS[3]); // Default to 3rd prize
   const [isAdmin, setIsAdmin] = useState(false);
-  
+
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ const LotteryWheel: React.FC = () => {
     const init = async () => {
       const config = await getTicketConfig();
       setEnabled(!!config.lotteryEnabled);
-      
+
       if (config.lotteryEnabled) {
         const res = await getReservations();
         const validCandidates: Winner[] = [];
@@ -62,7 +62,7 @@ const LotteryWheel: React.FC = () => {
     // Subscribe to live lottery state
     const unsubscribe = subscribeToLotteryState((state) => {
       if (!state) return;
-      
+
       // Update selected prize if changed by admin
       if (state.selectedPrize) {
         const prize = PRIZE_TIERS.find(p => p.id === state.selectedPrize.id);
@@ -100,7 +100,7 @@ const LotteryWheel: React.FC = () => {
 
   const startSpin = async () => {
     if (candidates.length === 0 || !isAdmin) return;
-    
+
     // Broadcast spinning state
     await updateLotteryState({
       isSpinning: true,
@@ -108,11 +108,11 @@ const LotteryWheel: React.FC = () => {
       selectedPrize,
       timestamp: Date.now()
     });
-    
+
     // Admin handles the actual logic
     setTimeout(async () => {
       const finalWinner = candidates[Math.floor(Math.random() * candidates.length)];
-      
+
       // Broadcast winner
       await updateLotteryState({
         isSpinning: false,
@@ -156,8 +156,8 @@ const LotteryWheel: React.FC = () => {
         <div className="bg-gray-100 p-6 rounded-full mb-6">
           <Gift className="w-12 h-12 text-gray-400" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">抽奖功能未开启</h2>
-        <p className="text-gray-500 mt-2">请在后台设置中开启此功能</p>
+        <h2 className="text-2xl font-bold text-gray-900">抽奖功能未开启 (Lottery Disabled)</h2>
+        <p className="text-gray-500 mt-2">请在后台设置中开启此功能 (Please enable in settings)</p>
       </div>
     );
   }
@@ -184,11 +184,10 @@ const LotteryWheel: React.FC = () => {
             key={prize.id}
             onClick={() => handlePrizeChange(prize)}
             disabled={isSpinning || !isAdmin}
-            className={`px-6 py-3 rounded-2xl font-bold text-sm md:text-base border-2 transition-all ${
-              selectedPrize.id === prize.id 
-                ? `${prize.bg} ${prize.border} ${prize.color} scale-105 shadow-md` 
+            className={`px-6 py-3 rounded-2xl font-bold text-sm md:text-base border-2 transition-all ${selectedPrize.id === prize.id
+                ? `${prize.bg} ${prize.border} ${prize.color} scale-105 shadow-md`
                 : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'
-            } ${!isAdmin && selectedPrize.id !== prize.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${!isAdmin && selectedPrize.id !== prize.id ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <div className="flex items-center gap-2">
               {prize.id === 'grand' && <Crown className="w-4 h-4" />}
@@ -200,7 +199,7 @@ const LotteryWheel: React.FC = () => {
 
       <div className={`bg-white p-12 rounded-[3rem] shadow-2xl border-4 ${selectedPrize.border} relative overflow-hidden mb-12 transition-colors duration-500`}>
         <div className={`absolute top-0 left-0 w-full h-2 ${selectedPrize.bg} opacity-50`}></div>
-        
+
         <div className="text-[8rem] md:text-[12rem] font-black text-gray-900 leading-none tracking-tighter tabular-nums mb-8 font-mono">
           {currentDisplay}
         </div>
@@ -219,7 +218,7 @@ const LotteryWheel: React.FC = () => {
                 {isAdmin && showPhone ? winner.phone : maskPhone(winner.phone)}
               </span>
               {isAdmin && (
-                <button 
+                <button
                   onClick={() => setShowPhone(!showPhone)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                   title={showPhone ? "隐藏号码" : "显示完整号码"}
@@ -233,30 +232,29 @@ const LotteryWheel: React.FC = () => {
       </div>
 
       {isAdmin ? (
-        <button 
+        <button
           onClick={startSpin}
           disabled={isSpinning || candidates.length === 0}
-          className={`px-16 py-6 rounded-full text-2xl font-black tracking-widest shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all disabled:transform-none disabled:opacity-50 text-white ${
-            selectedPrize.id === 'grand' ? 'bg-yellow-500 hover:bg-yellow-600' :
-            selectedPrize.id === 'first' ? 'bg-red-500 hover:bg-red-600' :
-            selectedPrize.id === 'second' ? 'bg-orange-500 hover:bg-orange-600' :
-            'bg-blue-500 hover:bg-blue-600'
-          }`}
+          className={`px-16 py-6 rounded-full text-2xl font-black tracking-widest shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all disabled:transform-none disabled:opacity-50 text-white ${selectedPrize.id === 'grand' ? 'bg-yellow-500 hover:bg-yellow-600' :
+              selectedPrize.id === 'first' ? 'bg-red-500 hover:bg-red-600' :
+                selectedPrize.id === 'second' ? 'bg-orange-500 hover:bg-orange-600' :
+                  'bg-blue-500 hover:bg-blue-600'
+            }`}
         >
           {isSpinning ? '抽奖中...' : `抽取 ${selectedPrize.name}`}
         </button>
       ) : (
         <div className="text-gray-400 font-bold flex items-center justify-center gap-2">
           {isSpinning ? (
-            <><RefreshCw className="w-5 h-5 animate-spin" /> 正在抽奖中...</>
+            <><RefreshCw className="w-5 h-5 animate-spin" /> 正在抽奖中... (Spinning...)</>
           ) : (
-            <>等待主持人开始抽奖...</>
+            <>等待主持人开始抽奖... (Waiting for host...)</>
           )}
         </div>
       )}
 
       <p className="mt-8 text-gray-400 font-bold">
-        当前奖池人数: {candidates.length}
+        当前奖池人数 (Entries): {candidates.length}
       </p>
     </div>
   );

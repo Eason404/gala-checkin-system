@@ -54,19 +54,19 @@ const ProgramList: React.FC = () => {
                     Performance Lineup
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-2">
-                    节目单
+                    节目单 (Program)
                 </h1>
                 <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">
-                    Gala Performance Programme
+                    2026 Gala Performance Programme
                 </p>
             </div>
 
             {/* Time & Location Banner */}
-            <div className="mb-10 bg-gradient-to-r from-cny-red to-red-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+            <div className="mb-8sm:mb-10 bg-gradient-to-r from-cny-red to-red-900 text-white rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                 <div className="relative z-10 text-center sm:text-left w-full">
-                    <p className="text-cny-gold text-xs font-bold uppercase tracking-[0.2em] mb-1">1:00 PM – 2:30 PM · Natick High School Auditorium</p>
-                    <p className="text-white/80 text-sm font-medium">学校礼堂 · 共 {performances.length} 个精彩节目</p>
+                    <p className="text-cny-gold text-xs font-bold uppercase tracking-[0.2em] mb-1">1:00 PM – 2:30 PM • Natick High School Auditorium</p>
+                    <p className="text-white/80 text-sm font-medium">学校礼堂 • 共 {performances.length} 个精彩节目 (Total {performances.length} Performances)</p>
                 </div>
             </div>
 
@@ -82,7 +82,7 @@ const ProgramList: React.FC = () => {
                         >
                             <div className="flex items-start gap-4 sm:gap-5">
                                 {/* Number */}
-                                <div className="flex-shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gray-50 flex items-center justify-center text-sm sm:text-base font-black text-gray-300 group-hover:text-cny-red group-hover:bg-cny-red/5 transition-colors">
+                                <div className="flex-shrink-0 w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-gray-50 flex items-center justify-center text-xs sm:text-base font-black text-gray-300 group-hover:text-cny-red group-hover:bg-cny-red/5 transition-colors mt-0.5 sm:mt-0">
                                     {idx + 1}
                                 </div>
 
@@ -130,12 +130,9 @@ const ProgramList: React.FC = () => {
             <div className="mt-10 text-center pb-4">
                 <div className="inline-flex items-center gap-2 text-gray-300 text-xs font-bold">
                     <Sparkles className="w-4 h-4 text-cny-gold" />
-                    <span>节目顺序以当天实际演出为准</span>
+                    <span>节目顺序以当天实际演出为准 (Programme order subject to change)</span>
                     <Sparkles className="w-4 h-4 text-cny-gold" />
                 </div>
-                <p className="text-[10px] text-gray-300 mt-1 font-bold uppercase tracking-widest">
-                    Programme order subject to change
-                </p>
             </div>
         </div>
     );

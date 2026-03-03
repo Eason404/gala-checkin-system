@@ -14,8 +14,8 @@ describe('ProgramList Component', () => {
 
     it('renders the header correctly in both languages', () => {
         renderComponent();
-        expect(screen.getByText('节目单')).toBeInTheDocument();
-        expect(screen.getByText('Gala Performance Programme')).toBeInTheDocument();
+        expect(screen.getByText('节目单 (Program)')).toBeInTheDocument();
+        expect(screen.getByText('2026 Gala Performance Programme')).toBeInTheDocument();
     });
 
     it('renders the time and location banner', () => {

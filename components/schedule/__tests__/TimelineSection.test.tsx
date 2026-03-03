@@ -15,7 +15,7 @@ describe('TimelineSection Component', () => {
     it('renders the agenda header', () => {
         renderComponent();
         expect(screen.getByText('流程安排')).toBeInTheDocument();
-        expect(screen.getByText('AGENDA')).toBeInTheDocument();
+        expect(screen.getByText('Event Agenda')).toBeInTheDocument();
     });
 
     it('renders all schedule items', () => {
