@@ -15,13 +15,13 @@ describe('ProgramList Component', () => {
     it('renders the header correctly in both languages', () => {
         renderComponent();
         expect(screen.getByText('节目单 (Program)')).toBeInTheDocument();
-        expect(screen.getByText('2026 Gala Performance Programme')).toBeInTheDocument();
+        expect(screen.getByText('2026 Gala Performance')).toBeInTheDocument();
     });
 
     it('renders the time and location banner', () => {
         renderComponent();
         expect(screen.getByText(/1:00 PM – 2:30 PM/)).toBeInTheDocument();
-        expect(screen.getByText(/Natick High School Auditorium/)).toBeInTheDocument();
+        expect(screen.getByText(/NHS Auditorium/)).toBeInTheDocument();
     });
 
     it('renders performance items with bilingual content', () => {
