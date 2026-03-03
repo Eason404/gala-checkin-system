@@ -233,7 +233,7 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
 
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Ticket className="text-cny-gold w-5 h-5" /> 现场购票录入
+            <Ticket className="text-cny-gold w-5 h-5" /> 现场购票录入 (Staff Walk-in Registration)
           </h2>
           {onClose && (
             <button onClick={onClose} className="px-4 py-2 bg-white/10 text-white/60 rounded-xl text-xs font-bold hover:bg-white/20 transition-all z-10 relative">
@@ -279,7 +279,7 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
           <div className="w-20 h-20 bg-cny-gold text-cny-dark rounded-3xl shadow-2xl flex items-center justify-center text-4xl font-serif font-black mb-8 rotate-3 festive-float border-2 border-white/20">福</div>
           <h1 className="text-5xl sm:text-6xl font-bold text-white tracking-tighter mb-4 drop-shadow-xl">2026 Natick 春晚</h1>
           <div className="flex items-center gap-4 px-6 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10">
-            <span className="text-cny-gold font-bold text-xs uppercase tracking-[0.3em]">Year of the Horse Gala</span>
+            <span className="text-cny-gold font-bold text-xs uppercase tracking-[0.3em] font-serif">2026 Natick Chinese New Year Gala</span>
           </div>
         </div>
       </div>

@@ -30,27 +30,27 @@ export const LiveTicker: React.FC = () => {
     const formatNotification = (res: Reservation) => {
       // Anonymize Name: "John Doe" -> "J.D"
       const parts = res.contactName.trim().split(/\s+/);
-      const initials = parts.length >= 2 
-        ? `${parts[0][0].toUpperCase()}.${parts[parts.length - 1][0].toUpperCase()}.` 
+      const initials = parts.length >= 2
+        ? `${parts[0][0].toUpperCase()}.${parts[parts.length - 1][0].toUpperCase()}.`
         : `${parts[0][0].toUpperCase()}.`;
 
       // Time Ago
       const now = Date.now();
       const diffMs = now - res.createdTime;
       const diffMins = Math.floor(diffMs / 60000);
-      
+
       let timeStr = "";
-      if (diffMins < 1) timeStr = "just reserved";
-      else if (diffMins < 60) timeStr = `reserved ${diffMins} mins ago`;
-      else if (diffMins < 120) timeStr = `reserved 1 hour ago`;
-      else timeStr = "reserved today";
+      if (diffMins < 1) timeStr = "刚刚预约 (just reserved)";
+      else if (diffMins < 60) timeStr = `${diffMins} 分钟前预约 (reserved ${diffMins} mins ago)`;
+      else if (diffMins < 120) timeStr = `1 小时前预约 (reserved 1 hour ago)`;
+      else timeStr = "今天已预约 (reserved today)";
 
       return `${initials} ${timeStr}`;
     };
 
     const updateTicker = () => {
       setIsVisible(false); // Hide first
-      
+
       setTimeout(() => {
         // Change text while hidden
         setCurrentIndex((prev) => {
@@ -78,10 +78,10 @@ export const LiveTicker: React.FC = () => {
     <div className={`fixed bottom-24 sm:bottom-6 left-6 z-[40] transition-all duration-500 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
       <div className="bg-white/90 backdrop-blur-md border border-white/40 shadow-xl pl-2 pr-4 py-2 rounded-full flex items-center gap-3">
         <div className="bg-gradient-to-br from-cny-red to-orange-500 w-6 h-6 rounded-full flex items-center justify-center shrink-0 animate-pulse">
-            <Zap className="w-3 h-3 text-white fill-white" />
+          <Zap className="w-3 h-3 text-white fill-white" />
         </div>
         <span className="text-xs font-bold text-gray-800 tracking-wide whitespace-nowrap">
-            {displayText}
+          {displayText}
         </span>
       </div>
     </div>

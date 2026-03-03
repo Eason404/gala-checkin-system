@@ -74,7 +74,7 @@ describe('PublicRegistration Component', () => {
         it('renders Walk-in specific layout when forceWalkIn is true', async () => {
             renderComponent({ forceWalkIn: true });
 
-            expect(await screen.findByText('现场购票录入')).toBeInTheDocument();
+            expect(await screen.findByText('现场购票录入 (Staff Walk-in Registration)')).toBeInTheDocument();
             // "取消返回 Close" is only rendered if onClose prop is passed
 
             // Should skip Step 1 and go straight to Step 2 form

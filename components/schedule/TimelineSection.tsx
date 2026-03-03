@@ -44,22 +44,22 @@ export const TimelineSection: React.FC = () => {
     <div className="space-y-10">
       <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
         <div className="w-2 h-8 bg-cny-red rounded-full"></div>
-        流程安排 <span className="text-gray-400 font-bold text-xs ml-2 tracking-widest uppercase">AGENDA</span>
+        流程安排 <span className="text-gray-400 font-bold text-xs ml-2 tracking-widest uppercase">Event Agenda</span>
       </h3>
 
       <div className="space-y-8">
         {scheduleItems.map((item, idx) => (
-          <div key={idx} className="group relative bg-white rounded-[2.5rem] shadow-xl p-8 border border-cny-gold/5 hover:border-cny-gold/30 transition-all duration-500">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-8">
-              <div className="flex flex-col sm:flex-row gap-6 sm:gap-8">
+          <div key={idx} className="group relative bg-white rounded-[2.5rem] shadow-xl p-6 sm:p-8 border border-cny-gold/5 hover:border-cny-gold/30 transition-all duration-500">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 sm:gap-8">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-8">
                 <div className={`${item.color} text-white p-5 rounded-2xl shadow-lg h-fit festive-float w-fit`}>
                   {item.icon}
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-cny-red/60 uppercase tracking-widest mb-3 leading-none">{item.time}</div>
-                  <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4 mb-2">
-                    <h4 className="text-3xl font-bold text-gray-900 tracking-tight">{item.titleZh}</h4>
-                    <h4 className="text-xl font-bold text-gray-500 tracking-tight sm:pb-0.5">{item.titleEn}</h4>
+                  <div className="text-xs font-bold text-cny-red/60 uppercase tracking-widest mb-2 sm:mb-3 leading-none">{item.time}</div>
+                  <div className="flex flex-col sm:flex-row sm:items-end gap-1 sm:gap-4 mb-2">
+                    <h4 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">{item.titleZh}</h4>
+                    <h4 className="text-lg sm:text-xl font-bold text-gray-500 tracking-tight sm:pb-0.5">{item.titleEn}</h4>
                   </div>
                 </div>
               </div>
