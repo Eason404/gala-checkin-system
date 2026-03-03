@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sparkles, Music2 } from 'lucide-react';
 
 interface Performance {
@@ -28,101 +28,167 @@ const performances: Performance[] = [
     { typeZh: '独舞', typeEn: 'Solo Dance', titleZh: '盛世敦煌', titleEn: 'Glorious DunHuang', artistZh: '傅静雯舞苑', artistEn: 'FJW Dance Academy' },
 ];
 
-const typeColors: Record<string, string> = {
-    '歌舞': 'bg-rose-500',
-    '四重奏': 'bg-amber-500',
-    '朗诵': 'bg-sky-500',
-    '京剧': 'bg-red-700',
-    '独舞': 'bg-purple-500',
-    '团唱': 'bg-teal-500',
-    '团舞': 'bg-pink-500',
-    '歌曲串烧': 'bg-orange-500',
-    '乐器': 'bg-emerald-500',
-    '独唱': 'bg-indigo-500',
-    '街舞串烧': 'bg-cyan-600',
-    '男高音独唱': 'bg-blue-600',
-    '诗歌': 'bg-violet-500',
+const hexColors: Record<string, string> = {
+    '歌舞': '#f43f5e', // rose-500
+    '四重奏': '#f59e0b', // amber-500
+    '朗诵': '#0ea5e9', // sky-500
+    '诗歌': '#8b5cf6', // violet-500
+    '京剧': '#b91c1c', // red-700
+    '独舞': '#a855f7', // purple-500
+    '团唱': '#14b8a6', // teal-500
+    '团舞': '#ec4899', // pink-500
+    '歌曲串烧': '#f97316', // orange-500
+    '乐器': '#10b981', // emerald-500
+    '独唱': '#6366f1', // indigo-500
+    '街舞串烧': '#0891b2', // cyan-600
+    '男高音独唱': '#2563eb', // blue-600
+};
+
+const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }> = ({ perf, idx, colorHex }) => {
+    const [isFlipped, setIsFlipped] = useState(false);
+    const displayArtistEn = perf.artistEn && perf.artistEn !== perf.artistZh ? perf.artistEn : '';
+
+    return (
+        <div
+            className="w-full cursor-pointer mb-5"
+            onClick={() => setIsFlipped(!isFlipped)}
+            style={{ perspective: '1000px' }}
+        >
+            <div
+                className="grid transition-transform duration-500"
+                style={{
+                    transformStyle: 'preserve-3d',
+                    transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                }}
+            >
+                {/* Front (Title) */}
+                <div
+                    className="bg-gradient-to-r from-cny-red to-red-900 rounded-2xl shadow-md flex border border-cny-gold/30 overflow-hidden min-h-[110px]"
+                    style={{
+                        gridArea: '1 / 1',
+                        backfaceVisibility: 'hidden',
+                    }}
+                >
+                    {/* Sidebar: Program Type Section */}
+                    <div
+                        className="w-10 flex-shrink-0 flex flex-col items-center justify-between py-3 text-white shadow-[inset_-2px_0_6px_rgba(0,0,0,0.2)] border-r border-cny-gold/20"
+                        style={{ backgroundColor: colorHex }}
+                    >
+                        <span className="text-[10px] font-black opacity-80">{idx + 1}</span>
+                        <span className="text-[12px] font-bold font-serif [writing-mode:vertical-lr] tracking-widest drop-shadow-md">
+                            {perf.typeZh}
+                        </span>
+                    </div>
+
+                    {/* Main Content Area: Left-Right Bilingual Split */}
+                    <div className="flex-1 flex min-w-0 relative">
+                        {/* Glow effect */}
+                        <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -ml-10 -mt-10 pointer-events-none"></div>
+
+                        {/* Centered Vertical gold divider */}
+                        <div className="absolute left-1/2 top-3 bottom-3 w-[1px] bg-gradient-to-b from-transparent via-cny-gold/30 to-transparent z-0"></div>
+
+                        {/* Left Side: Chinese Content */}
+                        <div className="w-1/2 p-3 pr-4 flex items-center min-w-0 relative z-10">
+                            <h3 className="text-base font-bold font-serif text-white tracking-wide leading-tight drop-shadow-sm break-words">
+                                {perf.titleZh}
+                            </h3>
+                        </div>
+
+                        {/* Right Side: English Content */}
+                        <div className="w-1/2 p-3 pl-4 flex flex-col justify-center min-w-0 relative z-10">
+                            <div className="text-[8px] font-black text-cny-gold/80 uppercase tracking-widest mb-1 truncate">
+                                {perf.typeEn}
+                            </div>
+                            <p className="text-[11px] font-medium font-sans text-white/90 leading-snug break-words">
+                                {perf.titleEn}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Back (Artist/Performers) */}
+                <div
+                    className="bg-gradient-to-r from-red-900 to-cny-dark rounded-2xl shadow-md flex border border-cny-gold/30 overflow-hidden min-h-[110px]"
+                    style={{
+                        gridArea: '1 / 1',
+                        backfaceVisibility: 'hidden',
+                        transform: 'rotateY(180deg)',
+                    }}
+                >
+                    {/* Sidebar: Label Header */}
+                    <div
+                        className="w-10 flex-shrink-0 flex flex-col items-center justify-center py-3 text-cny-gold bg-black/20 shadow-[inset_-2px_0_6px_rgba(0,0,0,0.2)] border-r border-cny-gold/20"
+                    >
+                        <span className="text-[9px] font-black uppercase [writing-mode:vertical-lr] rotate-180 tracking-[0.2em] opacity-80 drop-shadow-sm">
+                            Performers
+                        </span>
+                    </div>
+
+                    {/* Content Area: Left-Right Bilingual Split */}
+                    <div className="flex-1 flex min-w-0 relative">
+                        {/* Glow effect */}
+                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-cny-gold/5 rounded-full blur-2xl -mr-10 -mb-10 pointer-events-none"></div>
+
+                        {/* Centered Vertical gold divider */}
+                        <div className="absolute left-1/2 top-4 bottom-4 w-[1px] bg-gradient-to-b from-transparent via-cny-gold/30 to-transparent z-0"></div>
+
+                        {/* Left Side: Chinese Content */}
+                        <div className="w-1/2 p-3 pr-4 flex items-center min-w-0 relative z-10">
+                            <div className="text-sm font-bold font-serif text-white leading-snug drop-shadow-sm break-words">
+                                {perf.artistZh}
+                            </div>
+                        </div>
+
+                        {/* Right Side: English Content */}
+                        <div className="w-1/2 p-3 pl-4 flex flex-col justify-center min-w-0 relative z-10">
+                            <div className="text-[8px] font-black text-cny-gold/60 uppercase tracking-widest mb-1">
+                                P-{idx + 1}
+                            </div>
+                            {displayArtistEn && (
+                                <div className="text-[11px] font-medium font-sans text-white/80 leading-snug break-words truncate line-clamp-2">
+                                    {displayArtistEn}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 const ProgramList: React.FC = () => {
     return (
         <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 antialiased">
             {/* Header */}
-            <div className="text-center mb-12">
-                <div className="inline-flex items-center gap-2 bg-cny-red/10 text-cny-red px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-6">
+            <div className="text-center mb-8">
+                <div className="inline-flex items-center gap-2 bg-cny-red/10 text-cny-red px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-4">
                     <Music2 className="w-3.5 h-3.5" />
                     Performance Lineup
                 </div>
-                <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-2">
+                <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight mb-1">
                     节目单 (Program)
                 </h1>
-                <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">
-                    2026 Gala Performance Programme
+                <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">
+                    2026 Gala Performance
                 </p>
             </div>
 
             {/* Time & Location Banner */}
-            <div className="mb-8sm:mb-10 bg-gradient-to-r from-cny-red to-red-900 text-white rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden">
+            <div className="mb-6 bg-gradient-to-r from-cny-red to-red-900 text-white rounded-3xl p-5 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                 <div className="relative z-10 text-center sm:text-left w-full">
-                    <p className="text-cny-gold text-xs font-bold uppercase tracking-[0.2em] mb-1">1:00 PM – 2:30 PM • Natick High School Auditorium</p>
-                    <p className="text-white/80 text-sm font-medium">学校礼堂 • 共 {performances.length} 个精彩节目 (Total {performances.length} Performances)</p>
+                    <p className="text-cny-gold text-[10px] font-bold uppercase tracking-[0.15em] mb-1">1:00 PM – 2:30 PM • NHS Auditorium</p>
+                    <p className="text-white/90 text-xs font-medium">点击节目查看详细表演者 (Tap cards for details)</p>
                 </div>
             </div>
 
             {/* Performance List */}
-            <div className="space-y-4">
+            <div className="px-1">
                 {performances.map((perf, idx) => {
-                    const color = typeColors[perf.typeZh] || 'bg-gray-500';
-                    const displayArtistEn = perf.artistEn && perf.artistEn !== perf.artistZh ? perf.artistEn : '';
-                    return (
-                        <div
-                            key={idx}
-                            className="group relative bg-white rounded-2xl sm:rounded-3xl shadow-lg hover:shadow-xl p-5 sm:p-7 border border-gray-100 hover:border-cny-gold/30 transition-all duration-300"
-                        >
-                            <div className="flex items-start gap-4 sm:gap-5">
-                                {/* Number */}
-                                <div className="flex-shrink-0 w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-gray-50 flex items-center justify-center text-xs sm:text-base font-black text-gray-300 group-hover:text-cny-red group-hover:bg-cny-red/5 transition-colors mt-0.5 sm:mt-0">
-                                    {idx + 1}
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                    {/* Type Badge — Chinese + English */}
-                                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                                        <span className={`${color} text-white text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-md`}>
-                                            {perf.typeZh}
-                                        </span>
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                            {perf.typeEn}
-                                        </span>
-                                    </div>
-
-                                    {/* Titles — Chinese prominent, English below */}
-                                    <h3 className="text-lg sm:text-xl font-bold text-gray-800 tracking-tight group-hover:text-cny-red transition-colors leading-snug">
-                                        {perf.titleZh}
-                                    </h3>
-                                    {perf.titleEn !== perf.titleZh && (
-                                        <p className="text-sm text-gray-400 font-medium mt-0.5 leading-snug italic">
-                                            {perf.titleEn}
-                                        </p>
-                                    )}
-
-                                    {/* Artist — Chinese / English */}
-                                    <div className="mt-2 pt-2 border-t border-gray-50">
-                                        <p className="text-xs sm:text-sm text-gray-500 font-bold leading-relaxed">
-                                            {perf.artistZh}
-                                        </p>
-                                        {displayArtistEn && (
-                                            <p className="text-[11px] sm:text-xs text-gray-400 font-medium">
-                                                {displayArtistEn}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    );
+                    const colorHex = hexColors[perf.typeZh] || '#9ca3af';
+                    return <ProgramCard key={idx} perf={perf} idx={idx} colorHex={colorHex} />;
                 })}
             </div>
 

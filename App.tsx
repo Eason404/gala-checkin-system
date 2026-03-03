@@ -4,7 +4,7 @@ import PublicRegistration from './pages/PublicRegistration';
 import ManageReservation from './pages/ManageReservation';
 import StaffPortal from './pages/StaffPortal';
 import AdminDashboard from './pages/AdminDashboard';
-import LotteryWheel from './components/LotteryWheel';
+import RaffleWheel from './components/RaffleWheel';
 import ProtectedRoute from './components/ProtectedRoute';
 import EventSchedule from './pages/EventSchedule';
 import ProgramList from './pages/ProgramList';
@@ -55,9 +55,9 @@ const Navigation = memo(() => {
               <Music2 className="w-4 h-4" />
               <span>节目单 (Program)</span>
             </Link>
-            <Link to="/lottery" className={navClass('/lottery')}>
+            <Link to="/raffle" className={navClass('/raffle')}>
               <Sparkles className="w-4 h-4" />
-              <span>抽奖 (Lottery)</span>
+              <span>抽奖 (Raffle)</span>
             </Link>
 
             <>
@@ -125,8 +125,8 @@ const Navigation = memo(() => {
             <Music2 className="w-5 h-5" />
           </div>
         </Link>
-        <Link to="/lottery" className="flex flex-col items-center transition-transform active:scale-90">
-          <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/lottery' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
+        <Link to="/raffle" className="flex flex-col items-center transition-transform active:scale-90">
+          <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/raffle' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
             <Sparkles className="w-5 h-5" />
           </div>
         </Link>
@@ -192,8 +192,8 @@ function App() {
               }
             />
             <Route
-              path="/lottery"
-              element={<LotteryWheel />}
+              path="/raffle"
+              element={<RaffleWheel />}
             />
           </Routes>
         </main>

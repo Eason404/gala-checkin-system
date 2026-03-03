@@ -17,7 +17,7 @@ const PRIZE_TIERS = [
   { id: 'third', name: '三等奖', label: '3rd Prize', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
 ];
 
-const LotteryWheel: React.FC = () => {
+const RaffleWheel: React.FC = () => {
   const [candidates, setCandidates] = useState<Winner[]>([]);
   const [winner, setWinner] = useState<Winner | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -152,12 +152,27 @@ const LotteryWheel: React.FC = () => {
 
   if (!enabled) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
-        <div className="bg-gray-100 p-6 rounded-full mb-6">
-          <Gift className="w-12 h-12 text-gray-400" />
+      <div className="max-w-4xl mx-auto py-12 px-4 text-center">
+        <div className="mb-8 p-4 bg-cny-gold/20 rounded-2xl border border-cny-gold max-w-2xl mx-auto">
+          <p className="font-bold text-cny-gold text-lg">
+            抽奖环节将在演出期间进行 (Raffle game will be live during performance time)
+          </p>
+          <p className="text-white/60 text-sm mt-1">请耐心等待主持人宣布 (Please wait for the host to announce)</p>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">抽奖功能未开启 (Lottery Disabled)</h2>
-        <p className="text-gray-500 mt-2">请在后台设置中开启此功能 (Please enable in settings)</p>
+
+        <div className="mb-8 relative">
+          <h1 className="text-5xl md:text-7xl font-black text-cny-red opacity-50 tracking-tighter mb-4 flex items-center justify-center gap-4">
+            <Trophy className="w-12 h-12 md:w-16 md:h-16 text-cny-gold" />
+            幸运大抽奖
+          </h1>
+          <p className="text-gray-500 font-bold tracking-[0.2em] opacity-50 uppercase">Raffle Game</p>
+        </div>
+
+        <div className={`bg-white/5 p-12 rounded-[3rem] shadow-2xl border-4 border-white/10 relative overflow-hidden mb-12`}>
+          <div className="text-[8rem] md:text-[12rem] font-black text-white/20 leading-none tracking-tighter tabular-nums mb-8 font-mono">
+            000
+          </div>
+        </div>
       </div>
     );
   }
@@ -174,7 +189,7 @@ const LotteryWheel: React.FC = () => {
           <Trophy className="w-12 h-12 md:w-16 md:h-16 text-cny-gold" />
           幸运大抽奖
         </h1>
-        <p className="text-gray-500 font-bold tracking-[0.2em] uppercase">Lucky Draw</p>
+        <p className="text-gray-500 font-bold tracking-[0.2em] uppercase">Raffle Game</p>
       </div>
 
       {/* Prize Tier Selector */}
@@ -185,8 +200,8 @@ const LotteryWheel: React.FC = () => {
             onClick={() => handlePrizeChange(prize)}
             disabled={isSpinning || !isAdmin}
             className={`px-6 py-3 rounded-2xl font-bold text-sm md:text-base border-2 transition-all ${selectedPrize.id === prize.id
-                ? `${prize.bg} ${prize.border} ${prize.color} scale-105 shadow-md`
-                : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'
+              ? `${prize.bg} ${prize.border} ${prize.color} scale-105 shadow-md`
+              : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'
               } ${!isAdmin && selectedPrize.id !== prize.id ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <div className="flex items-center gap-2">
@@ -236,9 +251,9 @@ const LotteryWheel: React.FC = () => {
           onClick={startSpin}
           disabled={isSpinning || candidates.length === 0}
           className={`px-16 py-6 rounded-full text-2xl font-black tracking-widest shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all disabled:transform-none disabled:opacity-50 text-white ${selectedPrize.id === 'grand' ? 'bg-yellow-500 hover:bg-yellow-600' :
-              selectedPrize.id === 'first' ? 'bg-red-500 hover:bg-red-600' :
-                selectedPrize.id === 'second' ? 'bg-orange-500 hover:bg-orange-600' :
-                  'bg-blue-500 hover:bg-blue-600'
+            selectedPrize.id === 'first' ? 'bg-red-500 hover:bg-red-600' :
+              selectedPrize.id === 'second' ? 'bg-orange-500 hover:bg-orange-600' :
+                'bg-blue-500 hover:bg-blue-600'
             }`}
         >
           {isSpinning ? '抽奖中...' : `抽取 ${selectedPrize.name}`}
@@ -260,4 +275,4 @@ const LotteryWheel: React.FC = () => {
   );
 };
 
-export default LotteryWheel;
+export default RaffleWheel;
