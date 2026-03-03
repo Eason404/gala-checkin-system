@@ -30,6 +30,15 @@ const StaffPortal: React.FC = () => {
     if ('vibrate' in navigator) navigator.vibrate(pattern);
   };
 
+  const handleSetMode = (newMode: typeof mode) => {
+    if (newMode === 'walkin' || newMode === 'dashboard' || newMode === 'search') {
+      setSelectedRes(null);
+      setShowPayModal(false);
+      setSearchPhone('');
+    }
+    setMode(newMode);
+  };
+
   const refreshData = async () => {
     setLoading(true);
     const data = await getReservations();
@@ -136,16 +145,12 @@ const StaffPortal: React.FC = () => {
   };
 
   const resetToNext = () => {
-    setSelectedRes(null);
-    setSearchPhone('');
-    setMode('search');
-    // Optional: auto-open scanner for efficiency
-    // setShowScanner(true);
+    handleSetMode('search');
   };
 
   return (
     <div className="max-w-xl mx-auto pb-24 px-4 antialiased">
-      <StaffHeader setMode={setMode} triggerHaptic={triggerHaptic} />
+      <StaffHeader setMode={handleSetMode} triggerHaptic={triggerHaptic} />
 
       {mode === 'search' && (
         <SearchSection
@@ -159,7 +164,7 @@ const StaffPortal: React.FC = () => {
       )}
 
       {mode === 'dashboard' && (
-        <StaffDashboard reservations={reservations} onClose={() => setMode('search')} />
+        <StaffDashboard reservations={reservations} onClose={() => handleSetMode('search')} />
       )}
 
       {mode === 'walkin' && (
@@ -171,7 +176,7 @@ const StaffPortal: React.FC = () => {
               setMode('result');
               setShowPayModal(true);
             } else {
-              setMode('search');
+              handleSetMode('search');
             }
           }}
         />
@@ -186,7 +191,7 @@ const StaffPortal: React.FC = () => {
       )}
 
       {mode === 'result' && selectedRes && (
-        <ReservationDetail selectedRes={selectedRes} setShowPayModal={setShowPayModal} setMode={setMode} setSelectedRes={setSelectedRes} />
+        <ReservationDetail selectedRes={selectedRes} setShowPayModal={setShowPayModal} setMode={handleSetMode} setSelectedRes={setSelectedRes} />
       )}
 
       {showPayModal && selectedRes && (
