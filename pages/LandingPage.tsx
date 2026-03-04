@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, Music2, Users, Ticket, ArrowRight, Sparkles, AlertCircle, Utensils, Banknote } from 'lucide-react';
+import { CalendarDays, Music2, Users, Ticket, ArrowRight, Sparkles, AlertCircle, Utensils, Banknote, MapPin } from 'lucide-react';
 import { TimelineSection } from '../components/schedule/TimelineSection';
 
 const LandingPage: React.FC = () => {
@@ -18,6 +18,43 @@ const LandingPage: React.FC = () => {
                         (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1590073844006-33379778ae09?auto=format&fit=crop&q=80&w=2000';
                     }}
                 />
+            </div>
+
+            {/* Event Overview Metadata */}
+            <div className="px-2">
+                <div className="glass-dark rounded-[2.5rem] p-4 sm:p-6 border border-white/10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-12 shadow-xl">
+                    <a
+                        href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Natick+CNY+Gala+2026&dates=20260308T150000Z/20260308T193000Z&details=Join+us+for+the+Year+of+the+Horse+Gala!&location=Natick+High+School,+15+West+St,+Natick,+MA+01760"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-4 group hover:scale-[1.02] transition-transform"
+                    >
+                        <div className="w-10 h-10 bg-cny-gold/20 text-cny-gold rounded-xl flex items-center justify-center border border-cny-gold/30 group-hover:bg-cny-gold group-hover:text-cny-dark transition-colors">
+                            <CalendarDays className="w-5 h-5" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-white font-black text-sm sm:text-base leading-tight">2026年3月8日 星期日</span>
+                            <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">March 8, 2026 (Sun) · 15:00-19:30</span>
+                        </div>
+                    </a>
+
+                    <div className="hidden sm:block w-px h-8 bg-white/10"></div>
+
+                    <a
+                        href="https://maps.google.com/?q=Natick+High+School,+15+West+St,+Natick,+MA+01760"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-4 group hover:scale-[1.02] transition-transform"
+                    >
+                        <div className="w-10 h-10 bg-cny-red/20 text-cny-red rounded-xl flex items-center justify-center border border-cny-red/30 group-hover:bg-cny-red group-hover:text-white transition-colors">
+                            <MapPin className="w-5 h-5" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-white font-black text-sm sm:text-base leading-tight">纳提克高中礼堂</span>
+                            <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Natick High School Auditorium</span>
+                        </div>
+                    </a>
+                </div>
             </div>
 
             {/* Content Modules Hierarchy */}
