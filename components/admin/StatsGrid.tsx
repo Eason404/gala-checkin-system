@@ -54,27 +54,27 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, config }) => {
       {/* Visual Capacity KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {kpis.map((k, i) => (
-          <div key={i} className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 relative overflow-hidden group">
+          <div key={i} className="glass-dark rounded-3xl p-6 shadow-2xl border border-white/10 backdrop-blur-2xl relative overflow-hidden group">
             <div className="flex justify-between items-start mb-4 relative z-10">
               <div className={`p-3 rounded-2xl ${k.color} text-white shadow-lg`}>
                 {k.icon}
               </div>
               <div className="text-right">
-                <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">{k.label}</p>
+                <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider">{k.label}</p>
                 <div className="flex items-end gap-1 justify-end">
-                  <span className={`text-3xl font-black ${k.textMain} tracking-tighter`}>{k.val}</span>
-                  <span className="text-sm font-bold text-gray-400 mb-1">/ {k.target}</span>
+                  <span className={`text-3xl font-black text-white tracking-tighter drop-shadow-md`}>{k.val}</span>
+                  <span className="text-sm font-bold text-white/40 mb-1">/ {k.target}</span>
                 </div>
               </div>
             </div>
 
-            <div className="w-full bg-gray-100 rounded-full h-3 mb-1 overflow-hidden relative z-10">
+            <div className="w-full bg-white/5 rounded-full h-3 mb-1 overflow-hidden relative z-10 shadow-inner">
               <div
                 className={`h-3 rounded-full ${k.color} transition-all duration-1000 ease-out`}
                 style={{ width: `${k.rate}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs font-bold text-gray-400 relative z-10">
+            <div className="flex justify-between text-xs font-bold text-white/40 relative z-10">
               <span>0%</span>
               <span>{Math.round(k.rate)}%</span>
             </div>
@@ -86,49 +86,49 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, config }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
         {/* Financials Combined */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="glass-dark p-5 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between backdrop-blur-2xl">
           <div className="flex justify-between items-center mb-4">
-            <DollarSign className="text-green-500 w-5 h-5 flex-shrink-0" />
-            <span className="text-xs font-bold text-gray-400 uppercase text-right">Financials</span>
+            <DollarSign className="text-green-400 w-5 h-5 flex-shrink-0" />
+            <span className="text-xs font-bold text-white/40 uppercase text-right">Financials</span>
           </div>
           <div>
-            <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-2">资金收讫</p>
+            <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">资金收讫</p>
             <div className="space-y-1 text-sm font-bold">
               <div className="flex justify-between">
-                <span className="text-gray-500">应收 Expected</span>
-                <span className="text-gray-900">${stats.totalRevenueExpected}</span>
+                <span className="text-white/60">应收 Expected</span>
+                <span className="text-white">${stats.totalRevenueExpected}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">实收 Collected</span>
-                <span className="text-green-600">${stats.totalRevenueCollected}</span>
+                <span className="text-white/60">实收 Collected</span>
+                <span className="text-green-400">${stats.totalRevenueCollected}</span>
               </div>
-              <div className="flex justify-between pt-1 border-t border-gray-100 mt-1">
-                <span className="text-gray-500">待收 Unpaid</span>
-                <span className="text-red-500">${Math.max(0, stats.totalRevenueExpected - stats.totalRevenueCollected)}</span>
+              <div className="flex justify-between pt-1 border-t border-white/10 mt-1">
+                <span className="text-white/60">待收 Unpaid</span>
+                <span className="text-red-400">${Math.max(0, stats.totalRevenueExpected - stats.totalRevenueCollected)}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Tickets combined */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="glass-dark p-5 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between backdrop-blur-2xl">
           <div className="flex justify-between items-center mb-4">
-            <Ticket className="text-purple-500 w-5 h-5 flex-shrink-0" />
-            <span className="text-xs font-bold text-gray-400 uppercase text-right">Ticket Types</span>
+            <Ticket className="text-purple-400 w-5 h-5 flex-shrink-0" />
+            <span className="text-xs font-bold text-white/40 uppercase text-right">Ticket Types</span>
           </div>
           <div>
-            <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-2">票种分布</p>
+            <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">票种分布</p>
             <div className="space-y-1 text-sm font-bold">
               <div className="flex justify-between">
-                <span className="text-gray-500">早鸟 Early Bird</span>
-                <span className="text-gray-900">{stats.earlyBirdCount}</span>
+                <span className="text-white/60">早鸟 Early Bird</span>
+                <span className="text-white">{stats.earlyBirdCount}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">常规 Regular</span>
-                <span className="text-gray-900">{stats.regularCount}</span>
+                <span className="text-white/60">常规 Regular</span>
+                <span className="text-white">{stats.regularCount}</span>
               </div>
-              <div className="flex justify-between pt-1 border-t border-gray-100 mt-1">
-                <span className="text-gray-500">现场 Walk-in</span>
+              <div className="flex justify-between pt-1 border-t border-white/10 mt-1">
+                <span className="text-white/60">现场 Walk-in</span>
                 <span className="text-cny-gold">{stats.walkInCount}</span>
               </div>
             </div>
@@ -136,41 +136,41 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, config }) => {
         </div>
 
         {/* Attendance Summary */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="glass-dark p-5 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between backdrop-blur-2xl">
           <div className="flex justify-between items-center mb-4">
-            <CheckCircle2 className="text-blue-500 w-5 h-5 flex-shrink-0" />
-            <span className="text-xs font-bold text-gray-400 uppercase text-right">Attendance</span>
+            <CheckCircle2 className="text-blue-400 w-5 h-5 flex-shrink-0" />
+            <span className="text-xs font-bold text-white/40 uppercase text-right">Attendance</span>
           </div>
           <div>
-            <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-2">出勤状态</p>
+            <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">出勤状态</p>
             <div className="space-y-1 text-sm font-bold">
               <div className="flex justify-between">
-                <span className="text-gray-500">已签到 Arrived</span>
-                <span className="text-emerald-600">{stats.checkedInCount}</span>
+                <span className="text-white/60">已签到 Arrived</span>
+                <span className="text-emerald-400">{stats.checkedInCount}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">未签到 Pending</span>
-                <span className="text-orange-500">{Math.max(0, stats.totalPeople - stats.checkedInCount)}</span>
+                <span className="text-white/60">未签到 Pending</span>
+                <span className="text-orange-400">{Math.max(0, stats.totalPeople - stats.checkedInCount)}</span>
               </div>
-              <div className="flex justify-between pt-1 border-t border-gray-100 mt-1">
-                <span className="text-gray-500">已取消 Cancelled</span>
-                <span className="text-gray-400">{stats.cancelledCount}</span>
+              <div className="flex justify-between pt-1 border-t border-white/10 mt-1">
+                <span className="text-white/60">已取消 Cancelled</span>
+                <span className="text-white/40">{stats.cancelledCount}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Lunch Boxes */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="glass-dark p-5 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between backdrop-blur-2xl">
           <div className="flex justify-between items-center mb-4">
-            <Utensils className="text-orange-500 w-5 h-5 flex-shrink-0" />
-            <span className="text-xs font-bold text-gray-400 uppercase text-right">Catering</span>
+            <Utensils className="text-orange-400 w-5 h-5 flex-shrink-0" />
+            <span className="text-xs font-bold text-white/40 uppercase text-right">Catering</span>
           </div>
           <div>
-            <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">盒饭需求</p>
+            <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">盒饭需求</p>
             <div className="flex items-end gap-2 mt-4">
-              <span className="text-4xl font-black text-gray-900 leading-none">{stats.lunchBoxCount}</span>
-              <span className="text-sm font-bold text-gray-400 mb-1">份 (Boxes)</span>
+              <span className="text-4xl font-black text-white leading-none drop-shadow-md">{stats.lunchBoxCount}</span>
+              <span className="text-sm font-bold text-white/40 mb-1">份 (Boxes)</span>
             </div>
           </div>
         </div>

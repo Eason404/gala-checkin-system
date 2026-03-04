@@ -40,14 +40,14 @@ export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }
   if (data.length === 0) return null;
 
   return (
-    <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-sm border border-gray-100">
+    <div className="glass-dark p-6 sm:p-8 rounded-[2rem] shadow-xl border border-white/10 backdrop-blur-2xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 tracking-tight flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-cny-red" />
+          <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2 drop-shadow-md">
+            <TrendingUp className="w-5 h-5 text-cny-gold" />
             每日报名趋势
           </h3>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Daily Registration Trend</p>
+          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">Daily Registration Trend</p>
         </div>
       </div>
 
@@ -57,27 +57,27 @@ export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }
             data={data}
             margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff20" />
             <XAxis
               dataKey="displayDate"
-              stroke="#9ca3af"
+              stroke="#ffffff80"
               fontSize={10}
               tickLine={false}
               axisLine={false}
               dy={10}
             />
             <YAxis
-              stroke="#9ca3af"
+              stroke="#ffffff80"
               fontSize={10}
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => `${value}`}
             />
             <Tooltip
-              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', fontSize: '12px', fontWeight: 'bold' }}
-              cursor={{ fill: '#f3f4f6' }}
+              contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.8)', color: 'white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.5)', fontSize: '12px', fontWeight: 'bold' }}
+              cursor={{ fill: '#ffffff10' }}
             />
-            <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px' }} />
+            <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px', color: '#ffffff80' }} />
             <Bar
               dataKey="adults"
               name="成人 (Adults)"

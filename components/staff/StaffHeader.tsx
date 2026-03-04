@@ -9,10 +9,16 @@ interface StaffHeaderProps {
 
 export const StaffHeader: React.FC<StaffHeaderProps> = ({ setMode, triggerHaptic }) => {
   return (
-    <div className="flex justify-between items-center mb-6">
-      <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-        <Sparkles className="text-cny-gold w-6 h-6" /> 签到台 <span className="text-3xl ml-1">Check-in</span>
-      </h2>
+    <div className="flex justify-between items-center mb-8">
+      <div className="flex items-center gap-3">
+        <div className="bg-gradient-to-br from-cny-gold/20 to-orange-500/20 p-2.5 rounded-2xl border border-cny-gold/30 shadow-inner">
+          <Sparkles className="text-cny-gold w-6 h-6" />
+        </div>
+        <div>
+          <h2 className="text-3xl font-black text-white tracking-tight drop-shadow-md">签到台</h2>
+          <p className="text-cny-gold/80 font-bold uppercase tracking-[0.2em] text-[10px] mt-0.5">Staff Check-in</p>
+        </div>
+      </div>
       <div className="flex gap-2">
         <button
           onClick={() => { setMode('dashboard'); triggerHaptic(10); }}

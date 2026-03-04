@@ -11,6 +11,7 @@ import { ReservationDetail } from '../components/staff/ReservationDetail';
 import { PaymentModal } from '../components/staff/PaymentModal';
 import { SuccessView } from '../components/staff/SuccessView';
 import { StaffDashboard } from '../components/staff/StaffDashboard';
+import { AdminSwitcher } from '../components/AdminSwitcher';
 
 const StaffPortal: React.FC = () => {
   const [mode, setMode] = useState<'search' | 'result' | 'walkin' | 'scanner' | 'success' | 'already_checked_in' | 'dashboard'>('search');
@@ -150,6 +151,7 @@ const StaffPortal: React.FC = () => {
 
   return (
     <div className="max-w-xl mx-auto pb-24 px-4 antialiased">
+      <AdminSwitcher />
       <StaffHeader setMode={handleSetMode} triggerHaptic={triggerHaptic} />
 
       {mode === 'search' && (

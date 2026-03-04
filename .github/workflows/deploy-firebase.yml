@@ -17,6 +17,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
       - name: Deploy to Firebase Hosting (Preview)
         if: github.event_name == 'pull_request'
         run: npx firebase-tools hosting:channel:deploy pr-${{ github.event.number }} --token ${{ secrets.FIREBASE_TOKEN }} --project gala-checkin-system

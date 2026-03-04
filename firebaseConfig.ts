@@ -5,7 +5,7 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBwHlmVRRqgF_M046_ia2yAkm7Iw88vefs",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "gala-checkin-system.firebaseapp.com",
   projectId: "gala-checkin-system",
   storageBucket: "gala-checkin-system.firebasestorage.app",

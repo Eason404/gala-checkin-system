@@ -15,6 +15,7 @@ import { ReservationList } from '../components/admin/ReservationList';
 import { ConfigModal } from '../components/admin/modals/ConfigModal';
 import { DeleteModal } from '../components/admin/modals/DeleteModal';
 import { DetailModal } from '../components/admin/modals/DetailModal';
+import { AdminSwitcher } from '../components/AdminSwitcher';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -200,6 +201,8 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-20 px-4 antialiased animate-in fade-in duration-700">
 
+      <AdminSwitcher />
+
       <ConfigModal
         showConfigModal={showConfigModal}
         setShowConfigModal={setShowConfigModal}
@@ -227,27 +230,27 @@ const AdminDashboard: React.FC = () => {
       />
 
       {/* Header Info */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-10 rounded-[2.5rem] shadow-xl border border-gray-100">
+      <div className="glass-dark flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-10 rounded-[2.5rem] shadow-xl border border-white/10 backdrop-blur-2xl">
         <div className="flex items-center gap-6">
-          <div className="bg-cny-red p-5 rounded-3xl shadow-lg">
-            <Activity className="text-white w-8 h-8" />
+          <div className="bg-gradient-to-br from-cny-gold/20 to-orange-500/20 p-5 rounded-3xl border border-cny-gold/30 shadow-inner">
+            <Activity className="text-cny-gold w-8 h-8" />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">数据中心 Dashboard</h2>
-            <p className="text-gray-400 text-xs font-bold mt-1 uppercase tracking-[0.2em]">Real-time Event Analytics</p>
+            <h2 className="text-3xl font-black text-white tracking-tight drop-shadow-md">数据中心 Dashboard</h2>
+            <p className="text-cny-gold/80 text-xs font-bold mt-1 uppercase tracking-[0.2em]">Real-time Event Analytics</p>
           </div>
         </div>
         <div className="flex gap-4 w-full md:w-auto">
           {isAdmin && (
-            <button onClick={() => setShowConfigModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-50 border border-gray-100 px-8 py-4 rounded-2xl text-sm font-bold hover:bg-gray-100 transition">
+            <button onClick={() => setShowConfigModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 border border-white/5 px-8 py-4 rounded-2xl text-sm font-bold text-white hover:bg-white/20 transition hover:shadow-lg">
               <Settings className="w-4 h-4" /> 库存设置
             </button>
           )}
-          <button onClick={fetchData} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-50 border border-gray-100 px-8 py-4 rounded-2xl text-sm font-bold hover:bg-gray-100 transition">
+          <button onClick={fetchData} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 border border-white/5 px-8 py-4 rounded-2xl text-sm font-bold text-white hover:bg-white/20 transition hover:shadow-lg">
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> 刷新
           </button>
           {isAdmin && (
-            <button onClick={downloadCSV} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-cny-dark text-white px-8 py-4 rounded-2xl text-sm font-bold hover:shadow-lg transition">
+            <button onClick={downloadCSV} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-cny-gold text-cny-dark px-8 py-4 rounded-2xl text-sm font-bold hover:shadow-lg hover:shadow-cny-gold/20 transition">
               <Download className="w-4 h-4" /> 导出报表
             </button>
           )}
