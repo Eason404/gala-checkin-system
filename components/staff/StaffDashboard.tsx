@@ -82,7 +82,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ reservations, on
                     stats.recentCheckIns.map(res => (
                         <div key={res.id} className="glass-dark p-4 rounded-2xl border border-white/5 flex items-center justify-between">
                             <div>
-                                <p className="text-white font-bold">{res.name}</p>
+                                <p className="text-white font-bold">{res.contactName}</p>
                                 <p className="text-white/40 text-[10px] font-mono mt-0.5">{res.id}</p>
                             </div>
                             <div className="flex items-center gap-3">

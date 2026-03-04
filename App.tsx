@@ -43,44 +43,25 @@ const Navigation = memo(() => {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="fixed top-3 left-1/2 -translate-x-1/2 z-50 hidden sm:block max-w-[95vw]">
-        <div className="glass-dark px-1 py-1 rounded-2xl flex items-center gap-1 shadow-2xl border border-white/10 backdrop-blur-2xl overflow-x-auto no-scrollbar">
-          <Link to="/" className="flex items-center gap-2 px-3 mr-2 group flex-shrink-0 whitespace-nowrap">
-            <div className="w-6 h-6 bg-cny-gold text-cny-dark flex items-center justify-center font-serif font-black rounded-lg shadow-lg rotate-3 group-hover:rotate-0 transition-transform text-xs">福</div>
-            <span className="text-white font-black tracking-tight text-[11px]">Natick 2026</span>
+      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden sm:block w-full max-w-6xl px-4 pointer-events-none">
+        <div className="flex items-center justify-between">
+          <Link to="/" className="glass-dark pl-2 pr-4 py-2 rounded-2xl flex items-center gap-3 shadow-2xl border border-white/10 backdrop-blur-2xl pointer-events-auto hover:bg-white/5 transition-colors group">
+            <div className="w-8 h-8 bg-gradient-to-br from-cny-gold to-orange-400 text-cny-dark flex items-center justify-center font-serif font-black rounded-xl shadow-lg rotate-3 group-hover:rotate-0 transition-transform text-sm">福</div>
+            <div className="flex flex-col">
+              <span className="text-white font-black tracking-tight text-sm leading-none">Natick 2026 春晚</span>
+              <span className="text-cny-gold/80 font-bold uppercase tracking-[0.2em] text-[10px] mt-0.5">Lunar New Year Gala</span>
+            </div>
           </Link>
 
-          <div className="flex items-center gap-0.5 text-[11px] flex-shrink-0 whitespace-nowrap pr-1">
-            {ENABLE_REGISTRATION && (
-              <Link to="/" className={navClass('/')}>
-                <Ticket className="w-4 h-4" />
-                <span>活动预约 (Registration)</span>
-              </Link>
-            )}
-            <Link to="/program" className={navClass('/program')}>
-              <Music2 className="w-4 h-4" />
-              <span>节目单 (Program)</span>
-            </Link>
-            <Link to="/raffle" className={navClass('/raffle')}>
-              <Sparkles className="w-4 h-4" />
-              <span>抽奖 (Raffle)</span>
-            </Link>
-
-            <>
-              <div className="w-px h-6 bg-white/10 mx-1 flex-shrink-0"></div>
-              <Link to="/staff" className={navClass('/staff')}>
-                <Users className="w-4 h-4" />
-                <span className="hidden md:inline">工作人员 (Staff)</span>
-              </Link>
-              <Link to="/admin" className={navClass('/admin')}>
-                <BarChart3 className="w-4 h-4" />
-                <span className="hidden md:inline">后台 (Admin)</span>
-              </Link>
-            </>
-
+          <div className="pointer-events-auto flex items-center gap-2">
             {ENABLE_AUTH && user && (
-              <button onClick={logout} className="ml-2 text-white/40 hover:text-white p-2 rounded-xl transition-colors flex-shrink-0">
+              <button
+                onClick={logout}
+                className="glass-dark flex items-center gap-2 px-4 py-2.5 rounded-2xl text-white/60 hover:text-white hover:bg-white/10 transition-colors border border-white/10 shadow-xl backdrop-blur-2xl"
+                title="Logout"
+              >
                 <LogOut className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">退出登录</span>
               </button>
             )}
           </div>
@@ -177,7 +158,7 @@ function App() {
             <Route
               path="/staff"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="staff">
                   <StaffPortal />
                 </ProtectedRoute>
               }
@@ -185,8 +166,16 @@ function App() {
             <Route
               path="/admin"
               element={
-                <ProtectedRoute>
-                  <AdminDashboard />
+                <ProtectedRoute requiredRole="observer">
+                  <AdminDashboard view="dashboard" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/list"
+              element={
+                <ProtectedRoute requiredRole="observer">
+                  <AdminDashboard view="list" />
                 </ProtectedRoute>
               }
             />

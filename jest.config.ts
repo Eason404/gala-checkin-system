@@ -4,6 +4,7 @@ export default {
   testEnvironment: 'jsdom',
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^.*/firebaseConfig$': '<rootDir>/__mocks__/firebaseConfig.ts'
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 };

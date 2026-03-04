@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. ACCESS KEYS (Login Codes)
+    // CRITICAL SECURITY UPDATE:
+    // We allow 'get' so the Login screen can verify a specific code.
+    // We DENY 'list' so attackers cannot download your entire list of passwords.
+    match /access_keys/{code} {
+      allow get: if true;
+      allow list: if false; 
+      allow write: if false;
+    }
+
+    // 2. RESERVATIONS
+    // Must remain open because your app uses custom access codes (client-side)
+    // instead of native Firebase Authentication.
+    match /reservations/{reservation=**} {
+      allow read, write: if true;
+    }
+
+    // 3. SYSTEM CONFIG
+    // Stores ticket caps. Must be writable for the Admin Dashboard to work.
+    match /system/{config=**} {
+      allow read, write: if true;
+    }
+
+    // 4. EMAIL LOGS (Firebase Extension)
+    // Allow the app to trigger emails (create), but prevents reading/deleting logs.
+    match /mail/{email=**} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+  }
+}

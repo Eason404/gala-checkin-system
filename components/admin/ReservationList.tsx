@@ -2,6 +2,7 @@
 import React from 'react';
 import { Reservation, CheckInStatus, PaymentStatus } from '../../types';
 import { Search, Filter, Star, Mic2, MoreVertical, ChevronLeft, ChevronRight, Tag, Crown, Users } from 'lucide-react';
+import { getCurrentUserRole } from '../../services/authService';
 
 interface ReservationListProps {
   reservations: Reservation[];
@@ -29,6 +30,21 @@ export const ReservationList: React.FC<ReservationListProps> = ({
   paginatedData, toggleSort, setSelectedForAction,
   currentPage, setCurrentPage, totalPages
 }) => {
+  const role = getCurrentUserRole();
+  const isObserver = role === 'observer';
+
+  const maskPhone = (phone?: string) => {
+    if (!phone) return 'N/A';
+    if (phone.length <= 4) return phone;
+    return '****' + phone.slice(-4);
+  };
+
+  const maskId = (id?: string) => {
+    if (!id) return 'N/A';
+    if (id.length <= 3) return id;
+    return '***' + id.slice(-3);
+  };
+
   const adultCounts = React.useMemo(() => {
     let performers = 0;
     let volunteers = 0;
@@ -139,7 +155,9 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-white/40 font-bold font-mono mt-1">{res.phoneNumber} · {res.id}</div>
+                  <div className="text-xs text-white/40 font-bold font-mono mt-1">
+                    {isObserver ? maskPhone(res.phoneNumber) : res.phoneNumber} · {isObserver ? maskId(res.id) : res.id}
+                  </div>
                 </div>
                 <div className="w-[20%] px-5 flex flex-col justify-center">
                   {res.isPerformer ? (
@@ -171,8 +189,8 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                       {res.paymentStatus === PaymentStatus.Paid ? '已付' : '未付'}
                     </div>
                     <div className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${res.checkInStatus === CheckInStatus.Arrived ? 'bg-blue-900/40 text-blue-300 border-blue-500/30' :
-                        res.checkInStatus === CheckInStatus.Cancelled ? 'bg-red-900/40 text-red-300 border-red-500/30' :
-                          'bg-white/10 text-white/60 border-white/10'
+                      res.checkInStatus === CheckInStatus.Cancelled ? 'bg-red-900/40 text-red-300 border-red-500/30' :
+                        'bg-white/10 text-white/60 border-white/10'
                       }`}>
                       {res.checkInStatus === CheckInStatus.Arrived ? '到场' :
                         res.checkInStatus === CheckInStatus.Cancelled ? '已取消' :
@@ -181,7 +199,9 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                   </div>
                 </div>
                 <div className="w-[10%] text-right">
-                  <button onClick={() => setSelectedForAction(res)} className="p-4 text-white/40 hover:text-cny-gold transition-all"><MoreVertical className="w-5 h-5" /></button>
+                  {!isObserver && (
+                    <button onClick={() => setSelectedForAction(res)} className="p-4 text-white/40 hover:text-cny-gold transition-all"><MoreVertical className="w-5 h-5" /></button>
+                  )}
                 </div>
               </div>
             ))

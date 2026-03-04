@@ -68,7 +68,7 @@ Used by the Firebase "Trigger Email" extension to send confirmation and cancella
 ### Collection: `access_keys`
 
 Maps access codes to roles for staff/admin login.
-**Document ID:** The 6-character code (e.g., `A9X2M1`).
+**Document ID:** The 6-character code.
 
 ```json
 {

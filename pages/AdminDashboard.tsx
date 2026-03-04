@@ -1,7 +1,7 @@
 
-import { Download, Loader2, RefreshCw, Activity, Settings, Mail } from 'lucide-react';
+import { Download, Loader2, RefreshCw, Activity, Settings, Mail, Users } from 'lucide-react';
 import React, { useEffect, useState, useMemo } from 'react';
-import { calculateStats, getReservations, updateReservation, deleteReservation, getTicketConfig, updateTicketConfig, sendCancellationEmail } from '../services/dataService';
+import { calculateStats, getReservations, updateReservation, deleteReservation, getTicketConfig, updateTicketConfig, sendCancellationEmail, getStaffAccounts } from '../services/dataService';
 import { Stats, Reservation, CheckInStatus, TicketConfig } from '../types';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -11,6 +11,7 @@ import { getCurrentUserRole } from '../services/authService';
 import { StatsGrid } from '../components/admin/StatsGrid';
 import { DailyStatsChart } from '../components/admin/DailyStatsChart';
 import { CouponStats } from '../components/admin/CouponStats';
+import { StaffStats } from '../components/admin/StaffStats';
 import { ReservationList } from '../components/admin/ReservationList';
 import { ConfigModal } from '../components/admin/modals/ConfigModal';
 import { DeleteModal } from '../components/admin/modals/DeleteModal';
@@ -20,13 +21,14 @@ import { AdminSwitcher } from '../components/AdminSwitcher';
 
 const ITEMS_PER_PAGE = 10;
 
-const AdminDashboard: React.FC = () => {
+const AdminDashboard: React.FC<{ view?: 'dashboard' | 'list' }> = ({ view = 'dashboard' }) => {
   const role = getCurrentUserRole();
   const isAdmin = role === 'admin';
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [config, setConfig] = useState<TicketConfig | null>(null);
+  const [staffMap, setStaffMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,14 +58,16 @@ const AdminDashboard: React.FC = () => {
     try {
       const fetchedReservations = await getReservations();
 
-      const [fetchedStats, fetchedConfig] = await Promise.all([
+      const [fetchedStats, fetchedConfig, fetchedStaffMap] = await Promise.all([
         calculateStats(fetchedReservations),
-        getTicketConfig()
+        getTicketConfig(),
+        getStaffAccounts(fetchedReservations)
       ]);
 
       setStats(fetchedStats);
       setReservations(fetchedReservations);
       setConfig(fetchedConfig);
+      setStaffMap(fetchedStaffMap);
       setEditConfig(fetchedConfig);
     } catch (e) {
       console.error("Failed to load dashboard data", e);
@@ -241,28 +245,34 @@ const AdminDashboard: React.FC = () => {
       <div className="glass-dark flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-10 rounded-[2.5rem] shadow-xl border border-white/10 backdrop-blur-2xl">
         <div className="flex items-center gap-6">
           <div className="bg-gradient-to-br from-cny-gold/20 to-orange-500/20 p-5 rounded-3xl border border-cny-gold/30 shadow-inner">
-            <Activity className="text-cny-gold w-8 h-8" />
+            {view === 'dashboard' ? <Activity className="text-cny-gold w-8 h-8" /> : <Users className="text-cny-gold w-8 h-8" />}
           </div>
-          <div>
-            <h2 className="text-3xl font-black text-white tracking-tight drop-shadow-md">数据中心 Dashboard</h2>
-            <p className="text-cny-gold/80 text-xs font-bold mt-1 uppercase tracking-[0.2em]">Real-time Event Analytics</p>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div>
+              <h2 className="text-3xl font-black text-white tracking-tight drop-shadow-md">
+                {view === 'dashboard' ? '数据中心 Dashboard' : '注册列表 Registration List'}
+              </h2>
+              <p className="text-cny-gold/80 text-xs font-bold mt-1 uppercase tracking-[0.2em]">
+                {view === 'dashboard' ? 'Real-time Event Analytics' : 'Attendee Management'}
+              </p>
+            </div>
+            <button onClick={fetchData} className="flex items-center justify-center gap-2 bg-white/10 border border-white/5 px-4 py-2 rounded-xl text-sm font-bold text-white hover:bg-white/20 transition hover:shadow-lg h-fit" title="Refresh data">
+              <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
         <div className="flex gap-4 w-full md:w-auto">
-          {isAdmin && (
+          {isAdmin && view === 'dashboard' && (
             <button onClick={() => setShowConfigModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 border border-white/5 px-8 py-4 rounded-2xl text-sm font-bold text-white hover:bg-white/20 transition hover:shadow-lg">
               <Settings className="w-4 h-4" /> 库存设置
             </button>
           )}
-          <button onClick={fetchData} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 border border-white/5 px-8 py-4 rounded-2xl text-sm font-bold text-white hover:bg-white/20 transition hover:shadow-lg">
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> 刷新
-          </button>
-          {isAdmin && (
+          {isAdmin && view === 'list' && (
             <button onClick={() => setShowEmailModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#D72638] border border-red-500/50 px-8 py-4 rounded-2xl text-sm font-bold text-white hover:bg-red-700 transition hover:shadow-lg hover:shadow-red-900/30">
               <Mail className="w-4 h-4" /> 邮件提醒
             </button>
           )}
-          {isAdmin && (
+          {isAdmin && view === 'list' && (
             <button onClick={downloadCSV} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-cny-gold text-cny-dark px-8 py-4 rounded-2xl text-sm font-bold hover:shadow-lg hover:shadow-cny-gold/20 transition">
               <Download className="w-4 h-4" /> 导出报表
             </button>
@@ -270,13 +280,16 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      <StatsGrid stats={stats} config={config} />
+      {view === 'dashboard' && (
+        <>
+          <StatsGrid stats={stats} config={config} />
+          <StaffStats reservations={reservations} staffMap={staffMap} />
+          <CouponStats stats={stats} />
+          <DailyStatsChart reservations={reservations} />
+        </>
+      )}
 
-      <CouponStats stats={stats} />
-
-      <DailyStatsChart reservations={reservations} />
-
-      {isAdmin && (
+      {view === 'list' && (
         <ReservationList
           reservations={reservations}
           searchTerm={searchTerm}

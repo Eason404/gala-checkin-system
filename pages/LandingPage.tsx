@@ -63,9 +63,6 @@ const LandingPage: React.FC = () => {
                 {/* 1. Primary Highlight (Full Width) */}
                 {/* Registration Card (Walk-in Encouraged) */}
                 <div className="group relative glass-dark rounded-[2.5rem] p-8 border border-white/10 overflow-hidden shadow-2xl shadow-cny-red/10">
-                    <div className="absolute top-4 right-4 bg-gradient-to-r from-cny-red to-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg animate-[pulse_2s_ease-in-out_infinite] z-20">
-                        WALK-INS WELCOME
-                    </div>
                     <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Ticket className="w-32 h-32" />
                     </div>
@@ -76,7 +73,12 @@ const LandingPage: React.FC = () => {
                                     <Ticket className="w-7 h-7" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1">现场购票</h3>
+                                    <div className="flex flex-wrap items-center gap-3 mb-1">
+                                        <h3 className="text-2xl sm:text-3xl font-bold text-white">现场购票</h3>
+                                        <span className="bg-gradient-to-r from-cny-red to-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg animate-[pulse_2s_ease-in-out_infinite]">
+                                            WALK-INS WELCOME
+                                        </span>
+                                    </div>
                                     <p className="text-white/60 text-xs sm:text-sm font-medium uppercase tracking-widest">Early Bird Sold Out</p>
                                 </div>
                             </div>
@@ -210,13 +212,17 @@ const LandingPage: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 mt-auto">
-                            <Link to="/staff" className="flex flex-col items-center justify-center p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all group/staff">
-                                <span className="text-white/80 font-bold text-sm mb-1 group-hover/staff:text-white transition-colors">工作人员</span>
+                        <div className="grid grid-cols-3 gap-2 mt-auto">
+                            <Link to="/staff" className="flex flex-col items-center justify-center p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all group/staff">
+                                <span className="text-white/80 font-bold text-xs mb-1 group-hover/staff:text-white transition-colors tracking-tight">工作人员</span>
                                 <span className="text-white/40 text-[9px] font-medium uppercase tracking-tighter">Staff</span>
                             </Link>
-                            <Link to="/admin" className="flex flex-col items-center justify-center p-4 bg-cny-red/10 hover:bg-cny-red/20 rounded-2xl border border-cny-red/20 transition-all group/admin">
-                                <span className="text-cny-red font-bold text-sm mb-1 group-hover/admin:text-red-400 transition-colors">系统管理</span>
+                            <Link to="/admin" className="flex flex-col items-center justify-center p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all group/observer">
+                                <span className="text-white/80 font-bold text-xs mb-1 group-hover/observer:text-white transition-colors tracking-tight">观察员</span>
+                                <span className="text-white/40 text-[9px] font-medium uppercase tracking-tighter">Observer</span>
+                            </Link>
+                            <Link to="/admin" className="flex flex-col items-center justify-center p-3 bg-cny-red/10 hover:bg-cny-red/20 rounded-2xl border border-cny-red/20 transition-all group/admin">
+                                <span className="text-cny-red font-bold text-xs mb-1 group-hover/admin:text-red-400 transition-colors tracking-tight">系统管理</span>
                                 <span className="text-cny-red/60 text-[9px] font-medium uppercase tracking-tighter">Admin</span>
                             </Link>
                         </div>
