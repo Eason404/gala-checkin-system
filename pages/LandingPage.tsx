@@ -132,7 +132,7 @@ const LandingPage: React.FC = () => {
 
                     {/* Food & Snacks Card (Coming Soon) */}
                     <div className="group relative glass-dark rounded-[2.5rem] p-8 border border-white/10 overflow-hidden opacity-90 hover:opacity-100 transition-opacity">
-                        <div className="absolute top-4 right-4 bg-white/10 text-white/80 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-none z-20 border border-white/10">
+                        <div className="absolute top-4 right-4 bg-gradient-to-r from-gray-500 to-gray-700 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg animate-[pulse_3s_ease-in-out_infinite] z-20 border border-white/10">
                             COMING SOON
                         </div>
                         <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
