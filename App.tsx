@@ -88,22 +88,21 @@ const Navigation = memo(() => {
       </nav>
       {/* Mobile Top Header (Shows on smaller screens) */}
       <div className="sm:hidden fixed top-0 left-0 right-0 z-40 p-2 pointer-events-none">
-        <div className="glass-dark rounded-xl p-2 flex items-center justify-between shadow-xl pointer-events-auto">
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="bg-cny-gold text-cny-dark font-serif font-black rounded w-5 h-5 flex items-center justify-center text-xs shadow-md">福</div>
-            <span className="text-white font-black tracking-tight text-sm">Natick 春晚</span>
+        <div className="glass-dark rounded-xl p-3 flex items-center justify-between shadow-xl pointer-events-auto border border-white/5 backdrop-blur-3xl">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="bg-gradient-to-br from-cny-gold to-orange-400 text-cny-dark font-serif font-black rounded-lg w-7 h-7 flex items-center justify-center text-sm shadow-md">福</div>
+            <div className="flex flex-col">
+              <span className="text-white font-black tracking-tight text-[13px] leading-none">Natick 2026 春晚</span>
+              <span className="text-cny-gold/80 font-bold uppercase tracking-[0.2em] text-[8px] mt-0.5">Lunar New Year Gala</span>
+            </div>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <>
-              <Link to="/staff" className="text-[8px] font-black uppercase tracking-tighter text-white/40 border border-white/5 px-1.5 py-0.5 rounded-md">
-                Staff
-              </Link>
-              <Link to="/admin" className="text-[8px] font-black uppercase tracking-tighter text-white/40 border border-white/5 px-1.5 py-0.5 rounded-md">
-                Admin
-              </Link>
-            </>
             {ENABLE_AUTH && user && (
-              <button onClick={logout} className="text-white/40 p-1">
+              <button
+                onClick={logout}
+                className="text-white/40 hover:text-white p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/5"
+                title="Logout"
+              >
                 <LogOut className="w-4 h-4" />
               </button>
             )}
