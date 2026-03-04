@@ -1,30 +1,47 @@
-import React from 'react';
-import { MapPin, ShoppingBag, Utensils, Music, ChevronRight } from 'lucide-react';
+import * as React from 'react';
+import { MapPin, ShoppingBag, Utensils, Music, ChevronRight, Banknote, Ticket } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+interface ScheduleItem {
+  time: string;
+  titleZh: string;
+  titleEn: string;
+  descZh: string;
+  descEn: string;
+  locationZh: string;
+  locationEn: string;
+  icon: React.ReactNode;
+  color: string;
+  cashOnly?: boolean;
+  includedInTicket?: boolean;
+  showProgramLink?: boolean;
+}
+
 export const TimelineSection: React.FC = () => {
-  const scheduleItems = [
+  const scheduleItems: ScheduleItem[] = [
     {
       time: '10:00 AM - 12:00 PM',
       titleZh: '春节庙会',
       titleEn: 'Temple Fair & Cultural Fair',
       descZh: '庙会包含丰富多彩的游戏、文化展位、手工制作以及新春零食。适合全家参与。',
-      descEn: 'Features cultural booths, crafts, games, and authentic New Year snacks. Fun for the whole family.',
+      descEn: 'Features cultural booths, crafts, games, and authentic New Year snacks.',
       locationZh: '学校餐厅',
       locationEn: 'Natick High School Cafeteria',
       icon: <ShoppingBag className="w-6 h-6" />,
-      color: 'bg-orange-500'
+      color: 'bg-orange-500',
+      cashOnly: true
     },
     {
       time: '12:00 PM - 1:00 PM',
       titleZh: '春节午餐',
       titleEn: 'Traditional CNY Lunch',
-      descZh: '享用“贺岁锦绣”开运午餐。包含地道中式佳肴，需提前预约。',
-      descEn: 'Enjoy a traditional Chinese New Year lunch with authentic dishes. Pre-order required.',
+      descZh: '享用“贺岁锦绣”开运午餐。包含地道中式佳肴。',
+      descEn: 'Enjoy a traditional Chinese New Year lunch with authentic dishes.',
       locationZh: '学校餐厅',
       locationEn: 'Natick High School Cafeteria',
       icon: <Utensils className="w-6 h-6" />,
-      color: 'bg-green-600'
+      color: 'bg-green-600',
+      includedInTicket: true
     },
     {
       time: '1:00 PM - 2:30 PM',
@@ -41,53 +58,65 @@ export const TimelineSection: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-10">
-      <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-        <div className="w-2 h-8 bg-cny-red rounded-full"></div>
-        流程安排 <span className="text-gray-400 font-bold text-xs ml-2 tracking-widest uppercase">Event Agenda</span>
+    <div className="space-y-8">
+      <h3 className="text-2xl font-bold text-white flex items-center gap-3 px-2">
+        <div className="w-2 h-8 bg-cny-gold rounded-full"></div>
+        流程安排 <span className="text-white/40 font-bold text-xs ml-2 tracking-widest uppercase italic">Schedule</span>
       </h3>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {scheduleItems.map((item, idx) => (
-          <div key={idx} className="group relative bg-white rounded-[2.5rem] shadow-xl p-6 sm:p-8 border border-cny-gold/5 hover:border-cny-gold/30 transition-all duration-500">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 sm:gap-8">
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-8">
-                <div className={`${item.color} text-white p-5 rounded-2xl shadow-lg h-fit festive-float w-fit`}>
-                  {item.icon}
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-cny-red/60 uppercase tracking-widest mb-2 sm:mb-3 leading-none">{item.time}</div>
-                  <div className="flex flex-col sm:flex-row sm:items-end gap-1 sm:gap-4 mb-2">
-                    <h4 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">{item.titleZh}</h4>
-                    <h4 className="text-lg sm:text-xl font-bold text-gray-500 tracking-tight sm:pb-0.5">{item.titleEn}</h4>
-                  </div>
-                </div>
-              </div>
+          <div key={idx} className="group relative glass-dark rounded-[2.5rem] p-6 sm:p-8 border border-white/10 hover:border-cny-gold/30 transition-all duration-500 overflow-hidden shadow-xl">
+            {/* Background Icon Decoration */}
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none transform translate-x-12 -translate-y-4">
+              {React.cloneElement(item.icon as React.ReactElement, { className: 'w-48 h-48' })}
             </div>
-            <div className="mt-6 pt-6 border-t border-gray-50">
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 mb-8">
-                <p className="text-gray-600 text-[15px] leading-relaxed font-medium flex-1">{item.descZh}</p>
-                <div className="hidden sm:block w-px bg-gray-100"></div>
-                <p className="text-gray-500 text-[14px] leading-relaxed font-medium flex-1">{item.descEn}</p>
-              </div>
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-400 bg-gray-50 w-fit px-4 py-2 rounded-full border border-gray-100">
-                    <MapPin className="w-4 h-4 text-cny-red/40" /> {item.locationZh}
-                  </div>
-                  <div className="hidden sm:block text-gray-300">•</div>
-                  <span className="text-xs font-bold text-gray-400 px-2">{item.locationEn}</span>
+
+            <div className="relative z-10">
+              {/* Header: Time and Badges */}
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div className="inline-flex items-center px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-black text-cny-gold tracking-tighter">
+                  {item.time}
                 </div>
 
-                {item.showProgramLink && (
-                  <Link
-                    to="/program"
-                    className="flex items-center gap-2 bg-cny-red/5 hover:bg-cny-red text-cny-red hover:text-white px-5 py-2.5 rounded-2xl transition-all font-bold text-sm shadow-sm hover:shadow-lg hover:shadow-cny-red/20 group/btn"
-                  >
-                    查看节目单 (View Program)
-                    <ChevronRight className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" />
-                  </Link>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {item.cashOnly && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-cny-gold/20 text-cny-gold rounded-full text-[10px] font-bold uppercase tracking-wider border border-cny-gold/30">
+                      <Banknote className="w-3.5 h-3.5" /> 仅限现金 Cash Only
+                    </span>
+                  )}
+                  {item.includedInTicket && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-green-500/20">
+                      <Ticket className="w-3.5 h-3.5" /> 已含在门票内 Included
+                    </span>
+                  )}
+                  {item.showProgramLink && (
+                    <Link to="/program" className="inline-flex items-center gap-1.5 px-3 py-1 bg-cny-red/20 text-cny-red rounded-full text-[10px] font-bold uppercase tracking-wider border border-cny-red/30 hover:bg-cny-red hover:text-white transition-all">
+                      <Music className="w-3.5 h-3.5" /> 查看节目单 View Program
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* Title Section */}
+              <div className="mb-6">
+                <h4 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-2">{item.titleZh}</h4>
+                <p className="text-white/40 text-sm font-bold uppercase tracking-[0.2em]">{item.titleEn}</p>
+              </div>
+
+              {/* Description Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6 border-t border-white/5 pt-6">
+                <p className="text-white/80 text-sm sm:text-base leading-relaxed font-medium">
+                  {item.descZh}
+                </p>
+                <p className="text-white/40 text-sm leading-relaxed font-medium italic">
+                  {item.descEn}
+                </p>
+              </div>
+
+              {/* Location Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-2xl border border-white/5 text-[10px] font-bold text-white/50 uppercase tracking-widest group-hover:text-white/80 transition-colors">
+                <MapPin className="w-3 h-3 text-cny-red/60" /> {item.locationZh} · {item.locationEn}
               </div>
             </div>
           </div>

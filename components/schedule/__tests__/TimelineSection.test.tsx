@@ -15,7 +15,7 @@ describe('TimelineSection Component', () => {
     it('renders the agenda header', () => {
         renderComponent();
         expect(screen.getByText('流程安排')).toBeInTheDocument();
-        expect(screen.getByText('Event Agenda')).toBeInTheDocument();
+        expect(screen.getByText('Schedule')).toBeInTheDocument();
     });
 
     it('renders all schedule items', () => {
@@ -27,7 +27,7 @@ describe('TimelineSection Component', () => {
 
     it('renders the "View Program" link for the Gala Performance', () => {
         renderComponent();
-        const link = screen.getByRole('link', { name: /查看节目单 \(View Program\)/i });
+        const link = screen.getByRole('link', { name: /查看节目单 View Program/i });
         expect(link).toBeInTheDocument();
         expect(link).toHaveAttribute('href', '/program');
     });
@@ -35,7 +35,7 @@ describe('TimelineSection Component', () => {
     it('does not render "View Program" link for other items', () => {
         renderComponent();
         // The link should only be for the Gala Performance (3rd item)
-        const links = screen.queryAllByRole('link', { name: /查看节目单 \(View Program\)/i });
+        const links = screen.queryAllByRole('link', { name: /查看节目单 View Program/i });
         expect(links).toHaveLength(1);
     });
 });
