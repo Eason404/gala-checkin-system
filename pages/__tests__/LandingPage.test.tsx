@@ -40,10 +40,11 @@ describe('LandingPage Component', () => {
         expect(screen.getByText('查询预约 Manage')).toBeInTheDocument();
     });
 
-    it('renders the Staff and Admin Portal links', () => {
+    it('renders the Staff, Observer and Admin Portal links', () => {
         renderComponent();
         expect(screen.getByText('内部管理')).toBeInTheDocument();
         expect(screen.getByText('工作人员')).toBeInTheDocument();
+        expect(screen.getByText('观察员')).toBeInTheDocument();
         expect(screen.getByText('系统管理')).toBeInTheDocument();
     });
 });

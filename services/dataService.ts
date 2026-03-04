@@ -463,6 +463,37 @@ export const getRecentReservations = async (limitCount: number = 10): Promise<Re
   }
 };
 
+export const getStaffAccounts = async (reservations: Reservation[]): Promise<Record<string, string>> => {
+  try {
+    const uniqueIds = new Set<string>();
+    reservations.forEach(r => {
+      if (r.operatorId) uniqueIds.add(r.operatorId);
+      if (r.lastModifiedBy) uniqueIds.add(r.lastModifiedBy);
+    });
+
+    const map: Record<string, string> = {};
+    const fetchPromises = Array.from(uniqueIds).map(async (id) => {
+      try {
+        const docSnap = await getDoc(doc(db, 'access_keys', id));
+        if (docSnap.exists()) {
+          map[id] = docSnap.data().displayName || id;
+        } else {
+          map[id] = id;
+        }
+      } catch (e) {
+        console.warn(`Could not fetch name for operator ${id}`, e);
+        map[id] = id;
+      }
+    });
+
+    await Promise.all(fetchPromises);
+    return map;
+  } catch (error) {
+    console.error("Error fetching staff accounts", error);
+    return {};
+  }
+};
+
 export const createReservation = async (data: Partial<Reservation>): Promise<Reservation> => {
   if (!data.contactName) throw new Error('MISSING_NAME');
 
