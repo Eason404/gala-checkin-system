@@ -175,7 +175,8 @@ import {
   subscribeToLotteryState,
   getRecentReservations,
   sendCancellationEmail,
-  sendDiscountEmail
+  sendDiscountEmail,
+  sendEventReminderEmail
 } from './dataService';
 import { TicketType, CheckInStatus, PaymentStatus } from '../types';
 
@@ -275,8 +276,25 @@ describe('DataService - Full Coverage Suite', () => {
       addDocMock.mockReturnValueOnce(Promise.reject(new Error('Network Error')));
       await sendDiscountEmail({ id: '1', contactName: 'N', email: 'test@ex.com' } as any);
 
-      expect(consoleSpy).toHaveBeenCalledTimes(3);
+      // Test Event Reminder Email
+      await sendEventReminderEmail([]); // empty emails
+      addDocMock.mockReturnValueOnce(Promise.reject(new Error('Network Error')));
+      await sendEventReminderEmail(['test@ex.com'], { id: '1', contactName: 'N', totalAmount: 10 } as any);
+
+      // Expect one more error log from EventReminderEmail failure
+      expect(consoleSpy).toHaveBeenCalledTimes(4);
       consoleSpy.mockRestore();
+    });
+
+    test('sendEventReminderEmail should write to mail collection', async () => {
+      const addDocMock = jest.requireMock('firebase/firestore').addDoc;
+      await sendEventReminderEmail(['success@ex.com'], { id: 'test-id', contactName: 'Tester', totalAmount: 0 } as any);
+
+      const calls = addDocMock.mock.calls;
+      const mailCall = calls.find((c: any) => c[0].id === 'mail' && c[1].to.includes('success@ex.com'));
+      expect(mailCall).toBeDefined();
+      expect(mailCall[1].message.html).toContain('test-id');
+      expect(mailCall[1].message.html).toContain('Tester');
     });
 
     test('删除预约应从列表中移除', async () => {

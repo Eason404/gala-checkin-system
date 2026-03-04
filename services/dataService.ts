@@ -258,6 +258,114 @@ export const sendCancellationEmail = async (reservation: Reservation) => {
   }
 };
 
+export const generateEventReminderEmailHtml = (reservationData?: Reservation) => {
+  const contactName = reservationData ? reservationData.contactName : "Guest";
+  const totalDue = reservationData ? reservationData.totalAmount : 0;
+  const resIdStr = reservationData ? reservationData.id : "YOUR-RESERVATION-ID";
+  const qrUrl = reservationData ? "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + reservationData.id : "";
+
+  let dueStrHTML = "";
+  if (reservationData) {
+    dueStrHTML = `<div style="text-align: center; margin-bottom: 25px; padding: 15px; background-color: #FFF5F5; border: 2px solid #D72638; border-radius: 12px;">
+      <p style="margin: 0; color: #D72638; font-size: 14px; font-weight: bold; text-transform: uppercase;">应付金额 / Total Due</p>
+      <p style="margin: 5px 0 0; color: #D72638; font-size: 28px; font-weight: 900;">$${totalDue}</p>
+    </div>`;
+  }
+
+  let qrStrHTML = "";
+  if (qrUrl) {
+    qrStrHTML = `<div style="text-align: center; margin-bottom: 20px;">
+      <img src="${qrUrl}" width="180" height="180" style="border: 4px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; display: inline-block;" alt="Check-in QR Code" />
+      <p style="margin: 10px 0 0; color: #D72638; font-size: 18px; font-weight: 900; font-family: monospace; letter-spacing: 2px;">${resIdStr}</p>
+      <p style="margin: 5px 0 0; color: #666; font-size: 12px;">请出示此码签到 / Scan to Check-in</p>
+    </div>`;
+  }
+
+  const calendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Natick+2026+CNY+Gala&dates=20260308T140000Z/20260308T183000Z&details=Ticket+Confirmation+ID:+" + resIdStr + "%0A%0APlease+bring+cash+for+check-in+and+snacks.+Present+this+email+at+the+reception.&location=Natick+High+School,+15+West+St,+Natick,+MA+01760";
+
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e0e0e0;">
+      
+      <!-- Header -->
+      <div style="background-color: #D72638; padding: 25px 20px; text-align: center;">
+        <h1 style="color: #FCE7BB; margin: 0; font-size: 24px; font-weight: bold;">Natick 2026 春晚</h1>
+        <p style="color: #ffffff; margin: 5px 0 0; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; opacity: 0.9;">Event Reminder • 活动提醒</p>
+      </div>
+
+      <div style="padding: 30px 20px;">
+        
+        <!-- Welcome -->
+        <p style="color: #333; font-size: 15px; margin: 0 0 25px; text-align: center;">
+          您好 / Dear <strong>${contactName}</strong>,<br/>
+          <span style="color: #666; font-size: 13px; margin-top: 5px; display: inline-block;">We look forward to seeing you! 期待您的光临！</span>
+        </p>
+
+        <!-- TOP FOCUS: QR Code & ID -->
+        ${qrStrHTML}
+
+        <!-- Important Notice: Cash -->
+        <div style="background-color: #FFF3CD; border-left: 4px solid #FFC107; padding: 15px; margin-bottom: 25px; border-radius: 4px;">
+          <p style="margin: 0 0 5px; color: #856404; font-size: 15px; font-weight: bold;">
+            ⚠️ 提示：请携带现金 / PLEASE BRING CASH
+          </p>
+          <p style="margin: 0; color: #856404; font-size: 13px; line-height: 1.5;">
+            请在签到处支付现金购票。建议多准备零钱购买特色小吃！<br/>
+            Please pay cash at the door. Bring extra cash for delicious snacks!
+          </p>
+        </div>
+
+        <!-- Total Due (if any) -->
+        ${dueStrHTML}
+
+        <!-- Event Details -->
+        <div style="background-color: #F8F9FA; padding: 20px; border-radius: 8px; border: 1px solid #E9ECEF;">
+          
+          <div style="margin-bottom: 15px;">
+            <p style="margin: 0; font-weight: bold; color: #333; font-size: 14px;">📅 时间 / Date & Time</p>
+            <p style="margin: 3px 0 0; color: #555; font-size: 14px;">Sunday, March 8, 2026<br/>10:00 AM - 2:30 PM</p>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <p style="margin: 0; font-weight: bold; color: #333; font-size: 14px;">📍 地点 / Location</p>
+            <p style="margin: 3px 0 0; color: #555; font-size: 14px;">Natick High School<br/>15 West St, Natick, MA 01760</p>
+          </div>
+
+          <div style="text-align: center;">
+            <a href="${calendarUrl}" target="_blank" style="display: inline-block; background-color: #333; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: bold;">🗓️ 加至日历 / Add to Calendar</a>
+          </div>
+
+        </div>
+
+      </div>
+      
+      <!-- Footer -->
+      <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 11px; color: #888;">
+        <p style="margin: 0;">Hosted by <strong>Natick High School Chinese Club</strong></p>
+      </div>
+
+    </div>
+  `;
+};
+
+export const sendEventReminderEmail = async (targetEmails: string[], reservationData?: Reservation) => {
+  if (targetEmails.length === 0) return;
+
+  try {
+    const emailHtml = generateEventReminderEmailHtml(reservationData);
+
+    await addDoc(collection(db, MAIL_COLLECTION), {
+      to: targetEmails,
+      from: OFFICIAL_EMAIL,
+      message: {
+        subject: "【Event Reminder | 活动提醒】Natick 2026 CNY Gala - Please Bring Cash / 请带现金",
+        html: emailHtml
+      }
+    });
+  } catch (e) {
+    console.error("Reminder Email error", e);
+  }
+};
+
 export const sendDiscountEmail = async (reservation: Reservation) => {
   if (!reservation.email || !reservation.email.includes('@')) return;
 

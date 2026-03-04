@@ -1,5 +1,5 @@
 
-import { Download, Loader2, RefreshCw, Activity, Settings } from 'lucide-react';
+import { Download, Loader2, RefreshCw, Activity, Settings, Mail } from 'lucide-react';
 import React, { useEffect, useState, useMemo } from 'react';
 import { calculateStats, getReservations, updateReservation, deleteReservation, getTicketConfig, updateTicketConfig, sendCancellationEmail } from '../services/dataService';
 import { Stats, Reservation, CheckInStatus, TicketConfig } from '../types';
@@ -15,6 +15,7 @@ import { ReservationList } from '../components/admin/ReservationList';
 import { ConfigModal } from '../components/admin/modals/ConfigModal';
 import { DeleteModal } from '../components/admin/modals/DeleteModal';
 import { DetailModal } from '../components/admin/modals/DetailModal';
+import { EmailReminderModal } from '../components/admin/modals/EmailReminderModal';
 import { AdminSwitcher } from '../components/AdminSwitcher';
 
 const ITEMS_PER_PAGE = 10;
@@ -48,6 +49,7 @@ const AdminDashboard: React.FC = () => {
     regularCap: 50,
     walkInCap: 50
   });
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -229,6 +231,12 @@ const AdminDashboard: React.FC = () => {
         fetchData={fetchData}
       />
 
+      <EmailReminderModal
+        showModal={showEmailModal}
+        setShowModal={setShowEmailModal}
+        reservations={reservations}
+      />
+
       {/* Header Info */}
       <div className="glass-dark flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-10 rounded-[2.5rem] shadow-xl border border-white/10 backdrop-blur-2xl">
         <div className="flex items-center gap-6">
@@ -249,6 +257,11 @@ const AdminDashboard: React.FC = () => {
           <button onClick={fetchData} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 border border-white/5 px-8 py-4 rounded-2xl text-sm font-bold text-white hover:bg-white/20 transition hover:shadow-lg">
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> 刷新
           </button>
+          {isAdmin && (
+            <button onClick={() => setShowEmailModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#D72638] border border-red-500/50 px-8 py-4 rounded-2xl text-sm font-bold text-white hover:bg-red-700 transition hover:shadow-lg hover:shadow-red-900/30">
+              <Mail className="w-4 h-4" /> 邮件提醒
+            </button>
+          )}
           {isAdmin && (
             <button onClick={downloadCSV} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-cny-gold text-cny-dark px-8 py-4 rounded-2xl text-sm font-bold hover:shadow-lg hover:shadow-cny-gold/20 transition">
               <Download className="w-4 h-4" /> 导出报表
