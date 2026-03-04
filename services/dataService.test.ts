@@ -279,22 +279,40 @@ describe('DataService - Full Coverage Suite', () => {
       // Test Event Reminder Email
       await sendEventReminderEmail([]); // empty emails
       addDocMock.mockReturnValueOnce(Promise.reject(new Error('Network Error')));
-      await sendEventReminderEmail(['test@ex.com'], { id: '1', contactName: 'N', totalAmount: 10 } as any);
+      await expect(sendEventReminderEmail(['test@ex.com'], { id: '1', firebaseDocId: 'doc-1', contactName: 'N', totalAmount: 10 } as any)).rejects.toThrow('Network Error');
 
       // Expect one more error log from EventReminderEmail failure
       expect(consoleSpy).toHaveBeenCalledTimes(4);
       consoleSpy.mockRestore();
     });
 
-    test('sendEventReminderEmail should write to mail collection', async () => {
+    test('sendEventReminderEmail should write to mail collection and update reservation', async () => {
       const addDocMock = jest.requireMock('firebase/firestore').addDoc;
-      await sendEventReminderEmail(['success@ex.com'], { id: 'test-id', contactName: 'Tester', totalAmount: 0 } as any);
+      const updateDocMock = jest.requireMock('firebase/firestore').updateDoc;
+
+      // Seed the mock database so updateDoc finds the document
+      mockDb.push({ firebaseDocId: 'test-doc-id' });
+
+      await sendEventReminderEmail(['success@ex.com'], { id: 'test-id', firebaseDocId: 'test-doc-id', contactName: 'Tester', totalAmount: 0 } as any);
 
       const calls = addDocMock.mock.calls;
       const mailCall = calls.find((c: any) => c[0].id === 'mail' && c[1].to.includes('success@ex.com'));
       expect(mailCall).toBeDefined();
       expect(mailCall[1].message.html).toContain('test-id');
       expect(mailCall[1].message.html).toContain('Tester');
+
+      // Verify updateDoc was called to set isReminderEmailSent
+      expect(updateDocMock).toHaveBeenCalledWith(
+        { id: 'test-doc-id', path: 'reservations/test-doc-id' },
+        { isReminderEmailSent: true }
+      );
+    });
+
+    test('sendEventReminderEmail should throw error if failed', async () => {
+      const addDocMock = jest.requireMock('firebase/firestore').addDoc;
+      addDocMock.mockReturnValueOnce(Promise.reject(new Error('Network Error')));
+
+      await expect(sendEventReminderEmail(['test@ex.com'], { id: '1', firebaseDocId: 'doc-1', contactName: 'N', totalAmount: 10 } as any)).rejects.toThrow('Network Error');
     });
 
     test('删除预约应从列表中移除', async () => {

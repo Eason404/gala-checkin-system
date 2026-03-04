@@ -84,41 +84,39 @@ export const EmailReminderModal: React.FC<EmailReminderModalProps> = ({
         }
     };
 
-    const handleSendMass = async () => {
-        // Second step requirement
+    const validReservations = activeReservations.filter(r => r.email && r.email.includes('@'));
+    const sentCount = validReservations.filter(r => r.isReminderEmailSent).length;
+    const pendingReservations = validReservations.filter(r => !r.isReminderEmailSent);
+
+    const handleSendBatch = async () => {
         if (!showMassConfirm) {
             setShowMassConfirm(true);
             return;
         }
 
         setSendingMass(true);
-        setProgress({ sent: 0, total: activeReservations.length });
+        const batchSize = 20;
+        const toSend = pendingReservations.slice(0, batchSize);
+        setProgress({ sent: 0, total: toSend.length });
 
+        let currentSent = 0;
         try {
-            // Send roughly in batches to avoid overwhelming the client or function quotas
-            const BATCH_SIZE = 10;
-            let sentCount = 0;
-
-            for (let i = 0; i < activeReservations.length; i += BATCH_SIZE) {
-                const batch = activeReservations.slice(i, i + BATCH_SIZE);
-
-                await Promise.all(batch.map(async (res) => {
-                    if (res.email && res.email.includes('@')) {
-                        await sendEventReminderEmail([res.email], res);
-                    }
-                }));
-
-                sentCount += batch.length;
-                setProgress({ sent: Math.min(sentCount, activeReservations.length), total: activeReservations.length });
-
-                // Small delay between batches to respect rate limits
-                await new Promise(r => setTimeout(r, 500));
+            for (const res of toSend) {
+                if (res.email) {
+                    await sendEventReminderEmail([res.email], res);
+                    currentSent++;
+                    setProgress({ sent: currentSent, total: toSend.length });
+                    // Sequential delay of 800ms avoids concurrent Firebase Extension limits & Gmail spam blocking
+                    await new Promise(r => setTimeout(r, 800));
+                }
             }
 
-            alert(`Successfully sent ${activeReservations.length} reminder emails.`);
+            alert(`Successfully sent ${currentSent} reminder emails in this batch.`);
+            setShowMassConfirm(false); // Reset confirmation
         } catch (e) {
             console.error(e);
-            alert("An error occurred while sending mass emails. Proceeded partially.");
+            alert(`An error occurred. Proceeded partially (${currentSent} sent in this batch). Please wait a moment and try again.`);
+            setShowMassConfirm(false);
         } finally {
             setSendingMass(false);
         }
@@ -250,7 +248,7 @@ export const EmailReminderModal: React.FC<EmailReminderModalProps> = ({
                     <div className="space-y-4 pt-4">
                         <div className="flex justify-between items-end border-b border-red-500/20 pb-2">
                             <h3 className="text-lg font-semibold text-cny-red flex items-center gap-2">
-                                <Users className="w-5 h-5" /> 2. Mass Broadcast
+                                <Users className="w-5 h-5" /> 2. Batch Broadcast
                             </h3>
                             <button
                                 onClick={() => setShowPreview(!showPreview)}
@@ -263,7 +261,7 @@ export const EmailReminderModal: React.FC<EmailReminderModalProps> = ({
                         {showPreview && (
                             <div className="mb-4 border border-white/10 rounded-xl overflow-hidden bg-white shadow-inner">
                                 <div className="bg-gray-200 text-gray-800 text-xs px-3 py-1 font-mono border-b border-gray-300 flex justify-between">
-                                    <span>Subject: 【提醒/Reminder】 Natick 2026 春晚即将来临...</span>
+                                    <span>Subject: 【Reminder】 Natick 2026 春晚即将来临...</span>
                                 </div>
                                 <iframe
                                     sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
@@ -274,25 +272,30 @@ export const EmailReminderModal: React.FC<EmailReminderModalProps> = ({
                             </div>
                         )}
 
-                        <p className="text-sm text-white/60">Send the reminder to all <strong className="text-white">{activeReservations.length}</strong> active reservations. This action takes time and cannot be stopped once started.</p>
+                        <div className="flex justify-between items-center text-sm font-medium">
+                            <span className="text-white/60">Total Valid Profiles: <strong className="text-white">{validReservations.length}</strong></span>
+                            <span className="text-blue-400">Sent: <strong>{sentCount}</strong> / {validReservations.length}</span>
+                        </div>
+
+                        <p className="text-sm text-white/60">Send reminders in controlled batches of up to <strong className="text-white">20 attendees</strong> to respect email server rate limits. You can safely resume where you left off if an error occurs.</p>
 
                         {!showMassConfirm ? (
                             <button
-                                onClick={handleSendMass}
-                                disabled={sendingMass || sendingTest || activeReservations.length === 0}
+                                onClick={handleSendBatch}
+                                disabled={sendingMass || sendingTest || pendingReservations.length === 0}
                                 className="w-full bg-gradient-to-r from-cny-red to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-900/50"
                             >
                                 <Mail className="w-6 h-6" />
-                                Send to All {activeReservations.length} Attendees
+                                {pendingReservations.length > 0 ? `Send to Next Batch (Up to 20)` : `All Confirmed Emails Sent!`}
                             </button>
                         ) : (
                             <div className="bg-red-500/10 border border-red-500 rounded-xl p-4 space-y-3 animate-in fade-in duration-300">
                                 <p className="text-red-400 font-bold flex items-center gap-2">
                                     <AlertTriangle className="w-5 h-5" />
-                                    Are you absolutely sure?
+                                    Send to Next Batch?
                                 </p>
                                 <p className="text-white/80 text-sm">
-                                    You are about to securely broadcast emails to <strong>{activeReservations.length} distinct addresses</strong>. This cannot be undone.
+                                    You are about to securely broadcast emails to the next <strong>{Math.min(20, pendingReservations.length)} pending addresses</strong>.
                                 </p>
                                 <div className="flex gap-3">
                                     <button
@@ -303,12 +306,12 @@ export const EmailReminderModal: React.FC<EmailReminderModalProps> = ({
                                         Cancel
                                     </button>
                                     <button
-                                        onClick={handleSendMass}
+                                        onClick={handleSendBatch}
                                         disabled={sendingMass}
                                         className="flex-[2] bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold transition flex justify-center items-center gap-2 shadow-lg shadow-red-900/50 disabled:opacity-50"
                                     >
                                         {sendingMass ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                                        {sendingMass ? `Sending... (${progress.sent} / ${progress.total})` : "Yes, Send Broadcast!"}
+                                        {sendingMass ? `Sending... (${progress.sent} / ${progress.total})` : "Yes, Send Next Batch"}
                                     </button>
                                 </div>
                             </div>

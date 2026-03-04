@@ -77,6 +77,7 @@ const mapDocToReservation = (docSnap: any): Reservation => {
     totalPeople: data.totalPeople || 0,
     totalAmount: data.totalAmount || 0,
     paidAmount: data.paidAmount || 0,
+    isReminderEmailSent: data.isReminderEmailSent || false,
   } as Reservation;
 };
 
@@ -361,8 +362,15 @@ export const sendEventReminderEmail = async (targetEmails: string[], reservation
         html: emailHtml
       }
     });
+
+    if (reservationData?.firebaseDocId) {
+      await updateDoc(doc(db, COLLECTION_NAME, reservationData.firebaseDocId), {
+        isReminderEmailSent: true
+      });
+    }
   } catch (e) {
     console.error("Reminder Email error", e);
+    throw e; // Let UI know sending failed
   }
 };
 

@@ -56,6 +56,7 @@ export interface Reservation {
   // Audit fields
   operatorId?: string;       // Who created this (e.g., 'PUBLIC', 'S1', 'A1')
   lastModifiedBy?: string;   // Who last updated this (e.g., 'S2', 'A2')
+  isReminderEmailSent?: boolean; // Track if the event reminder email has been sent
 }
 
 export interface TicketConfig {
