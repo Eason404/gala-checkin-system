@@ -34,7 +34,7 @@ const LandingPage: React.FC = () => {
                         </div>
                         <div className="flex flex-col">
                             <span className="text-white font-black text-sm sm:text-base leading-tight">2026年3月8日 星期日</span>
-                            <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">March 8, 2026 (Sun) · 15:00-19:30</span>
+                            <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">March 8, 2026 (Sun) · 10:00 - 14:30</span>
                         </div>
                     </a>
 
