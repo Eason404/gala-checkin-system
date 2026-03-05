@@ -4,7 +4,7 @@ import { Reservation, CheckInStatus, Coupon, TicketType, PaymentStatus, PaymentM
 import { X, Star, Ticket, Users, Loader2, Ban, Trash2, Tag, Percent, Coffee, PlusCircle, MinusCircle, Crown, Edit3, Save, History, Clock } from 'lucide-react';
 import { maskOperatorId } from '../../../utils/formatters';
 import { updateReservation, sendDiscountEmail } from '../../../services/dataService';
-import { getCurrentUserCode } from '../../../services/authService';
+import { getCurrentUserCode, getCurrentUserRole } from '../../../services/authService';
 
 interface DetailModalProps {
   selectedForAction: Reservation | null;
@@ -19,6 +19,9 @@ interface DetailModalProps {
 export const DetailModal: React.FC<DetailModalProps> = ({
   selectedForAction, setSelectedForAction, showConfirmDelete, setShowConfirmDelete, handleCancelReservation, actionLoading, fetchData
 }) => {
+
+  const role = getCurrentUserRole();
+  const isAdmin = role === 'admin';
 
   const [couponLoading, setCouponLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -178,16 +181,18 @@ export const DetailModal: React.FC<DetailModalProps> = ({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md bg-black/20 animate-in fade-in duration-300">
       <div className="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto rounded-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-4 relative">
         <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md px-8 py-6 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-gray-900 tracking-tight">管理预约</h3>
+          <h3 className="text-xl font-bold text-gray-900 tracking-tight">{isAdmin ? '管理预约' : '查看预约'}</h3>
           <div className="flex items-center gap-2">
-            {!isEditing ? (
-              <button onClick={() => setIsEditing(true)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900">
-                <Edit3 className="w-5 h-5" />
-              </button>
-            ) : (
-              <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900">
-                <Ban className="w-5 h-5" />
-              </button>
+            {isAdmin && (
+              !isEditing ? (
+                <button onClick={() => setIsEditing(true)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900">
+                  <Edit3 className="w-5 h-5" />
+                </button>
+              ) : (
+                <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900">
+                  <Ban className="w-5 h-5" />
+                </button>
+              )
             )}
             <button onClick={() => setSelectedForAction(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900">
               <X className="w-5 h-5" />
@@ -211,8 +216,8 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                     <div className="text-sm text-gray-400 font-medium font-mono mt-1">{selectedForAction.phoneNumber}</div>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${selectedForAction.checkInStatus === CheckInStatus.Arrived ? 'bg-green-100 text-green-700' :
-                      selectedForAction.checkInStatus === CheckInStatus.Cancelled ? 'bg-red-100 text-red-700' :
-                        'bg-gray-200 text-gray-500'
+                    selectedForAction.checkInStatus === CheckInStatus.Cancelled ? 'bg-red-100 text-red-700' :
+                      'bg-gray-200 text-gray-500'
                     }`}>
                     {selectedForAction.checkInStatus === CheckInStatus.Arrived ? '已签到' :
                       selectedForAction.checkInStatus === CheckInStatus.Cancelled ? '已取消' :
@@ -256,57 +261,61 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                             <p className="text-[9px] text-green-600 font-bold">-${c.amount}</p>
                           </div>
                         </div>
-                        <button onClick={() => handleRemoveCoupon(idx)} disabled={couponLoading} className="text-gray-400 hover:text-red-500">
-                          <MinusCircle className="w-4 h-4" />
-                        </button>
+                        {isAdmin && (
+                          <button onClick={() => handleRemoveCoupon(idx)} disabled={couponLoading} className="text-gray-400 hover:text-red-500">
+                            <MinusCircle className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     ))}
                     {currentCoupons.length === 0 && <p className="text-xs text-gray-300 italic text-center py-2">无优惠 No coupons applied</p>}
                   </div>
 
-                  {/* Add Buttons - Updated to 2 columns to accommodate new button */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
-                    <button
-                      onClick={() => handleAddCoupon('VOLUNTEER')}
-                      disabled={couponLoading}
-                      className="px-2 py-2 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
-                    >
-                      <span>+ 志愿者 Vol</span>
-                      <span className="text-gray-400 font-normal">(-${currentTicketPrice})</span>
-                    </button>
-                    <button
-                      onClick={() => handleAddCoupon('PERFORMER')}
-                      disabled={couponLoading}
-                      className="px-2 py-2 bg-gray-50 hover:bg-purple-50 hover:text-purple-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
-                    >
-                      <span>+ 演职 Perf</span>
-                      <span className="text-gray-400 font-normal">(-${currentTicketPrice})</span>
-                    </button>
-                    <button
-                      onClick={() => handleAddCoupon('SPONSOR')}
-                      disabled={couponLoading}
-                      className="px-2 py-2 bg-gray-50 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
-                    >
-                      <span className="whitespace-nowrap flex items-center gap-0.5"><Crown className="w-2.5 h-2.5" /> 赞助商 Sponsor</span>
-                      <span className="text-gray-400 font-normal">(-$15)</span>
-                    </button>
-                    <button
-                      onClick={() => handleAddCoupon('VOLUNTEER_NO_LUNCH')}
-                      disabled={couponLoading}
-                      className="px-2 py-2 bg-gray-50 hover:bg-orange-50 hover:text-orange-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
-                    >
-                      <span className="whitespace-nowrap flex items-center gap-0.5"><Coffee className="w-2.5 h-2.5" /> 义工(无饭)</span>
-                      <span className="text-gray-400 font-normal">(Free)</span>
-                    </button>
-                    <button
-                      onClick={() => handleAddCoupon('CAST_CREW_PARENT')}
-                      disabled={couponLoading}
-                      className="px-2 py-2 bg-gray-50 hover:bg-pink-50 hover:text-pink-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1 col-span-2"
-                    >
-                      <span className="whitespace-nowrap flex items-center gap-0.5"><Users className="w-2.5 h-2.5" /> 演职人员父母 Parent</span>
-                      <span className="text-gray-400 font-normal">($0)</span>
-                    </button>
-                  </div>
+                  {/* Add Buttons - Only visible to admin */}
+                  {isAdmin && (
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                      <button
+                        onClick={() => handleAddCoupon('VOLUNTEER')}
+                        disabled={couponLoading}
+                        className="px-2 py-2 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
+                      >
+                        <span>+ 志愿者 Vol</span>
+                        <span className="text-gray-400 font-normal">(-${currentTicketPrice})</span>
+                      </button>
+                      <button
+                        onClick={() => handleAddCoupon('PERFORMER')}
+                        disabled={couponLoading}
+                        className="px-2 py-2 bg-gray-50 hover:bg-purple-50 hover:text-purple-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
+                      >
+                        <span>+ 演职 Perf</span>
+                        <span className="text-gray-400 font-normal">(-${currentTicketPrice})</span>
+                      </button>
+                      <button
+                        onClick={() => handleAddCoupon('SPONSOR')}
+                        disabled={couponLoading}
+                        className="px-2 py-2 bg-gray-50 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
+                      >
+                        <span className="whitespace-nowrap flex items-center gap-0.5"><Crown className="w-2.5 h-2.5" /> 赞助商 Sponsor</span>
+                        <span className="text-gray-400 font-normal">(-$15)</span>
+                      </button>
+                      <button
+                        onClick={() => handleAddCoupon('VOLUNTEER_NO_LUNCH')}
+                        disabled={couponLoading}
+                        className="px-2 py-2 bg-gray-50 hover:bg-orange-50 hover:text-orange-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
+                      >
+                        <span className="whitespace-nowrap flex items-center gap-0.5"><Coffee className="w-2.5 h-2.5" /> 义工(无饭)</span>
+                        <span className="text-gray-400 font-normal">(Free)</span>
+                      </button>
+                      <button
+                        onClick={() => handleAddCoupon('CAST_CREW_PARENT')}
+                        disabled={couponLoading}
+                        className="px-2 py-2 bg-gray-50 hover:bg-pink-50 hover:text-pink-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1 col-span-2"
+                      >
+                        <span className="whitespace-nowrap flex items-center gap-0.5"><Users className="w-2.5 h-2.5" /> 演职人员父母 Parent</span>
+                        <span className="text-gray-400 font-normal">($0)</span>
+                      </button>
+                    </div>
+                  )}
 
                   <div className="flex justify-between items-center pt-2 border-t border-gray-100 mt-2">
                     <span className="text-xs font-bold text-gray-500">应付总额 Total</span>
@@ -465,7 +474,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
               <button onClick={handleSaveEdit} disabled={saveLoading || !editReason.trim()} className="w-full py-4 flex items-center justify-center gap-2 bg-cny-red text-white rounded-2xl font-bold text-sm uppercase tracking-wider hover:bg-red-700 disabled:opacity-50">
                 {saveLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 保存修改 Save Changes
               </button>
-            ) : (
+            ) : isAdmin ? (
               <>
                 <button onClick={handleCancelReservation} disabled={actionLoading || selectedForAction.checkInStatus === CheckInStatus.Cancelled} className="w-full py-4 flex items-center justify-center gap-2 bg-orange-50 text-orange-600 rounded-2xl font-bold text-sm uppercase tracking-wider hover:bg-orange-100 disabled:opacity-50">
                   {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />} 取消预约
@@ -474,6 +483,10 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   <Trash2 className="w-4 h-4" /> 永久删除
                 </button>
               </>
+            ) : (
+              <p className="text-center text-gray-400 text-xs font-bold uppercase tracking-widest py-4">
+                只读模式 Read-Only View
+              </p>
             )}
           </div>
         </div>

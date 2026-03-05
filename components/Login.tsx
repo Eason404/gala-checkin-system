@@ -1,22 +1,55 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { loginWithCode } from '../services/authService';
-import { Loader2, AlertCircle, KeyRound, Settings, Eye, EyeOff } from 'lucide-react';
+import { loginWithCode, checkLoginRateLimit } from '../services/authService';
+import { Loader2, AlertCircle, KeyRound, Settings, Eye, EyeOff, Timer } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errorType, setErrorType] = useState<'NONE' | 'INVALID' | 'DB_EMPTY' | 'ERROR'>('NONE');
+  const [errorType, setErrorType] = useState<'NONE' | 'INVALID' | 'DB_EMPTY' | 'ERROR' | 'RATE_LIMITED'>('NONE');
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
+    // Check if already rate-limited on mount
+    const rateCheck = checkLoginRateLimit();
+    if (!rateCheck.allowed) {
+      startCooldownTimer(rateCheck.waitMs);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
+
+  const startCooldownTimer = (waitMs: number) => {
+    setErrorType('RATE_LIMITED');
+    setLockoutSeconds(Math.ceil(waitMs / 1000));
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setLockoutSeconds(prev => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          setErrorType('NONE');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.length < 6) return; // Enforce minimum 6 characters
+    if (code.length < 6) return;
+
+    // Pre-check rate limit
+    const rateCheck = checkLoginRateLimit();
+    if (!rateCheck.allowed) {
+      startCooldownTimer(rateCheck.waitMs);
+      return;
+    }
 
     setLoading(true);
     setErrorType('NONE');
@@ -26,8 +59,17 @@ const Login: React.FC = () => {
       if (result.success) {
         window.location.reload();
       } else {
-        if (result.error === 'NOT_FOUND') {
-          setErrorType('INVALID');
+        if (result.error === 'RATE_LIMITED') {
+          const recheck = checkLoginRateLimit();
+          startCooldownTimer(recheck.waitMs);
+        } else if (result.error === 'NOT_FOUND') {
+          // Check if this attempt triggered rate-limiting
+          const postCheck = checkLoginRateLimit();
+          if (!postCheck.allowed) {
+            startCooldownTimer(postCheck.waitMs);
+          } else {
+            setErrorType('INVALID');
+          }
         } else if (result.error === 'PERMISSION_DENIED') {
           setErrorType('DB_EMPTY');
         } else {
@@ -41,6 +83,8 @@ const Login: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const isLocked = errorType === 'RATE_LIMITED' && lockoutSeconds > 0;
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
@@ -63,7 +107,7 @@ const Login: React.FC = () => {
                   ${errorType !== 'NONE' ? 'border-red-200 text-red-600' : 'border-gray-100 focus:border-cny-red'}`}
               value={code}
               onChange={e => setCode(e.target.value.trim())}
-              disabled={loading}
+              disabled={loading || isLocked}
             />
             <button
               type="button"
@@ -81,9 +125,21 @@ const Login: React.FC = () => {
             </p>
           )}
 
+          {isLocked && (
+            <div className="bg-orange-50 border border-orange-200 p-4 rounded-2xl animate-in fade-in">
+              <div className="flex items-center justify-center gap-2 text-orange-600 font-bold text-sm">
+                <Timer className="w-4 h-4 animate-pulse" />
+                <span>请等待 {lockoutSeconds} 秒后重试</span>
+              </div>
+              <p className="text-orange-400 text-[10px] font-bold mt-1 uppercase tracking-widest">
+                Too many attempts — please wait {lockoutSeconds}s
+              </p>
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={loading || code.length < 6}
+            disabled={loading || code.length < 6 || isLocked}
             className="w-full bg-gray-900 text-white font-black py-6 rounded-[2rem] shadow-xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-30"
           >
             {loading ? <Loader2 className="animate-spin" /> : "安全登录 LOGIN"}
@@ -103,7 +159,7 @@ const Login: React.FC = () => {
               </div>
               <div className="flex gap-3">
                 <div className="w-5 h-5 bg-orange-200 rounded-full flex items-center justify-center text-[10px] font-black shrink-0">2</div>
-                <p className="text-[11px] text-gray-600 leading-tight">新增文档，ID 建议填写复杂短语 (如 <code className="bg-white px-1 text-cny-red">Natick2026Admin</code>)</p>
+                <p className="text-[11px] text-gray-600 leading-tight">新增文档，ID 建议填写复杂短语 (如 <code className="bg-white px-1 text-cny-red">NatickGala2026Admin</code>)</p>
               </div>
               <div className="flex gap-3">
                 <div className="w-5 h-5 bg-orange-200 rounded-full flex items-center justify-center text-[10px] font-black shrink-0">3</div>
@@ -118,3 +174,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+
