@@ -79,7 +79,9 @@ describe('AuthService - Database based access', () => {
       expect(result.success).toBe(false);
       expect(result.role).toBeNull();
       expect(result.error).toBe('NOT_FOUND');
-      expect(sessionStorage.setItem).not.toHaveBeenCalled();
+      // Auth keys should NOT be set, but rate-limiting keys ARE expected
+      expect(sessionStorage.setItem).not.toHaveBeenCalledWith('cny_access_token', expect.anything());
+      expect(sessionStorage.setItem).not.toHaveBeenCalledWith('cny_access_role', expect.anything());
     });
 
     test('空代码应直接返回失败', async () => {

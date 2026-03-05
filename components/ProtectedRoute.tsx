@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { getCurrentUserRole, getCurrentUserCode, ENABLE_AUTH } from '../services/authService';
+import { verifyStoredSession, getCurrentUserCode, ENABLE_AUTH, UserRole } from '../services/authService';
 import Login from './Login';
 import { Loader2, Lock, ShieldAlert } from 'lucide-react';
 
@@ -15,16 +15,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   }
 
   const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<'admin' | 'staff' | 'observer' | null>(null);
-  const [code, setCode] = useState<string | null>(null);
+  const [role, setRole] = useState<UserRole>(null);
+  const [verified, setVerified] = useState(false);
 
   useEffect(() => {
-    // With code access, check is synchronous from sessionStorage
-    const r = getCurrentUserRole();
-    const c = getCurrentUserCode();
-    setRole(r);
-    setCode(c);
-    setLoading(false);
+    let cancelled = false;
+    const verify = async () => {
+      // Re-verify against Firestore to prevent sessionStorage tampering
+      const result = await verifyStoredSession();
+      if (cancelled) return;
+      setRole(result.role);
+      setVerified(result.valid);
+      setLoading(false);
+    };
+    verify();
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) {
@@ -36,7 +41,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   }
 
   // Case 1: Not Authenticated (No valid code in session)
-  if (!role || code === 'PUBLIC') {
+  if (!role || !verified) {
     return <Login />;
   }
 
@@ -57,8 +62,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
         </div>
         <h2 className="text-3xl font-black text-gray-900 tracking-tight">权限不足</h2>
         <p className="text-gray-400 mt-4 max-w-xs font-bold uppercase text-[10px] tracking-widest leading-relaxed">
-          Access Code <span className="text-orange-500">{code}</span> has STAFF privileges.<br />
-          This section requires ADMIN level access.
+          Your account does not have sufficient privileges.<br />
+          This section requires a higher access level.
         </p>
         <button
           onClick={() => window.history.back()}
@@ -75,3 +80,4 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
 };
 
 export default ProtectedRoute;
+
