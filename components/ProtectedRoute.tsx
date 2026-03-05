@@ -1,13 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { verifyStoredSession, getCurrentUserCode, ENABLE_AUTH, UserRole } from '../services/authService';
 import Login from './Login';
-import { Loader2, Lock, ShieldAlert } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: 'admin' | 'staff' | 'observer';
 }
+
+/** Get the default landing page for a given role */
+export const getRoleLandingPage = (role: UserRole): string => {
+  switch (role) {
+    case 'admin': return '/staff';
+    case 'staff': return '/staff';
+    case 'observer': return '/admin';
+    default: return '/';
+  }
+};
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
   if (!ENABLE_AUTH) {
@@ -45,37 +56,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     return <Login />;
   }
 
-  // Case 2: Insufficient privileges
+  // Case 2: Insufficient privileges — auto-redirect to role-appropriate page
   const hasAccess = () => {
     if (!requiredRole) return true;
     if (role === 'admin') return true;
 
-    // Strict role check
+    // Staff can access observer-level pages (e.g. analytics dashboard)
+    if (requiredRole === 'observer') return role === 'observer' || role === 'staff';
     if (requiredRole === 'staff') return role === 'staff';
-    if (requiredRole === 'observer') return role === 'observer';
 
     return false;
   };
 
   if (!hasAccess()) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 text-center">
-        <div className="bg-orange-50 p-6 rounded-[2.5rem] mb-6 shadow-inner">
-          <ShieldAlert className="w-12 h-12 text-orange-500" />
-        </div>
-        <h2 className="text-3xl font-black text-gray-900 tracking-tight">权限不足</h2>
-        <p className="text-gray-400 mt-4 max-w-xs font-bold uppercase text-[10px] tracking-widest leading-relaxed">
-          Your account does not have sufficient privileges.<br />
-          This section requires a higher access level.
-        </p>
-        <button
-          onClick={() => window.history.back()}
-          className="mt-10 py-4 px-8 bg-gray-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all"
-        >
-          返回 Back
-        </button>
-      </div>
-    );
+    return <Navigate to={getRoleLandingPage(role)} replace />;
   }
 
   // Case 3: Authorized

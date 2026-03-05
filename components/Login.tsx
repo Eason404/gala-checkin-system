@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { loginWithCode, checkLoginRateLimit } from '../services/authService';
+import { getRoleLandingPage } from './ProtectedRoute';
 import { Loader2, AlertCircle, KeyRound, Settings, Eye, EyeOff, Timer } from 'lucide-react';
 
 const Login: React.FC = () => {
@@ -57,6 +58,7 @@ const Login: React.FC = () => {
     try {
       const result = await loginWithCode(code);
       if (result.success) {
+        window.location.hash = getRoleLandingPage(result.role);
         window.location.reload();
       } else {
         if (result.error === 'RATE_LIMITED') {
