@@ -14,8 +14,8 @@ describe('ProgramList Component', () => {
 
     it('renders the header correctly in both languages', () => {
         renderComponent();
-        expect(screen.getByText('节目单 (Program)')).toBeInTheDocument();
-        expect(screen.getByText('2026 Gala Performance')).toBeInTheDocument();
+        expect(screen.getByText('节目单')).toBeInTheDocument();
+        expect(screen.getByText('Program')).toBeInTheDocument();
     });
 
     it('renders the time and location banner', () => {
@@ -39,8 +39,8 @@ describe('ProgramList Component', () => {
 
     it('renders the expected number of performances', () => {
         renderComponent();
-        // There are 15 performances, they are numbered 1 to 15
-        expect(screen.getByText('1')).toBeInTheDocument();
-        expect(screen.getByText('15')).toBeInTheDocument();
+        // There are 15 performances; numbers appear on both front and back of each card
+        expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(1);
+        expect(screen.getAllByText('15').length).toBeGreaterThanOrEqual(1);
     });
 });

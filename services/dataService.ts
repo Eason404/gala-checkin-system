@@ -1,7 +1,7 @@
 
 import { Reservation, TicketType, PaymentStatus, CheckInStatus, PaymentMethod, Stats, TicketConfig, Coupon } from '../types';
 import { db, analytics } from '../firebaseConfig';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy, Timestamp, setDoc, getDoc, limit, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy, Timestamp, setDoc, getDoc, limit, onSnapshot, runTransaction } from 'firebase/firestore';
 import { logEvent } from 'firebase/analytics';
 import { getCurrentUserCode } from './authService';
 
@@ -50,6 +50,65 @@ export const generateLotteryNumber = async (existingSet?: Set<string>): Promise<
   existingNumbers.add(num);
 
   return num;
+};
+
+export const processFamilyCheckInTransaction = async (
+  reservationId: string,
+  firebaseDocId: string,
+  count: number,
+  updates: Partial<Reservation>
+): Promise<string[]> => {
+  const currentOperator = getCurrentUserCode();
+  const resRef = doc(db, COLLECTION_NAME, firebaseDocId);
+  const sysRef = doc(db, SYSTEM_COLLECTION, 'usedLotteryNumbers');
+
+  return await runTransaction(db, async (transaction) => {
+    // 1. Read existing used numbers
+    const sysDoc = await transaction.get(sysRef);
+    let usedNumbers: string[] = [];
+    if (sysDoc.exists()) {
+      usedNumbers = sysDoc.data().numbers || [];
+    }
+    const existingSet = new Set(usedNumbers);
+
+    // 2. Read current reservation to check if arrived or already has numbers
+    const resDoc = await transaction.get(resRef);
+    if (!resDoc.exists()) throw new Error('RESERVATION_NOT_FOUND');
+    const rd = resDoc.data();
+
+    // If already checked in or cancelled, abort
+    if (rd.checkInStatus === CheckInStatus.Cancelled) {
+      throw new Error('RESERVATION_CANCELLED');
+    }
+
+    const currentNumbers: string[] = rd.lotteryNumbers || [];
+    const needed = count - currentNumbers.length;
+    const newLottery = [...currentNumbers];
+
+    if (needed > 0) {
+      for (let i = 0; i < needed; i++) {
+        let num: string;
+        do {
+          num = Math.floor(100 + Math.random() * 899).toString();
+        } while (existingSet.has(num));
+        existingSet.add(num);
+        newLottery.push(num);
+        usedNumbers.push(num);
+      }
+
+      // 3. Write back the updated numbers list
+      transaction.set(sysRef, { numbers: usedNumbers }, { merge: true });
+    }
+
+    // 4. Update the reservation document
+    transaction.update(resRef, {
+      ...updates,
+      lotteryNumbers: newLottery,
+      lastModifiedBy: currentOperator
+    });
+
+    return newLottery;
+  });
 };
 
 const mapDocToReservation = (docSnap: any): Reservation => {

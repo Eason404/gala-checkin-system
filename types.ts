@@ -86,3 +86,9 @@ export interface Stats {
   totalPerformerParentsCount: number;
   couponUsage: Record<string, number>;
 }
+
+export interface Winner {
+  number: string;
+  firstName: string;
+  phone: string;
+}
