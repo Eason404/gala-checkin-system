@@ -20,12 +20,14 @@ describe('LandingPage Component', () => {
         expect(heroImg).toHaveAttribute('src', '/landing-hero.png');
     });
 
-    it('renders navigation cards for Schedule and Program', () => {
+    it('renders navigation cards for Schedule, Program, and Food', () => {
         renderComponent();
         expect(screen.getByText('流程安排')).toBeInTheDocument();
         expect(screen.getByText('Schedule')).toBeInTheDocument();
         expect(screen.getByText('节目单')).toBeInTheDocument();
         expect(screen.getByText('Performances')).toBeInTheDocument();
+        expect(screen.getByText('新春美食')).toBeInTheDocument();
+        expect(screen.getByText('Food & Snacks')).toBeInTheDocument();
     });
 
     it('renders the Sold Out state for registration', () => {

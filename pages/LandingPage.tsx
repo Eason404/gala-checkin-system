@@ -135,32 +135,22 @@ const LandingPage: React.FC = () => {
                         </div>
                     </Link>
 
-                    {/* Food & Snacks Card (Coming Soon) */}
-                    <div className="group relative glass-dark rounded-[2.5rem] p-8 border border-white/10 overflow-hidden opacity-90 hover:opacity-100 transition-opacity">
-                        <div className="absolute top-4 right-4 bg-gradient-to-r from-gray-500 to-gray-700 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg animate-[pulse_3s_ease-in-out_infinite] z-20 border border-white/10">
-                            COMING SOON
-                        </div>
-                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                    {/* Food & Snacks Card */}
+                    <Link to="/food" className="group relative glass-dark rounded-[2.5rem] p-8 transition-all hover:scale-[1.02] hover:shadow-2xl border border-white/10 overflow-hidden">
+                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Utensils className="w-24 h-24" />
                         </div>
                         <div className="relative z-10">
-                            <div className="w-14 h-14 bg-white/5 text-white/40 rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform">
+                            <div className="w-14 h-14 bg-cny-gold text-cny-dark rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:-rotate-6 transition-transform">
                                 <Utensils className="w-7 h-7" />
                             </div>
-                            <h3 className="text-2xl font-bold text-white/60 mb-2">新春美食</h3>
-                            <p className="text-white/40 text-sm font-medium mb-4 uppercase tracking-widest">Food & Snacks</p>
-
-                            <div className="flex flex-wrap items-center gap-3 mb-6">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-cny-gold/20 text-cny-gold rounded-full text-[10px] font-bold uppercase tracking-wider border border-cny-gold/30">
-                                    <Banknote className="w-3 h-3" /> 仅限现金 Cash Only
-                                </span>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 opacity-50 cursor-not-allowed">
-                                <span className="block text-white/40 font-bold text-xs tracking-tight">敬请期待 Coming Soon</span>
+                            <h3 className="text-2xl font-bold text-white mb-2">新春美食</h3>
+                            <p className="text-white/60 text-sm font-medium mb-4 uppercase tracking-widest">Food & Snacks</p>
+                            <div className="flex items-center text-cny-gold gap-2 font-bold text-xs uppercase tracking-widest group-hover:translate-x-2 transition-transform">
+                                查看详情 View <ArrowRight className="w-4 h-4" />
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 </div>
             </div>
 
