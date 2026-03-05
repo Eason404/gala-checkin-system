@@ -49,8 +49,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   const hasAccess = () => {
     if (!requiredRole) return true;
     if (role === 'admin') return true;
-    if (requiredRole === 'staff' && role === 'staff') return true;
-    if (requiredRole === 'observer' && (role === 'staff' || role === 'observer')) return true;
+
+    // Strict role check
+    if (requiredRole === 'staff') return role === 'staff';
+    if (requiredRole === 'observer') return role === 'observer';
+
     return false;
   };
 

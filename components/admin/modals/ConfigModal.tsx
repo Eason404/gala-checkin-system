@@ -41,6 +41,11 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                   <label className="text-xs font-bold text-red-500 uppercase tracking-widest">关闭常规报名 (Close Regular Reg)</label>
                   <input type="checkbox" className="w-6 h-6 rounded text-red-600 focus:ring-red-600" checked={editConfig.regularRegistrationClosed || false} onChange={e => setEditConfig({ ...editConfig, regularRegistrationClosed: e.target.checked })} />
                </div>
+               <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">🍱 总饭卡数量 (Total Meal Cards)</label>
+                  <input type="number" className="w-full p-4 bg-orange-50 rounded-xl font-bold text-3xl border border-orange-200 text-center" value={editConfig.totalMealCards || 380} onChange={e => setEditConfig({ ...editConfig, totalMealCards: Number(e.target.value) })} />
+                  <p className="text-[10px] text-gray-400 text-center">用于计算可售walk-in盒饭数量</p>
+               </div>
                <button onClick={handleSaveConfig} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm uppercase tracking-[0.2em] shadow-xl">保存设置 Save Config</button>
             </div>
          </div>
