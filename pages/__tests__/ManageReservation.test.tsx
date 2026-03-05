@@ -62,7 +62,7 @@ describe('ManageReservation Component', () => {
         it('successfully matches exact full name and exact phone', async () => {
             renderComponent();
 
-            const nameInput = screen.getByPlaceholderText('例如: Zhang San');
+            const nameInput = screen.getByPlaceholderText('e.g. John Smith');
             const phoneInput = screen.getByPlaceholderText('508-xxx-xxxx');
             const searchButton = screen.getByText('搜索记录 Search');
 
@@ -79,7 +79,7 @@ describe('ManageReservation Component', () => {
         it('successfully matches exact first name and exact phone', async () => {
             renderComponent();
 
-            const nameInput = screen.getByPlaceholderText('例如: Zhang San');
+            const nameInput = screen.getByPlaceholderText('e.g. John Smith');
             const phoneInput = screen.getByPlaceholderText('508-xxx-xxxx');
             const searchButton = screen.getByText('搜索记录 Search');
 
@@ -96,7 +96,7 @@ describe('ManageReservation Component', () => {
         it('fails matching with partial phone number (loose matching protection)', async () => {
             renderComponent();
 
-            const nameInput = screen.getByPlaceholderText('例如: Zhang San');
+            const nameInput = screen.getByPlaceholderText('e.g. John Smith');
             const phoneInput = screen.getByPlaceholderText('508-xxx-xxxx');
             const searchButton = screen.getByText('搜索记录 Search');
 
@@ -110,7 +110,7 @@ describe('ManageReservation Component', () => {
         it('fails matching with exact phone but wrong name', async () => {
             renderComponent();
 
-            const nameInput = screen.getByPlaceholderText('例如: Zhang San');
+            const nameInput = screen.getByPlaceholderText('e.g. John Smith');
             const phoneInput = screen.getByPlaceholderText('508-xxx-xxxx');
             const searchButton = screen.getByText('搜索记录 Search');
 

@@ -33,14 +33,16 @@ export const ManagementTab: React.FC<ManagementTabProps> = ({
 
   return (
     <div className="glass-card rounded-[3rem] shadow-2xl p-8 sm:p-12 border border-white/30 animate-in fade-in slide-in-from-bottom-6">
-      <h3 className="text-2xl font-bold text-gray-900 mb-10 tracking-tight text-center">查询我的预约</h3>
+      <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight text-center">查询我的预约</h3>
+      <p className="text-sm text-gray-400 font-medium text-center mb-10 uppercase tracking-widest">My Reservation</p>
       <form onSubmit={handleLookup} className="space-y-6">
         <div className="space-y-2">
-          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">预约姓名 <span className="text-cny-red">*</span></label>
-          <input required className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none font-bold" placeholder="例如: Zhang San" value={manageName} onChange={e => setManageName(e.target.value)} />
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">预约姓名 Name <span className="text-cny-red">*</span></label>
+          <input required className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none font-bold" placeholder="e.g. John Smith" value={manageName} onChange={e => setManageName(e.target.value)} />
+          <p className="text-[11px] text-gray-400 px-2 mt-1">请输入名在前，姓在后 (FirstName LastName)</p>
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">手机号码 <span className="text-cny-red">*</span></label>
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">手机号码 Phone <span className="text-cny-red">*</span></label>
           <input type="tel" required className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-bold" placeholder="508-xxx-xxxx" value={managePhone} onChange={e => setManagePhone(e.target.value)} />
         </div>
         <button disabled={loading} className="w-full py-5 bg-gray-900 text-white rounded-[2rem] font-bold text-sm uppercase tracking-widest hover:bg-black transition shadow-xl active:scale-95">
@@ -78,7 +80,7 @@ export const ManagementTab: React.FC<ManagementTabProps> = ({
                 {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
                 取消预约 Cancel Reservation
               </button>
-              <p className="text-[10px] text-gray-400 text-center mt-3 font-medium">注意：取消后如需参加需重新排队报名</p>
+              <p className="text-[10px] text-gray-400 text-center mt-3 font-medium">注意：取消后如需参加需重新排队报名<br />Note: Re-registration required after cancellation</p>
             </div>
           )}
         </div>
