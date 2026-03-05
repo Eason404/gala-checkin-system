@@ -13,6 +13,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, config }) => {
   const totalTicketsSold = stats.earlyBirdCount + stats.regularCount + stats.walkInCount;
   const ticketCap = config?.totalCapacity || 400;
   const headcountCap = config?.totalHeadcountCap || 450;
+  const totalMealCards = config?.totalMealCards || 380;
   const checkInRateRaw = stats.totalPeople > 0 ? (stats.checkedInCount / stats.totalPeople) * 100 : 0;
   const checkInRate = Math.round(checkInRateRaw);
   const ticketSoldRate = Math.min(100, Math.round((totalTicketsSold / ticketCap) * 100));
@@ -160,17 +161,50 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, config }) => {
           </div>
         </div>
 
-        {/* Lunch Boxes */}
-        <div className="glass-dark p-5 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between backdrop-blur-2xl">
+        {/* Meal Tracker - 盒饭追踪 */}
+        <div className="glass-dark p-5 rounded-3xl border border-cny-gold/20 shadow-xl flex flex-col justify-between backdrop-blur-2xl md:col-span-2 lg:col-span-2">
           <div className="flex justify-between items-center mb-4">
             <Utensils className="text-orange-400 w-5 h-5 flex-shrink-0" />
-            <span className="text-xs font-bold text-white/40 uppercase text-right">Catering</span>
+            <span className="text-xs font-bold text-white/40 uppercase text-right">🍱 Meal Tracker</span>
           </div>
           <div>
-            <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">盒饭需求</p>
-            <div className="flex items-end gap-2 mt-4">
-              <span className="text-4xl font-black text-white leading-none drop-shadow-md">{stats.lunchBoxCount}</span>
-              <span className="text-sm font-bold text-white/40 mb-1">份 (Boxes)</span>
+            <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-3">盒饭实时追踪</p>
+
+            {/* Hero: Available for Walk-in */}
+            <div className="bg-gradient-to-br from-cny-gold/10 to-orange-500/10 rounded-2xl p-4 border border-cny-gold/20 mb-4 text-center">
+              <p className="text-[10px] text-cny-gold/80 uppercase font-black tracking-widest mb-1">🎫 可售 Walk-in Available</p>
+              <span className="text-5xl font-black text-cny-gold leading-none drop-shadow-md">
+                {Math.max(0, totalMealCards - stats.checkedInMealCount)}
+              </span>
+              <p className="text-[10px] text-white/30 mt-1">= 总饭卡 {totalMealCards} − 已领取 {stats.checkedInMealCount}</p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-white/5 rounded-full h-2.5 mb-3 overflow-hidden shadow-inner">
+              <div
+                className="h-2.5 rounded-full bg-gradient-to-r from-orange-500 to-cny-gold transition-all duration-1000 ease-out"
+                style={{ width: `${Math.min(100, totalMealCards > 0 ? (stats.checkedInMealCount / totalMealCards) * 100 : 0)}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] font-bold text-white/30 mb-4">
+              <span>已用 {totalMealCards > 0 ? Math.round((stats.checkedInMealCount / totalMealCards) * 100) : 0}%</span>
+              <span>总计 {totalMealCards} 张饭卡</span>
+            </div>
+
+            {/* Detail rows */}
+            <div className="space-y-1.5 text-sm font-bold">
+              <div className="flex justify-between">
+                <span className="text-white/60">预注册需求 Pre-registered</span>
+                <span className="text-white">{stats.lunchBoxCount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/60">已签到领取 Claimed</span>
+                <span className="text-emerald-400">{stats.checkedInMealCount}</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-white/10 mt-1">
+                <span className="text-white/60">未到预留 No-show Reserve</span>
+                <span className="text-orange-400">{stats.noShowMealReserve}</span>
+              </div>
             </div>
           </div>
         </div>

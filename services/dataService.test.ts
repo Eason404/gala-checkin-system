@@ -465,6 +465,60 @@ describe('DataService - Full Coverage Suite', () => {
       expect(stats.totalVolunteersCount).toBe(2); // 1 from VOLUNTEER, 1 from VOLUNTEER_NO_LUNCH legacy
       // lunches: 2 + 2 + 2 + 1 + 0 = 7
       expect(stats.lunchBoxCount).toBe(7);
+      // None are checked in, so checkedInMealCount should be 0
+      expect(stats.checkedInMealCount).toBe(0);
+      // noShowMealReserve should equal lunchBoxCount when nobody checked in
+      expect(stats.noShowMealReserve).toBe(7);
+    });
+
+    test('盒饭追踪：已签到 vs 未签到的饭卡分配 (Meal tracking with mixed check-in status)', async () => {
+      const stats = await calculateStats([
+        {
+          // Arrived: 3 adults, 1 child => 3 meals claimed
+          checkInStatus: CheckInStatus.Arrived,
+          totalPeople: 4,
+          adultsCount: 3,
+          childrenCount: 1,
+          ticketType: TicketType.EarlyBird,
+          totalAmount: 45,
+          paidAmount: 45,
+        } as any,
+        {
+          // Arrived with NO_LUNCH: 2 adults, 1 NO_LUNCH => 1 meal claimed
+          checkInStatus: CheckInStatus.Arrived,
+          totalPeople: 2,
+          adultsCount: 2,
+          coupons: [{ code: 'VOLUNTEER_NO_LUNCH', amount: 0 }],
+          ticketType: TicketType.Regular,
+          totalAmount: 0,
+          paidAmount: 0,
+        } as any,
+        {
+          // NotArrived: 2 adults => 2 meals reserved but not claimed
+          checkInStatus: CheckInStatus.NotArrived,
+          totalPeople: 2,
+          adultsCount: 2,
+          ticketType: TicketType.Regular,
+          totalAmount: 40,
+          paidAmount: 0,
+        } as any,
+        {
+          // Cancelled: should not count
+          checkInStatus: CheckInStatus.Cancelled,
+          totalPeople: 5,
+          adultsCount: 5,
+          ticketType: TicketType.Regular,
+          totalAmount: 100,
+          paidAmount: 0,
+        } as any,
+      ]);
+
+      // lunchBoxCount: 3 + 1 + 2 = 6 (cancelled excluded)
+      expect(stats.lunchBoxCount).toBe(6);
+      // checkedInMealCount: 3 + 1 = 4 (only Arrived)
+      expect(stats.checkedInMealCount).toBe(4);
+      // noShowMealReserve: 6 - 4 = 2
+      expect(stats.noShowMealReserve).toBe(2);
     });
 
     test('getRecentReservations returns recent items safely', async () => {

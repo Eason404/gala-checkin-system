@@ -668,7 +668,8 @@ export const calculateStats = async (existingReservations?: Reservation[]): Prom
   const reservations = existingReservations || await getReservations();
   const stats: Stats = {
     totalReservations: 0, totalPeople: 0, earlyBirdCount: 0, regularCount: 0,
-    walkInCount: 0, lunchBoxCount: 0, totalRevenueExpected: 0,
+    walkInCount: 0, lunchBoxCount: 0, checkedInMealCount: 0, noShowMealReserve: 0,
+    totalRevenueExpected: 0,
     totalRevenueCollected: 0, checkedInCount: 0, cancelledCount: 0, totalPerformersCount: 0,
     totalGuestsCount: 0, totalSponsorsCount: 0, totalVolunteersCount: 0, totalPerformerParentsCount: 0,
     couponUsage: {}
@@ -696,6 +697,11 @@ export const calculateStats = async (existingReservations?: Reservation[]): Prom
     }
 
     stats.lunchBoxCount += Math.max(0, lunchesForReservation);
+
+    // Track meals claimed by checked-in guests
+    if (r.checkInStatus === CheckInStatus.Arrived) {
+      stats.checkedInMealCount += Math.max(0, lunchesForReservation);
+    }
     // ---------------------------
 
     stats.totalRevenueExpected += r.totalAmount;
@@ -733,6 +739,10 @@ export const calculateStats = async (existingReservations?: Reservation[]): Prom
       stats.couponUsage[r.couponCode] = (stats.couponUsage[r.couponCode] || 0) + 1;
     }
   });
+
+  // Compute no-show reserve: pre-registered meals that haven't been claimed yet
+  stats.noShowMealReserve = Math.max(0, stats.lunchBoxCount - stats.checkedInMealCount);
+
   return stats;
 };
 
@@ -742,7 +752,8 @@ const DEFAULT_CONFIG: TicketConfig = {
   earlyBirdCap: 300,
   regularCap: 50,
   walkInCap: 50,
-  lotteryEnabled: false
+  lotteryEnabled: false,
+  totalMealCards: 380
 };
 
 export const getTicketConfig = async (): Promise<TicketConfig> => {

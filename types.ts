@@ -66,6 +66,8 @@ export interface TicketConfig {
   regularCap: number;
   walkInCap: number;
   lotteryEnabled?: boolean;  // Feature flag for lottery
+  regularRegistrationClosed?: boolean; // Close regular registration
+  totalMealCards?: number;   // Total physical meal cards (饭卡), default 380
 }
 
 export interface Stats {
@@ -75,6 +77,8 @@ export interface Stats {
   regularCount: number;
   walkInCount: number;
   lunchBoxCount: number;
+  checkedInMealCount: number;   // Meals claimed by checked-in guests
+  noShowMealReserve: number;    // Pre-registered meals minus checked-in meals
   totalRevenueExpected: number;
   totalRevenueCollected: number;
   checkedInCount: number;

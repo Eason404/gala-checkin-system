@@ -13,10 +13,6 @@ const LandingPage: React.FC = () => {
                     src="/landing-hero.png"
                     alt="2026 Natick Lunar New Year"
                     className="w-full h-auto max-h-[70vh] object-contain block mx-auto"
-                    onError={(e) => {
-                        // Fallback if image is missing
-                        (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1590073844006-33379778ae09?auto=format&fit=crop&q=80&w=2000';
-                    }}
                 />
             </div>
 

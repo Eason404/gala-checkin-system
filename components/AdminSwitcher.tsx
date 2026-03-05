@@ -36,27 +36,31 @@ export const AdminSwitcher: React.FC = () => {
                     </button>
                 )}
 
-                <button
-                    onClick={() => navigate('/admin')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${isAdminDashboard
-                        ? 'bg-cny-gold text-cny-dark shadow-lg shadow-cny-gold/20'
-                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                        }`}
-                >
-                    <BarChart className="w-4 h-4" />
-                    数据中心 Dashboard
-                </button>
+                {(role === 'observer' || role === 'admin') && (
+                    <>
+                        <button
+                            onClick={() => navigate('/admin')}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${isAdminDashboard
+                                ? 'bg-cny-gold text-cny-dark shadow-lg shadow-cny-gold/20'
+                                : 'text-white/60 hover:text-white hover:bg-white/5'
+                                }`}
+                        >
+                            <BarChart className="w-4 h-4" />
+                            数据中心 Dashboard
+                        </button>
 
-                <button
-                    onClick={() => navigate('/admin/list')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${isAdminList
-                        ? 'bg-cny-gold text-cny-dark shadow-lg shadow-cny-gold/20'
-                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                        }`}
-                >
-                    <Users className="w-4 h-4" />
-                    注册列表 Registration List
-                </button>
+                        <button
+                            onClick={() => navigate('/admin/list')}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${isAdminList
+                                ? 'bg-cny-gold text-cny-dark shadow-lg shadow-cny-gold/20'
+                                : 'text-white/60 hover:text-white hover:bg-white/5'
+                                }`}
+                        >
+                            <Users className="w-4 h-4" />
+                            注册列表 Registration List
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );
