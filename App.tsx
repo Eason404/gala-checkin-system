@@ -7,8 +7,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import RaffleWheel from './components/RaffleWheel';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProgramList from './pages/ProgramList';
+import FoodMenu from './pages/FoodMenu';
 import LandingPage from './pages/LandingPage';
-import { Ticket, Users, BarChart3, LogOut, CalendarDays, Home, Mail, Sparkles, Music2 } from 'lucide-react';
+import { Ticket, Users, BarChart3, LogOut, CalendarDays, Home, Mail, Sparkles, Music2, Utensils } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { logout, ENABLE_AUTH } from './services/authService';
@@ -104,6 +105,11 @@ const Navigation = memo(() => {
             <Music2 className="w-5 h-5" />
           </div>
         </Link>
+        <Link to="/food" className="flex flex-col items-center transition-transform active:scale-90">
+          <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/food' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
+            <Utensils className="w-5 h-5" />
+          </div>
+        </Link>
         <Link to="/raffle" className="flex flex-col items-center transition-transform active:scale-90">
           <div className={`p-2 rounded-2xl transition-all ${location.pathname === '/raffle' ? 'bg-cny-gold text-cny-dark shadow-lg' : 'text-white/40'}`}>
             <Sparkles className="w-5 h-5" />
@@ -155,6 +161,7 @@ function App() {
             <Route path="/walkin" element={<PublicRegistration forceWalkIn={true} />} />
             <Route path="/manage" element={<ManageReservation />} />
             <Route path="/program" element={<ProgramList />} />
+            <Route path="/food" element={<FoodMenu />} />
             <Route
               path="/staff"
               element={
