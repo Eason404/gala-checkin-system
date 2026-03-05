@@ -13,16 +13,15 @@ export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }
     const stats: Record<string, { date: string; displayDate: string; adults: number; children: number; total: number }> = {};
 
     reservations.forEach(res => {
-      // Exclude cancelled reservations
       if (res.checkInStatus === CheckInStatus.Cancelled) return;
 
       const dateObj = new Date(res.createdTime);
-      const key = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+      const key = dateObj.toISOString().split('T')[0];
 
       if (!stats[key]) {
         stats[key] = {
           date: key,
-          displayDate: dateObj.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }),
+          displayDate: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           adults: 0,
           children: 0,
           total: 0
@@ -40,57 +39,39 @@ export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }
   if (data.length === 0) return null;
 
   return (
-    <div className="glass-dark p-6 sm:p-8 rounded-[2rem] shadow-xl border border-white/10 backdrop-blur-2xl">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2 drop-shadow-md">
-            <TrendingUp className="w-5 h-5 text-cny-gold" />
-            每日报名趋势
-          </h3>
-          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">Daily Registration Trend</p>
-        </div>
-      </div>
+    <div className="glass-dark p-5 rounded-2xl shadow-lg border border-white/10">
+      <h3 className="text-sm font-black text-white/60 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <TrendingUp className="w-4 h-4 text-cny-gold" /> Daily Trend
+      </h3>
 
-      <div className="h-[240px] w-full select-none">
+      <div className="h-[200px] w-full select-none">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
-            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+            margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff20" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff15" />
             <XAxis
               dataKey="displayDate"
-              stroke="#ffffff80"
-              fontSize={10}
+              stroke="#ffffff60"
+              fontSize={9}
               tickLine={false}
               axisLine={false}
-              dy={10}
+              dy={8}
             />
             <YAxis
-              stroke="#ffffff80"
-              fontSize={10}
+              stroke="#ffffff60"
+              fontSize={9}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => `${value}`}
             />
             <Tooltip
-              contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.8)', color: 'white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.5)', fontSize: '12px', fontWeight: 'bold' }}
-              cursor={{ fill: '#ffffff10' }}
+              contentStyle={{ borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.85)', color: 'white', fontSize: '11px', fontWeight: 'bold' }}
+              cursor={{ fill: '#ffffff08' }}
             />
-            <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px', color: '#ffffff80' }} />
-            <Bar
-              dataKey="adults"
-              name="成人 (Adults)"
-              stackId="a"
-              fill="#D72638"
-            />
-            <Bar
-              dataKey="children"
-              name="儿童 (Children)"
-              stackId="a"
-              fill="#FCE7BB"
-              radius={[4, 4, 0, 0]}
-            />
+            <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '8px', color: '#ffffff60' }} />
+            <Bar dataKey="adults" name="Adults" stackId="a" fill="#D72638" />
+            <Bar dataKey="children" name="Kids" stackId="a" fill="#FCE7BB" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -1,6 +1,7 @@
 
 import { Download, Loader2, RefreshCw, Activity, Settings, Mail, Users } from 'lucide-react';
 import React, { useEffect, useState, useMemo } from 'react';
+import { Navigate } from 'react-router-dom';
 import { calculateStats, getReservations, updateReservation, deleteReservation, getTicketConfig, updateTicketConfig, sendCancellationEmail, getStaffAccounts } from '../services/dataService';
 import { Stats, Reservation, CheckInStatus, TicketConfig } from '../types';
 import { db } from '../firebaseConfig';
@@ -24,6 +25,12 @@ const ITEMS_PER_PAGE = 10;
 const AdminDashboard: React.FC<{ view?: 'dashboard' | 'list' }> = ({ view = 'dashboard' }) => {
   const role = getCurrentUserRole();
   const isAdmin = role === 'admin';
+
+  // Staff cannot access the registration list — redirect to check-in
+  if (view === 'list' && role === 'staff') {
+    return <Navigate to="/staff" replace />;
+  }
+
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -241,40 +248,31 @@ const AdminDashboard: React.FC<{ view?: 'dashboard' | 'list' }> = ({ view = 'das
         reservations={reservations}
       />
 
-      {/* Header Info */}
-      <div className="glass-dark flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-10 rounded-[2.5rem] shadow-xl border border-white/10 backdrop-blur-2xl">
-        <div className="flex items-center gap-6">
-          <div className="bg-gradient-to-br from-cny-gold/20 to-orange-500/20 p-5 rounded-3xl border border-cny-gold/30 shadow-inner">
-            {view === 'dashboard' ? <Activity className="text-cny-gold w-8 h-8" /> : <Users className="text-cny-gold w-8 h-8" />}
-          </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <div>
-              <h2 className="text-3xl font-black text-white tracking-tight drop-shadow-md">
-                {view === 'dashboard' ? '数据中心 Dashboard' : '注册列表 Registration List'}
-              </h2>
-              <p className="text-cny-gold/80 text-xs font-bold mt-1 uppercase tracking-[0.2em]">
-                {view === 'dashboard' ? 'Real-time Event Analytics' : 'Attendee Management'}
-              </p>
-            </div>
-            <button onClick={fetchData} className="flex items-center justify-center gap-2 bg-white/10 border border-white/5 px-4 py-2 rounded-xl text-sm font-bold text-white hover:bg-white/20 transition hover:shadow-lg h-fit" title="Refresh data">
-              <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+      {/* Header */}
+      <div className="glass-dark flex flex-wrap items-center justify-between gap-3 px-5 py-4 rounded-2xl shadow-lg border border-white/10 backdrop-blur-2xl">
+        <div className="flex items-center gap-3">
+          {view === 'dashboard' ? <Activity className="text-cny-gold w-5 h-5" /> : <Users className="text-cny-gold w-5 h-5" />}
+          <h2 className="text-lg font-black text-white tracking-tight">
+            {view === 'dashboard' ? 'Dashboard' : 'Registration List'}
+          </h2>
+          <button onClick={fetchData} className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition" title="Refresh">
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
         </div>
-        <div className="flex gap-4 w-full md:w-auto">
+        <div className="flex gap-2">
           {isAdmin && view === 'dashboard' && (
-            <button onClick={() => setShowConfigModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 border border-white/5 px-8 py-4 rounded-2xl text-sm font-bold text-white hover:bg-white/20 transition hover:shadow-lg">
-              <Settings className="w-4 h-4" /> 库存设置
+            <button onClick={() => setShowConfigModal(true)} className="flex items-center gap-1.5 bg-white/10 border border-white/5 px-4 py-2.5 rounded-xl text-xs font-bold text-white hover:bg-white/20 transition">
+              <Settings className="w-3.5 h-3.5" /> Config
             </button>
           )}
           {isAdmin && view === 'list' && (
-            <button onClick={() => setShowEmailModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#D72638] border border-red-500/50 px-8 py-4 rounded-2xl text-sm font-bold text-white hover:bg-red-700 transition hover:shadow-lg hover:shadow-red-900/30">
-              <Mail className="w-4 h-4" /> 邮件提醒
+            <button onClick={() => setShowEmailModal(true)} className="flex items-center gap-1.5 bg-[#D72638] border border-red-500/50 px-4 py-2.5 rounded-xl text-xs font-bold text-white hover:bg-red-700 transition">
+              <Mail className="w-3.5 h-3.5" /> Email
             </button>
           )}
           {isAdmin && view === 'list' && (
-            <button onClick={downloadCSV} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-cny-gold text-cny-dark px-8 py-4 rounded-2xl text-sm font-bold hover:shadow-lg hover:shadow-cny-gold/20 transition">
-              <Download className="w-4 h-4" /> 导出报表
+            <button onClick={downloadCSV} className="flex items-center gap-1.5 bg-cny-gold text-cny-dark px-4 py-2.5 rounded-xl text-xs font-bold hover:shadow-lg transition">
+              <Download className="w-3.5 h-3.5" /> CSV
             </button>
           )}
         </div>
