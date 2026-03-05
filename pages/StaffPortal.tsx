@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getReservations, updateReservation, generateLotteryNumber } from '../services/dataService';
+import { getReservations, updateReservation, processFamilyCheckInTransaction } from '../services/dataService';
 import PublicRegistration from './PublicRegistration';
 import { Reservation, CheckInStatus, PaymentStatus, PaymentMethod } from '../types';
 import { StaffHeader } from '../components/staff/StaffHeader';
@@ -109,37 +109,33 @@ const StaffPortal: React.FC = () => {
     if (!selectedRes) return;
     setLoading(true);
     const count = selectedRes.totalPeople;
-    const currentLottery = selectedRes.lotteryNumbers || [];
-    const newLottery = [...currentLottery];
 
     try {
-      const reservations = await getReservations();
-      const existingNumbers = new Set<string>();
-      reservations.forEach(r => {
-        if (r.lotteryNumbers) {
-          r.lotteryNumbers.forEach(n => existingNumbers.add(n));
-        }
-      });
-
-      while (newLottery.length < count) {
-        newLottery.push(await generateLotteryNumber(existingNumbers));
-      }
-
       const updates: Partial<Reservation> = {
         checkInStatus: CheckInStatus.Arrived,
         paymentStatus: PaymentStatus.Paid,
         paymentMethod: PaymentMethod.Cash,
         paidAmount: selectedRes.totalAmount,
-        lotteryNumbers: newLottery
       };
 
-      await updateReservation(selectedRes.id, updates, selectedRes.firebaseDocId);
+      const newLottery = await processFamilyCheckInTransaction(
+        selectedRes.id,
+        selectedRes.firebaseDocId,
+        count,
+        updates
+      );
+
       triggerHaptic([100, 50, 100]);
-      setSelectedRes({ ...selectedRes, ...updates });
+      setSelectedRes({ ...selectedRes, ...updates, lotteryNumbers: newLottery });
       setMode('success');
       setShowPayModal(false);
-    } catch (e) {
-      setErrorMsg('更新失败');
+    } catch (e: any) {
+      console.error(e);
+      if (e.message === 'RESERVATION_CANCELLED') {
+        setErrorMsg('此票已取消 (Cancelled)');
+      } else {
+        setErrorMsg('更新失败 (Update failed)');
+      }
     } finally {
       setLoading(false);
     }

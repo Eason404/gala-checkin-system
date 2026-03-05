@@ -52,19 +52,19 @@ const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }
         <div
             className="w-full cursor-pointer mb-5"
             onClick={() => setIsFlipped(!isFlipped)}
-            style={{ perspective: '1000px' }}
+            style={{ perspective: '800px' }}
         >
             <div
-                className="grid transition-transform duration-500"
+                className="grid transition-all duration-700 ease-in-out"
                 style={{
                     transformStyle: 'preserve-3d',
                     WebkitTransformStyle: 'preserve-3d',
-                    transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                    transform: isFlipped ? 'rotateY(180deg) scale(0.97)' : 'rotateY(0deg) scale(1)',
                 }}
             >
                 {/* Front (Title) */}
                 <div
-                    className="col-start-1 row-start-1 w-full h-full bg-gradient-to-r from-cny-red to-red-900 rounded-2xl shadow-md flex border border-cny-gold/30 overflow-hidden min-h-[110px] [backface-visibility:hidden] [-webkit-backface-visibility:hidden] transform-gpu translate-z-0"
+                    className="col-start-1 row-start-1 w-full h-full bg-gradient-to-r from-cny-red to-red-900 rounded-2xl shadow-lg flex border border-cny-gold/30 overflow-hidden min-h-[110px] [backface-visibility:hidden] [-webkit-backface-visibility:hidden] transform-gpu translate-z-0"
                     style={{
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
@@ -113,23 +113,18 @@ const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }
 
                 {/* Back (Artist/Performers) */}
                 <div
-                    className="col-start-1 row-start-1 w-full h-full bg-gradient-to-r from-red-900 to-cny-dark rounded-2xl shadow-md flex border border-cny-gold/30 overflow-hidden min-h-[110px] [backface-visibility:hidden] [-webkit-backface-visibility:hidden] transform-gpu translate-z-0"
+                    className="col-start-1 row-start-1 w-full h-full bg-gradient-to-br from-red-950 to-cny-dark rounded-2xl shadow-xl flex border border-cny-gold/40 overflow-hidden min-h-[110px] [backface-visibility:hidden] [-webkit-backface-visibility:hidden] transform-gpu translate-z-0"
                     style={{
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
                         transform: 'rotateY(180deg)',
                     }}
                 >
-                    {/* Sidebar: Label Header */}
+                    {/* Sidebar: Number only */}
                     <div
                         className="w-12 sm:w-14 flex-shrink-0 flex flex-col items-center justify-center py-3 text-cny-gold bg-black/20 shadow-[inset_-2px_0_6px_rgba(0,0,0,0.2)] border-r border-cny-gold/20"
                     >
-                        <span
-                            className="text-[9px] font-black uppercase rotate-180 tracking-[0.2em] opacity-80 drop-shadow-sm"
-                            style={{ writingMode: 'vertical-rl', WebkitWritingMode: 'vertical-rl' }}
-                        >
-                            Performers
-                        </span>
+                        <span className="text-[10px] font-black opacity-60">{idx + 1}</span>
                     </div>
 
                     {/* Content Area: Left-Right Bilingual Split */}
@@ -149,9 +144,6 @@ const ProgramCard: React.FC<{ perf: Performance; idx: number; colorHex: string }
 
                         {/* Right Side: English Content */}
                         <div className="w-1/2 p-3 pl-4 flex flex-col justify-center min-w-0 relative z-10">
-                            <div className="text-[8px] font-black text-cny-gold/60 uppercase tracking-widest mb-1">
-                                P-{idx + 1}
-                            </div>
                             {displayArtistEn && (
                                 <div className="text-[11px] font-medium font-sans text-white/80 leading-snug break-words line-clamp-2">
                                     {displayArtistEn}
@@ -169,16 +161,12 @@ const ProgramList: React.FC = () => {
     return (
         <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 antialiased">
             {/* Header */}
-            <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 bg-cny-red/10 text-cny-red px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-4">
-                    <Music2 className="w-3.5 h-3.5" />
-                    Performance Lineup
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight mb-1">
-                    节目单 (Program)
+            <div className="text-center mb-4">
+                <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                    节目单
                 </h1>
-                <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">
-                    2026 Gala Performance
+                <p className="text-white/60 text-sm font-medium uppercase tracking-widest mt-1">
+                    Program
                 </p>
             </div>
 
@@ -186,7 +174,7 @@ const ProgramList: React.FC = () => {
             <div className="mb-6 bg-gradient-to-r from-cny-red to-red-900 text-white rounded-3xl p-5 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                 <div className="relative z-10 text-center sm:text-left w-full">
-                    <p className="text-cny-gold text-[10px] font-bold uppercase tracking-[0.15em] mb-1">1:00 PM – 2:30 PM • NHS Auditorium</p>
+                    <p className="text-cny-gold text-[10px] font-bold uppercase tracking-[0.15em] mb-1">下午 1:00–2:30 · NHS 礼堂 | 1:00 PM – 2:30 PM • NHS Auditorium</p>
                     <p className="text-white/90 text-xs font-medium">点击节目查看详细表演者 (Tap cards for details)</p>
                 </div>
             </div>

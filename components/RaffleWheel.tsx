@@ -2,31 +2,28 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getReservations, getTicketConfig, updateLotteryState, subscribeToLotteryState } from '../services/dataService';
 import { getCurrentUserRole } from '../services/authService';
 import { Reservation, CheckInStatus } from '../types';
-import { Gift, Trophy, RefreshCw, Phone, Eye, EyeOff, Crown, Radio } from 'lucide-react';
+import { Gift, Trophy, RefreshCw, Crown, Radio } from 'lucide-react';
 
-interface Winner {
-  number: string;
-  firstName: string;
-  phone: string;
-}
+import { Winner } from '../types';
+import { SilkScrollDraw } from './raffle/SilkScrollDraw';
 
-const PRIZE_TIERS = [
-  { id: 'grand', name: '特等奖', label: 'Grand Prize', color: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-200' },
-  { id: 'first', name: '一等奖', label: '1st Prize', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
-  { id: 'second', name: '二等奖', label: '2nd Prize', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
-  { id: 'third', name: '三等奖', label: '3rd Prize', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
-];
+const DEFAULT_PRIZE = { id: 'default', name: '幸运大抽奖', label: 'Lucky Raffle', color: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-200' };
 
 const RaffleWheel: React.FC = () => {
   const [candidates, setCandidates] = useState<Winner[]>([]);
   const [winner, setWinner] = useState<Winner | null>(null);
+  const [pastWinners, setPastWinners] = useState<Winner[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [currentDisplay, setCurrentDisplay] = useState<string>('000');
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showPhone, setShowPhone] = useState(false);
-  const [selectedPrize, setSelectedPrize] = useState(PRIZE_TIERS[3]); // Default to 3rd prize
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  // Derived available candidates pool that excludes already drawn winners
+  const availableCandidates = candidates.filter(c =>
+    !pastWinners.some(pw => pw.number === c.number)
+  );
 
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -38,7 +35,7 @@ const RaffleWheel: React.FC = () => {
       const config = await getTicketConfig();
       setEnabled(!!config.lotteryEnabled);
 
-      if (config.lotteryEnabled) {
+      if (config.lotteryEnabled && role === 'admin') {
         const res = await getReservations();
         const validCandidates: Winner[] = [];
         res.forEach(r => {
@@ -55,7 +52,12 @@ const RaffleWheel: React.FC = () => {
         });
         setCandidates(validCandidates);
       }
-      setLoading(false);
+
+      if (role !== 'admin') {
+        setTimeout(() => setLoading(false), 1000 + Math.random() * 1000);
+      } else {
+        setLoading(false);
+      }
     };
     init();
 
@@ -63,10 +65,8 @@ const RaffleWheel: React.FC = () => {
     const unsubscribe = subscribeToLotteryState((state) => {
       if (!state) return;
 
-      // Update selected prize if changed by admin
-      if (state.selectedPrize) {
-        const prize = PRIZE_TIERS.find(p => p.id === state.selectedPrize.id);
-        if (prize) setSelectedPrize(prize);
+      if (state.pastWinners) {
+        setPastWinners(state.pastWinners);
       }
 
       if (state.isSpinning) {
@@ -99,39 +99,49 @@ const RaffleWheel: React.FC = () => {
   }, []);
 
   const startSpin = async () => {
-    if (candidates.length === 0 || !isAdmin) return;
+    if (availableCandidates.length === 0 || !isAdmin) return;
 
-    // Broadcast spinning state
-    await updateLotteryState({
-      isSpinning: true,
-      winner: null,
-      selectedPrize,
-      timestamp: Date.now()
-    });
-
-    // Admin handles the actual logic
-    setTimeout(async () => {
-      const finalWinner = candidates[Math.floor(Math.random() * candidates.length)];
-
-      // Broadcast winner
+    try {
+      // Broadcast spinning state
       await updateLotteryState({
-        isSpinning: false,
-        winner: finalWinner,
-        selectedPrize,
+        isSpinning: true,
+        winner: null,
         timestamp: Date.now()
       });
-    }, 3000); // 3 seconds of spinning
+
+      // Admin handles the actual logic
+      setTimeout(async () => {
+        try {
+          const finalWinner = availableCandidates[Math.floor(Math.random() * availableCandidates.length)];
+          const updatedPastWinners = [...pastWinners, finalWinner];
+
+          // Broadcast winner
+          await updateLotteryState({
+            isSpinning: false,
+            winner: finalWinner,
+            pastWinners: updatedPastWinners,
+            timestamp: Date.now()
+          });
+        } catch (error) {
+          console.error("Error during spin resolution:", error);
+          await updateLotteryState({ isSpinning: false });
+        }
+      }, 3000); // 3 seconds of spinning
+    } catch (error) {
+      console.error("Failed to start spin", error);
+      await updateLotteryState({ isSpinning: false });
+    }
   };
 
-  const handlePrizeChange = async (prize: typeof PRIZE_TIERS[0]) => {
-    if (!isAdmin || isSpinning) return;
-    setSelectedPrize(prize);
+  const clearWinners = async () => {
+    if (!isAdmin) return;
     await updateLotteryState({
       isSpinning: false,
       winner: null,
-      selectedPrize: prize,
+      pastWinners: [],
       timestamp: Date.now()
     });
+    setShowClearConfirm(false);
   };
 
   const maskPhone = (phone: string) => {
@@ -159,107 +169,83 @@ const RaffleWheel: React.FC = () => {
           </p>
           <p className="text-white/60 text-sm mt-1">请耐心等待主持人宣布 (Please wait for the host to announce)</p>
         </div>
-
-        <div className="mb-8 relative">
-          <h1 className="text-5xl md:text-7xl font-black text-cny-red opacity-50 tracking-tighter mb-4 flex items-center justify-center gap-4">
-            <Trophy className="w-12 h-12 md:w-16 md:h-16 text-cny-gold" />
-            幸运大抽奖
-          </h1>
-          <p className="text-gray-500 font-bold tracking-[0.2em] opacity-50 uppercase">Raffle Game</p>
-        </div>
-
-        <div className={`bg-white/5 p-12 rounded-[3rem] shadow-2xl border-4 border-white/10 relative overflow-hidden mb-12`}>
-          <div className="text-[8rem] md:text-[12rem] font-black text-white/20 leading-none tracking-tighter tabular-nums mb-8 font-mono">
-            000
-          </div>
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-12 px-4 text-center">
-      <div className="mb-8 relative">
+    <div className="max-w-4xl mx-auto py-2 md:py-4 px-2 md:px-4 text-center">
+      <div className="mb-4 relative">
         {!isAdmin && (
           <div className="absolute top-0 right-0 flex items-center gap-2 bg-red-100 text-red-600 px-3 py-1 rounded-full font-bold text-xs animate-pulse">
-            <Radio className="w-3 h-3" /> LIVE
-          </div>
-        )}
-        <h1 className="text-5xl md:text-7xl font-black text-cny-red tracking-tighter mb-4 flex items-center justify-center gap-4">
-          <Trophy className="w-12 h-12 md:w-16 md:h-16 text-cny-gold" />
-          幸运大抽奖
-        </h1>
-        <p className="text-gray-500 font-bold tracking-[0.2em] uppercase">Raffle Game</p>
-      </div>
-
-      {/* Prize Tier Selector */}
-      <div className="flex flex-wrap justify-center gap-3 mb-10">
-        {PRIZE_TIERS.map((prize) => (
-          <button
-            key={prize.id}
-            onClick={() => handlePrizeChange(prize)}
-            disabled={isSpinning || !isAdmin}
-            className={`px-6 py-3 rounded-2xl font-bold text-sm md:text-base border-2 transition-all ${selectedPrize.id === prize.id
-              ? `${prize.bg} ${prize.border} ${prize.color} scale-105 shadow-md`
-              : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'
-              } ${!isAdmin && selectedPrize.id !== prize.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            <div className="flex items-center gap-2">
-              {prize.id === 'grand' && <Crown className="w-4 h-4" />}
-              {prize.name}
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <div className={`bg-white p-12 rounded-[3rem] shadow-2xl border-4 ${selectedPrize.border} relative overflow-hidden mb-12 transition-colors duration-500`}>
-        <div className={`absolute top-0 left-0 w-full h-2 ${selectedPrize.bg} opacity-50`}></div>
-
-        <div className="text-[8rem] md:text-[12rem] font-black text-gray-900 leading-none tracking-tighter tabular-nums mb-8 font-mono">
-          {currentDisplay}
-        </div>
-
-        {winner && !isSpinning && (
-          <div className="animate-in zoom-in slide-in-from-bottom-8 duration-500">
-            <div className={`inline-block px-4 py-1 rounded-full ${selectedPrize.bg} ${selectedPrize.color} font-black text-sm tracking-widest uppercase mb-4`}>
-              {selectedPrize.name} {selectedPrize.label}
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              恭喜 <span className={selectedPrize.color}>{winner.firstName}</span>! 🎉
-            </h2>
-            <div className="inline-flex items-center gap-4 bg-gray-50 px-6 py-3 rounded-full border border-gray-200">
-              <Phone className="w-5 h-5 text-gray-400" />
-              <span className="text-xl font-mono font-bold text-gray-600 tracking-wider">
-                {isAdmin && showPhone ? winner.phone : maskPhone(winner.phone)}
-              </span>
-              {isAdmin && (
-                <button
-                  onClick={() => setShowPhone(!showPhone)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  title={showPhone ? "隐藏号码" : "显示完整号码"}
-                >
-                  {showPhone ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              )}
-            </div>
+            <Radio className="w-3 h-3" /> 直播 LIVE
           </div>
         )}
       </div>
 
+      {/* Main Animated Draw Component */}
+      <SilkScrollDraw
+        isSpinning={isSpinning}
+        winner={winner}
+        currentDisplay={currentDisplay}
+        isAdmin={isAdmin}
+      />
+
+      {/* Admin Controls */}
       {isAdmin ? (
-        <button
-          onClick={startSpin}
-          disabled={isSpinning || candidates.length === 0}
-          className={`px-16 py-6 rounded-full text-2xl font-black tracking-widest shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all disabled:transform-none disabled:opacity-50 text-white ${selectedPrize.id === 'grand' ? 'bg-yellow-500 hover:bg-yellow-600' :
-            selectedPrize.id === 'first' ? 'bg-red-500 hover:bg-red-600' :
-              selectedPrize.id === 'second' ? 'bg-orange-500 hover:bg-orange-600' :
-                'bg-blue-500 hover:bg-blue-600'
-            }`}
-        >
-          {isSpinning ? '抽奖中...' : `抽取 ${selectedPrize.name}`}
-        </button>
+        <div className="flex flex-col items-center gap-4 mt-12 w-full max-w-sm mx-auto">
+          <button
+            onClick={startSpin}
+            disabled={isSpinning || availableCandidates.length === 0}
+            className={`w-full py-6 rounded-full text-2xl font-black tracking-widest shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all disabled:transform-none disabled:opacity-50 text-white bg-red-600 hover:bg-red-700`}
+          >
+            {isSpinning ? '抽奖中...' : `开始抽奖 (Start Draw)`}
+          </button>
+
+          <div className="flex gap-4 w-full justify-between items-center px-2 mt-1">
+            {isSpinning && (
+              <button
+                onClick={async () => await updateLotteryState({ isSpinning: false })}
+                className="text-gray-500 text-sm hover:text-red-500 underline"
+              >
+                强制停止 (Force Stop)
+              </button>
+            )}
+
+            {pastWinners.length > 0 && !isSpinning && !showClearConfirm && (
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                className="text-gray-500 text-sm hover:text-red-500 underline ml-auto"
+              >
+                清空全部中奖记录 (Clear Winners)
+              </button>
+            )}
+          </div>
+
+          {/* Inline confirmation panel */}
+          {showClearConfirm && (
+            <div className="w-full mt-3 p-4 bg-red-950/60 border border-red-700 rounded-2xl text-center">
+              <p className="text-red-200 text-sm font-bold mb-1">⚠️ 确认清空所有中奖记录？</p>
+              <p className="text-red-300/70 text-xs mb-4">所有人将重新获得中奖资格，此操作不可撤销。</p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setShowClearConfirm(false)}
+                  className="px-5 py-2 rounded-full bg-white/10 text-white text-sm hover:bg-white/20"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={clearWinners}
+                  className="px-5 py-2 rounded-full bg-red-600 text-white text-sm font-bold hover:bg-red-500"
+                >
+                  确认清空
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       ) : (
-        <div className="text-gray-400 font-bold flex items-center justify-center gap-2">
+        <div className="text-gray-400 font-bold mt-12 flex items-center justify-center gap-2">
           {isSpinning ? (
             <><RefreshCw className="w-5 h-5 animate-spin" /> 正在抽奖中... (Spinning...)</>
           ) : (
@@ -268,9 +254,27 @@ const RaffleWheel: React.FC = () => {
         </div>
       )}
 
-      <p className="mt-8 text-gray-400 font-bold">
-        当前奖池人数 (Entries): {candidates.length}
+      <p className="mt-8 text-gray-400 font-bold mb-12 flex flex-col items-center gap-1">
+        <span>当前剩余奖池人数 (Entries Left): {availableCandidates.length}</span>
+        <span className="text-xs font-normal opacity-70">总参与人数 (Total): {candidates.length}</span>
       </p>
+
+      {/* Past Winners Display Area */}
+      {pastWinners.length > 0 && (
+        <div className="mt-12 bg-white/5 backdrop-blur-md rounded-3xl p-6 md:p-8 border border-white/10 max-w-3xl mx-auto shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+          <h3 className="text-cny-gold font-bold text-xl md:text-2xl mb-6 tracking-widest flex items-center justify-center gap-2">
+            <Gift className="w-6 h-6" /> 已中奖名单 (Past Winners)
+          </h3>
+          <div className="flex flex-wrap justify-center gap-3">
+            {pastWinners.map((w, idx) => (
+              <div key={`${w.number}-${idx}`} className="px-4 py-2 bg-gradient-to-br from-red-900 to-red-800 rounded-lg text-yellow-100 font-bold text-sm md:text-base border border-red-500/30 flex items-center gap-2 shadow-md">
+                <Crown className="w-3 h-3 text-yellow-500" />
+                {w.firstName}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
