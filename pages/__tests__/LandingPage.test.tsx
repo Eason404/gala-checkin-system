@@ -37,7 +37,7 @@ describe('LandingPage Component', () => {
 
     it('renders the Manage Reservation link', () => {
         renderComponent();
-        expect(screen.getByText('查询预约 Manage')).toBeInTheDocument();
+        expect(screen.getByText('查询 / 取消预约 My Reservation')).toBeInTheDocument();
     });
 
     it('renders the Staff, Observer and Admin Portal links', () => {

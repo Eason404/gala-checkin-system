@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, Music2, Users, Ticket, ArrowRight, Sparkles, AlertCircle, Utensils, Banknote, MapPin } from 'lucide-react';
+import { CalendarDays, Music2, Users, Ticket, ArrowRight, Sparkles, AlertCircle, Utensils, Banknote, MapPin, Search } from 'lucide-react';
 import { TimelineSection } from '../components/schedule/TimelineSection';
 
 const LandingPage: React.FC = () => {
@@ -105,8 +105,11 @@ const LandingPage: React.FC = () => {
                                 流程安排 Schedule <ArrowRight className="w-4 h-4 ml-1 group-hover/btn2:translate-y-1 rotate-90 transition-transform" />
                             </button>
 
-                            <Link to="/manage" className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all group/btn">
-                                <span className="block text-white/60 font-bold text-xs tracking-tight group-hover/btn:text-white transition-colors">查询预约 Manage</span>
+                            <Link to="/manage" className="flex items-center justify-between p-3 bg-white/10 hover:bg-white/15 rounded-2xl border border-white/20 transition-all group/btn">
+                                <div className="flex items-center gap-2">
+                                    <Search className="w-4 h-4 text-white/60 group-hover/btn:text-white transition-colors" />
+                                    <span className="block text-white/80 font-bold text-xs tracking-tight group-hover/btn:text-white transition-colors">查询 / 取消预约 My Reservation</span>
+                                </div>
                                 <ArrowRight className="w-4 h-4 text-white/40 group-hover/btn:translate-x-1 group-hover/btn:text-white transition-all" />
                             </Link>
                         </div>
