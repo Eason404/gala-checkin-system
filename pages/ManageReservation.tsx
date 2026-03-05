@@ -27,22 +27,24 @@ const ManageReservation: React.FC = () => {
             return;
         }
 
+        const normalizeName = (name: string) => name.trim().toLowerCase().replace(/\s+/g, ' ');
+
         setLoading(true);
         try {
             const allReservations = await getReservations();
             const cleanPhone = managePhone.replace(/\D/g, '');
-            const cleanSearchName = manageName.trim().toLowerCase();
+            const normalizedSearchName = normalizeName(manageName);
 
             const found = allReservations.find(r => {
                 // Strip non-digits from stored phone
                 const storedCleanPhone = r.phoneNumber.replace(/\D/g, '');
                 const phoneMatch = storedCleanPhone === cleanPhone;
 
-                const storedFullName = r.contactName.toLowerCase();
-                const storedFirstName = r.contactName.split(' ')[0].toLowerCase();
+                const storedNormalizedName = normalizeName(r.contactName);
+                const storedFirstName = storedNormalizedName.split(' ')[0];
 
-                // Exact match on full name or first name
-                const nameMatch = storedFullName === cleanSearchName || storedFirstName === cleanSearchName;
+                // Exact match on normalized full name or first name
+                const nameMatch = storedNormalizedName === normalizedSearchName || storedFirstName === normalizedSearchName;
 
                 return phoneMatch && nameMatch && r.checkInStatus !== CheckInStatus.Cancelled;
             });
