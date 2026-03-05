@@ -42,8 +42,16 @@ export const SilkScrollDraw: React.FC<SilkScrollDrawProps> = ({
             </div>
 
             {/* The Scroll Paper Body */}
-            <div className={`relative w-full bg-[#f4e2c6] shadow-[0_30px_60px_rgba(0,0,0,0.4)] border-l-4 border-r-4 border-amber-900/40 flex flex-col items-center px-4 md:px-8 overflow-hidden z-10 transition-all duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${unfurled ? 'h-[400px] md:h-[500px] py-8 md:py-12 opacity-100' : 'h-0 py-0 opacity-0'}`}
-                style={{ backgroundImage: 'radial-gradient(#d3ba96 1px, transparent 1px)', backgroundSize: '10px 10px' }}
+            <div className={`relative w-full h-[400px] md:h-[500px] py-8 md:py-12 bg-[#f4e2c6] shadow-[0_30px_60px_rgba(0,0,0,0.4)] border-l-4 border-r-4 border-amber-900/40 flex flex-col items-center px-4 md:px-8 overflow-hidden z-10 ${unfurled ? 'opacity-100' : 'opacity-0'}`}
+                data-testid="scroll-body"
+                style={{
+                    backgroundImage: 'radial-gradient(#d3ba96 1px, transparent 1px)',
+                    backgroundSize: '10px 10px',
+                    transform: unfurled ? 'scaleY(1)' : 'scaleY(0)',
+                    transformOrigin: 'top',
+                    transition: 'transform 1.2s cubic-bezier(0.22,1,0.36,1), opacity 0.8s ease-out',
+                    willChange: 'transform, opacity',
+                }}
             >
                 {/* Subtle Watermark */}
                 <div className="absolute inset-0 opacity-5 pointer-events-none flex items-center justify-center">

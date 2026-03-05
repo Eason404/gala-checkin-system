@@ -519,6 +519,20 @@ export const getReservations = async (): Promise<Reservation[]> => {
   }
 };
 
+export const getLotteryCandidates = async (): Promise<Reservation[]> => {
+  try {
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('checkInStatus', '==', CheckInStatus.Arrived)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(mapDocToReservation);
+  } catch (error) {
+    console.error("Error fetching lottery candidates", error);
+    return [];
+  }
+};
+
 export const getRecentReservations = async (limitCount: number = 10): Promise<Reservation[]> => {
   try {
     const q = query(collection(db, COLLECTION_NAME), orderBy('createdTime', 'desc'), limit(limitCount));

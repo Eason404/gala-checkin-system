@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getReservations, getTicketConfig, updateLotteryState, subscribeToLotteryState } from '../services/dataService';
+import { getLotteryCandidates, getTicketConfig, updateLotteryState, subscribeToLotteryState } from '../services/dataService';
 import { getCurrentUserRole } from '../services/authService';
 import { Reservation, CheckInStatus } from '../types';
 import { Gift, Trophy, RefreshCw, Crown, Radio } from 'lucide-react';
@@ -36,10 +36,10 @@ const RaffleWheel: React.FC = () => {
       setEnabled(!!config.lotteryEnabled);
 
       if (config.lotteryEnabled && role === 'admin') {
-        const res = await getReservations();
+        const res = await getLotteryCandidates();
         const validCandidates: Winner[] = [];
         res.forEach(r => {
-          if (r.checkInStatus === CheckInStatus.Arrived && r.lotteryNumbers) {
+          if (r.lotteryNumbers) {
             const firstName = r.contactName.split(' ')[0] || r.contactName;
             r.lotteryNumbers.forEach(num => {
               validCandidates.push({
@@ -53,11 +53,7 @@ const RaffleWheel: React.FC = () => {
         setCandidates(validCandidates);
       }
 
-      if (role !== 'admin') {
-        setTimeout(() => setLoading(false), 1000 + Math.random() * 1000);
-      } else {
-        setLoading(false);
-      }
+      setLoading(false);
     };
     init();
 
