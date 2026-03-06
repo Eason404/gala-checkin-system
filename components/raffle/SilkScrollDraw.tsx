@@ -6,14 +6,16 @@ interface SilkScrollDrawProps {
     isSpinning: boolean;
     winner: Winner | null;
     currentDisplay: string;
-    isAdmin: boolean;
+    canControl: boolean; // admin or host
+    canRevealPhone: boolean; // admin only
 }
 
 export const SilkScrollDraw: React.FC<SilkScrollDrawProps> = ({
     isSpinning,
     winner,
     currentDisplay,
-    isAdmin,
+    canControl,
+    canRevealPhone,
 }) => {
     const [showPhone, setShowPhone] = useState(false);
     const [unfurled, setUnfurled] = useState(false);
@@ -116,9 +118,9 @@ export const SilkScrollDraw: React.FC<SilkScrollDrawProps> = ({
                                 <div className="mt-8 flex items-center gap-3 bg-red-900/10 px-6 py-2 rounded-sm border border-red-900/20">
                                     <Phone className="w-4 h-4 text-red-900/60" />
                                     <span className="text-lg font-mono text-red-900 tracking-widest">
-                                        {isAdmin && showPhone ? winner.phone : maskPhone(winner.phone)}
+                                        {canRevealPhone && showPhone ? winner.phone : maskPhone(winner.phone)}
                                     </span>
-                                    {isAdmin && (
+                                    {canRevealPhone && (
                                         <button onClick={() => setShowPhone(!showPhone)} className="text-red-900/50 hover:text-red-900 ml-2">
                                             {showPhone ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>

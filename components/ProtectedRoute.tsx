@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'staff' | 'observer';
+  requiredRole?: 'admin' | 'staff' | 'observer' | 'host';
 }
 
 /** Get the default landing page for a given role */
@@ -16,6 +16,7 @@ export const getRoleLandingPage = (role: UserRole): string => {
     case 'admin': return '/staff';
     case 'staff': return '/staff';
     case 'observer': return '/admin';
+    case 'host': return '/raffle';
     default: return '/';
   }
 };
