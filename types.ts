@@ -68,6 +68,8 @@ export interface TicketConfig {
   lotteryEnabled?: boolean;  // Feature flag for lottery
   regularRegistrationClosed?: boolean; // Close regular registration
   totalMealCards?: number;   // Total physical meal cards (饭卡), default 380
+  mealCardsPerStaff?: number; // Customized meal card numbers per staff
+  trackedStaffCodes?: string[]; // Specific staff codes to always show on the dashboard
 }
 
 export interface Stats {

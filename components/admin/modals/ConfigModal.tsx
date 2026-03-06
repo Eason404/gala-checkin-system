@@ -46,6 +46,24 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                   <input type="number" className="w-full p-4 bg-orange-50 rounded-xl font-bold text-3xl border border-orange-200 text-center" value={editConfig.totalMealCards || 380} onChange={e => setEditConfig({ ...editConfig, totalMealCards: Number(e.target.value) })} />
                   <p className="text-[10px] text-gray-400 text-center">用于计算可售walk-in盒饭数量</p>
                </div>
+               <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">工作人员饭卡数 (Cards/Staff)</label>
+                  <input type="number" className="w-full p-4 bg-purple-50 rounded-xl font-bold text-3xl border border-purple-200 text-center" value={editConfig.mealCardsPerStaff || 1} onChange={e => setEditConfig({ ...editConfig, mealCardsPerStaff: Number(e.target.value) })} />
+               </div>
+               <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">固定追踪的员工代码 (Tracked Codes)</label>
+                  <input
+                     type="text"
+                     placeholder="A9X2M1, S1R5T9 (comma separated)"
+                     className="w-full p-4 bg-gray-50 rounded-xl font-bold text-lg border border-gray-200 text-center"
+                     value={editConfig.trackedStaffCodes?.join(', ') || ''}
+                     onChange={e => {
+                        const codes = e.target.value.split(',').map(c => c.trim()).filter(c => c !== '');
+                        setEditConfig({ ...editConfig, trackedStaffCodes: codes });
+                     }}
+                  />
+                  <p className="text-[10px] text-gray-400 text-center">强制在控制台显示这些员工 (Comma separated codes)</p>
+               </div>
                <button onClick={handleSaveConfig} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm uppercase tracking-[0.2em] shadow-xl">保存设置 Save Config</button>
             </div>
          </div>
