@@ -1,12 +1,11 @@
 import React from 'react';
-import { Utensils, Banknote, Flame, Leaf, AlertTriangle, Baby, Cookie } from 'lucide-react';
+import { Utensils, Banknote, Flame, AlertTriangle, Baby, Cookie } from 'lucide-react';
 
 interface MenuItem {
     code?: string;
     zh: string;
     en: string;
     spicy?: boolean;
-    notSpicy?: boolean;
 }
 
 const snacks: { zh: string; en: string }[] = [
@@ -20,14 +19,14 @@ const snacks: { zh: string; en: string }[] = [
 ];
 
 const adultMeals: MenuItem[] = [
-    { code: 'C1', zh: '红烧排骨 + 香菇油菜', en: 'Braised Pork Ribs + Baby Bok Choy with Mushrooms', notSpicy: true },
+    { code: 'C1', zh: '红烧排骨 + 香菇油菜', en: 'Braised Pork Ribs + Baby Bok Choy with Mushrooms' },
     { code: 'C2', zh: '宫保鸡丁（甜辣）+ 素炒圆白菜', en: 'Kung Pao Chicken (Sweet & Spicy) + Stir-Fried Cabbage', spicy: true },
-    { code: 'C3', zh: '红烧鸡翅 + 素炒圆白菜', en: 'Braised Chicken Wings + Stir-Fried Cabbage', notSpicy: true },
-    { code: 'C4', zh: '芹菜炒香干 + 香菇油菜', en: 'Stir-Fried Celery with Dried Tofu + Baby Bok Choy with Mushrooms', notSpicy: true },
+    { code: 'C3', zh: '红烧鸡翅 + 素炒圆白菜', en: 'Braised Chicken Wings + Stir-Fried Cabbage' },
+    { code: 'C4', zh: '芹菜炒香干 + 香菇油菜', en: 'Stir-Fried Celery with Dried Tofu + Baby Bok Choy with Mushrooms' },
     { code: 'L1', zh: '铁板孜然牛肉（辣）+ 四季豆茄子', en: 'Sizzling Cumin Beef (Spicy) + Green Beans & Eggplant', spicy: true },
     { code: 'L2', zh: '夫妻肺片（辣）+ 素炒三丝', en: 'Sichuan Sliced Beef in Chili Sauce (Spicy) + Stir-Fried Shredded Vegetables', spicy: true },
     { code: 'L3', zh: '农家小炒肉（辣）+ 花菜', en: 'Farmhouse Stir-Fried Pork (Spicy) + Stir-Fried Cauliflower', spicy: true },
-    { code: 'L4', zh: '梅菜扣肉 + 干煸四季豆', en: 'Pork Belly with Preserved Mustard Greens + Dry-Fried Green Beans', notSpicy: true },
+    { code: 'L4', zh: '梅菜扣肉 + 干煸四季豆', en: 'Pork Belly with Preserved Mustard Greens + Dry-Fried Green Beans' },
 ];
 
 const kidsMeals: { zh: string; en: string }[] = [
@@ -37,16 +36,12 @@ const kidsMeals: { zh: string; en: string }[] = [
 ];
 
 const SpicyBadge: React.FC = () => (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-500/20 text-red-400 rounded-full text-[9px] font-bold uppercase tracking-wider border border-red-500/30">
-        <Flame className="w-2.5 h-2.5" /> 辣 Spicy
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-red-500/30 text-red-300 rounded-full text-[10px] font-black uppercase tracking-wider border border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.4)] animate-pulse">
+        <Flame className="w-3 h-3 text-red-400" /> 辣 Spicy
     </span>
 );
 
-const MildBadge: React.FC = () => (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full text-[9px] font-bold uppercase tracking-wider border border-emerald-500/30">
-        <Leaf className="w-2.5 h-2.5" /> 不辣 Mild
-    </span>
-);
+
 
 const FoodMenu: React.FC = () => {
     return (
@@ -126,8 +121,8 @@ const FoodMenu: React.FC = () => {
                             <div className="flex items-start gap-3">
                                 {/* Code Badge */}
                                 <div className={`w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center font-black text-sm shadow-md ${meal.spicy
-                                        ? 'bg-gradient-to-br from-red-500 to-orange-600 text-white'
-                                        : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
+                                    ? 'bg-gradient-to-br from-red-500 to-orange-600 text-white'
+                                    : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
                                     }`}>
                                     {meal.code}
                                 </div>
@@ -136,7 +131,6 @@ const FoodMenu: React.FC = () => {
                                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
                                         <h3 className="text-sm font-bold text-white">{meal.zh}</h3>
                                         {meal.spicy && <SpicyBadge />}
-                                        {meal.notSpicy && <MildBadge />}
                                     </div>
                                     <p className="text-white/50 text-xs leading-relaxed">{meal.en}</p>
                                 </div>
