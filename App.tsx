@@ -12,6 +12,7 @@ import LandingPage from './pages/LandingPage';
 import { Ticket, Users, BarChart3, LogOut, CalendarDays, Home, Mail, Sparkles, Music2, Utensils } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
+import Login from './components/Login';
 import { logout, ENABLE_AUTH } from './services/authService';
 
 export const ENABLE_REGISTRATION = false;
@@ -159,6 +160,7 @@ function App() {
             <Route path="/registration" element={ENABLE_REGISTRATION ? <PublicRegistration /> : <Navigate to="/" replace />} />
             <Route path="/registration-temp" element={<PublicRegistration />} />
             <Route path="/walkin" element={<PublicRegistration forceWalkIn={true} />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/manage" element={<ManageReservation />} />
             <Route path="/program" element={<ProgramList />} />
             <Route path="/food" element={<FoodMenu />} />
