@@ -1,13 +1,14 @@
 import React, { useMemo } from 'react';
-import { Reservation, CheckInStatus, PaymentMethod } from '../../types';
+import { Reservation, CheckInStatus, PaymentMethod, TicketConfig } from '../../types';
 import { Users } from 'lucide-react';
 
 interface StaffStatsProps {
     reservations: Reservation[];
     staffMap: Record<string, string>;
+    config?: TicketConfig | null;
 }
 
-export const StaffStats: React.FC<StaffStatsProps> = ({ reservations, staffMap }) => {
+export const StaffStats: React.FC<StaffStatsProps> = ({ reservations, staffMap, config }) => {
     const stats = useMemo(() => {
         const staffData: Record<string, { checkIns: number; cash: number }> = {};
 
@@ -48,7 +49,7 @@ export const StaffStats: React.FC<StaffStatsProps> = ({ reservations, staffMap }
                 {stats.map(staff => (
                     <div key={staff.code} className="glass-dark p-4 rounded-2xl border border-white/10 shadow-lg">
                         <h4 className="text-white font-bold text-sm truncate mb-3" title={staff.name}>{staff.name}</h4>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                             <div className="bg-blue-500/10 rounded-lg p-2 border border-blue-500/20">
                                 <p className="text-blue-400 text-[9px] font-bold uppercase mb-0.5">Check-ins</p>
                                 <p className="text-lg font-black text-white">{staff.checkIns}</p>
@@ -56,6 +57,10 @@ export const StaffStats: React.FC<StaffStatsProps> = ({ reservations, staffMap }
                             <div className="bg-green-500/10 rounded-lg p-2 border border-green-500/20">
                                 <p className="text-green-400 text-[9px] font-bold uppercase mb-0.5">Cash</p>
                                 <p className="text-lg font-black text-cny-gold">${staff.cash}</p>
+                            </div>
+                            <div className="bg-orange-500/10 rounded-lg p-2 border border-orange-500/20">
+                                <p className="text-orange-400 text-[9px] font-bold uppercase mb-0.5">Cards</p>
+                                <p className="text-lg font-black text-white">{config?.mealCardsPerStaff ?? 1}</p>
                             </div>
                         </div>
                     </div>

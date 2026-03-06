@@ -544,9 +544,18 @@ export const getRecentReservations = async (limitCount: number = 10): Promise<Re
   }
 };
 
-export const getStaffAccounts = async (reservations: Reservation[]): Promise<Record<string, string>> => {
+export const getStaffAccounts = async (reservations: Reservation[], config?: TicketConfig): Promise<Record<string, string>> => {
   try {
     const uniqueIds = new Set<string>();
+
+    // Add specifically tracked staff codes from config
+    if (config?.trackedStaffCodes) {
+      config.trackedStaffCodes.forEach(code => {
+        if (code) uniqueIds.add(code.trim());
+      });
+    }
+
+    // Include operators from reservations
     reservations.forEach(r => {
       if (r.operatorId) uniqueIds.add(r.operatorId);
       if (r.lastModifiedBy) uniqueIds.add(r.lastModifiedBy);
@@ -557,7 +566,9 @@ export const getStaffAccounts = async (reservations: Reservation[]): Promise<Rec
       try {
         const docSnap = await getDoc(doc(db, 'access_keys', id));
         if (docSnap.exists()) {
-          map[id] = docSnap.data().displayName || id;
+          const data = docSnap.data();
+          // Skip public/observer if needed, or just include
+          map[id] = data.displayName || id;
         } else {
           map[id] = id;
         }
@@ -753,7 +764,9 @@ const DEFAULT_CONFIG: TicketConfig = {
   regularCap: 50,
   walkInCap: 50,
   lotteryEnabled: false,
-  totalMealCards: 380
+  totalMealCards: 380,
+  mealCardsPerStaff: 1,
+  trackedStaffCodes: []
 };
 
 export const getTicketConfig = async (): Promise<TicketConfig> => {

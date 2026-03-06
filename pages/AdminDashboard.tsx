@@ -65,10 +65,10 @@ const AdminDashboard: React.FC<{ view?: 'dashboard' | 'list' }> = ({ view = 'das
     try {
       const fetchedReservations = await getReservations();
 
-      const [fetchedStats, fetchedConfig, fetchedStaffMap] = await Promise.all([
+      const fetchedConfig = await getTicketConfig();
+      const [fetchedStats, fetchedStaffMap] = await Promise.all([
         calculateStats(fetchedReservations),
-        getTicketConfig(),
-        getStaffAccounts(fetchedReservations)
+        getStaffAccounts(fetchedReservations, fetchedConfig)
       ]);
 
       setStats(fetchedStats);
@@ -281,7 +281,7 @@ const AdminDashboard: React.FC<{ view?: 'dashboard' | 'list' }> = ({ view = 'das
       {view === 'dashboard' && (
         <>
           <StatsGrid stats={stats} config={config} />
-          <StaffStats reservations={reservations} staffMap={staffMap} />
+          <StaffStats reservations={reservations} staffMap={staffMap} config={config} />
           <CouponStats stats={stats} />
           <DailyStatsChart reservations={reservations} />
         </>
