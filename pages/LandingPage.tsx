@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, Music2, Users, Ticket, ArrowRight, Sparkles, AlertCircle, Utensils, Banknote, MapPin, Search } from 'lucide-react';
+import { CalendarDays, Music2, Users, Ticket, ArrowRight, Sparkles, AlertCircle, Utensils, Banknote, MapPin, Search, KeyRound } from 'lucide-react';
 import { TimelineSection } from '../components/schedule/TimelineSection';
 
 const LandingPage: React.FC = () => {
@@ -185,38 +185,22 @@ const LandingPage: React.FC = () => {
                     </div>
                 </Link>
 
-                {/* Staff/Admin Group */}
-                <div className="glass-dark rounded-[2.5rem] p-8 border border-white/10 overflow-hidden relative group">
+                {/* Staff/Admin Portal — unified login */}
+                <Link to="/login" className="glass-dark rounded-[2.5rem] p-8 border border-white/10 overflow-hidden relative group hover:shadow-2xl transition-all block">
                     <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
                         <Users className="w-24 h-24" />
                     </div>
-                    <div className="relative z-10 flex flex-col h-full">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 bg-white/10 text-white/60 rounded-xl flex items-center justify-center">
-                                <Users className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold text-white">内部管理</h3>
-                                <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Management</p>
-                            </div>
+                    <div className="relative z-10 flex items-center gap-6">
+                        <div className="w-14 h-14 bg-white/10 text-white/60 rounded-2xl flex items-center justify-center group-hover:bg-cny-red/20 group-hover:text-cny-red transition-colors shrink-0">
+                            <KeyRound className="w-7 h-7" />
                         </div>
-
-                        <div className="grid grid-cols-3 gap-2 mt-auto">
-                            <Link to="/staff" className="flex flex-col items-center justify-center p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all group/staff">
-                                <span className="text-white/80 font-bold text-xs mb-1 group-hover/staff:text-white transition-colors tracking-tight">工作人员</span>
-                                <span className="text-white/40 text-[9px] font-medium uppercase tracking-tighter">Staff</span>
-                            </Link>
-                            <Link to="/admin" className="flex flex-col items-center justify-center p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all group/observer">
-                                <span className="text-white/80 font-bold text-xs mb-1 group-hover/observer:text-white transition-colors tracking-tight">观察员</span>
-                                <span className="text-white/40 text-[9px] font-medium uppercase tracking-tighter">Observer</span>
-                            </Link>
-                            <Link to="/admin" className="flex flex-col items-center justify-center p-3 bg-cny-red/10 hover:bg-cny-red/20 rounded-2xl border border-cny-red/20 transition-all group/admin">
-                                <span className="text-cny-red font-bold text-xs mb-1 group-hover/admin:text-red-400 transition-colors tracking-tight">系统管理</span>
-                                <span className="text-cny-red/60 text-[9px] font-medium uppercase tracking-tighter">Admin</span>
-                            </Link>
+                        <div className="flex-1">
+                            <h3 className="text-xl font-bold text-white mb-1">工作人员入口</h3>
+                            <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Staff / Admin / Host Portal</p>
                         </div>
+                        <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0" />
                     </div>
-                </div>
+                </Link>
             </div>
         </div>
     );
