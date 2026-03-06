@@ -18,6 +18,7 @@ const RaffleWheel: React.FC = () => {
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canControl, setCanControl] = useState(false); // admin or host
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Derived available candidates pool that excludes already drawn winners
@@ -29,13 +30,16 @@ const RaffleWheel: React.FC = () => {
 
   useEffect(() => {
     const role = getCurrentUserRole();
-    setIsAdmin(role === 'admin');
+    const adminFlag = role === 'admin';
+    const controlFlag = role === 'admin' || role === 'host';
+    setIsAdmin(adminFlag);
+    setCanControl(controlFlag);
 
     const init = async () => {
       const config = await getTicketConfig();
       setEnabled(!!config.lotteryEnabled);
 
-      if (config.lotteryEnabled && role === 'admin') {
+      if (config.lotteryEnabled && controlFlag) {
         const res = await getLotteryCandidates();
         const validCandidates: Winner[] = [];
         res.forEach(r => {
@@ -95,7 +99,7 @@ const RaffleWheel: React.FC = () => {
   }, []);
 
   const startSpin = async () => {
-    if (availableCandidates.length === 0 || !isAdmin) return;
+    if (availableCandidates.length === 0 || !canControl) return;
 
     try {
       // Broadcast spinning state
@@ -130,7 +134,7 @@ const RaffleWheel: React.FC = () => {
   };
 
   const clearWinners = async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) return; // Only admin can clear winners
     await updateLotteryState({
       isSpinning: false,
       winner: null,
@@ -172,7 +176,7 @@ const RaffleWheel: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto py-2 md:py-4 px-2 md:px-4 text-center">
       <div className="mb-4 relative">
-        {!isAdmin && (
+        {!canControl && (
           <div className="absolute top-0 right-0 flex items-center gap-2 bg-red-100 text-red-600 px-3 py-1 rounded-full font-bold text-xs animate-pulse">
             <Radio className="w-3 h-3" /> 直播 LIVE
           </div>
@@ -184,11 +188,12 @@ const RaffleWheel: React.FC = () => {
         isSpinning={isSpinning}
         winner={winner}
         currentDisplay={currentDisplay}
-        isAdmin={isAdmin}
+        canControl={canControl}
+        canRevealPhone={isAdmin}
       />
 
-      {/* Admin Controls */}
-      {isAdmin ? (
+      {/* Controls: Admin & Host */}
+      {canControl ? (
         <div className="flex flex-col items-center gap-4 mt-12 w-full max-w-sm mx-auto">
           <button
             onClick={startSpin}
@@ -208,7 +213,8 @@ const RaffleWheel: React.FC = () => {
               </button>
             )}
 
-            {pastWinners.length > 0 && !isSpinning && !showClearConfirm && (
+            {/* Clear winners: admin only */}
+            {isAdmin && pastWinners.length > 0 && !isSpinning && !showClearConfirm && (
               <button
                 onClick={() => setShowClearConfirm(true)}
                 className="text-gray-500 text-sm hover:text-red-500 underline ml-auto"
@@ -218,8 +224,8 @@ const RaffleWheel: React.FC = () => {
             )}
           </div>
 
-          {/* Inline confirmation panel */}
-          {showClearConfirm && (
+          {/* Inline confirmation panel — admin only */}
+          {isAdmin && showClearConfirm && (
             <div className="w-full mt-3 p-4 bg-red-950/60 border border-red-700 rounded-2xl text-center">
               <p className="text-red-200 text-sm font-bold mb-1">⚠️ 确认清空所有中奖记录？</p>
               <p className="text-red-300/70 text-xs mb-4">所有人将重新获得中奖资格，此操作不可撤销。</p>
@@ -265,7 +271,12 @@ const RaffleWheel: React.FC = () => {
             {pastWinners.map((w, idx) => (
               <div key={`${w.number}-${idx}`} className="px-4 py-2 bg-gradient-to-br from-red-900 to-red-800 rounded-lg text-yellow-100 font-bold text-sm md:text-base border border-red-500/30 flex items-center gap-2 shadow-md">
                 <Crown className="w-3 h-3 text-yellow-500" />
-                {w.firstName}
+                <span>{w.firstName}</span>
+                {canControl && (
+                  <span className="text-yellow-200/50 text-xs font-mono ml-1">
+                    {isAdmin ? w.phone : maskPhone(w.phone)}
+                  </span>
+                )}
               </div>
             ))}
           </div>
