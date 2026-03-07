@@ -46,7 +46,7 @@ const LandingPage: React.FC = () => {
                             <MapPin className="w-5 h-5" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-white font-black text-sm sm:text-base leading-tight">纳提克高中礼堂</span>
+                            <span className="text-white font-black text-sm sm:text-base leading-tight">纳迪克高中礼堂</span>
                             <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Natick High School Auditorium</span>
                         </div>
                     </a>
