@@ -26,7 +26,8 @@ A React-based event management system designed for the **2026 Natick Chinese New
 | Document | Purpose |
 | :--- | :--- |
 | [AI_CONTEXT.md](./AI_CONTEXT.md) | Creative vision, design system, and pricing rules |
-| [DESIGN_FIREBASE_MIGRATION.md](./DESIGN_FIREBASE_MIGRATION.md) | Firestore schema, security rules, and key workflows |
+| [SCHEMA.md](./SCHEMA.md) | Firestore schema, security rules, and key workflows |
+| [SECURITY.md](./SECURITY.md) | Security Policy and Vulnerability Reporting |
 | [DEPLOY.md](./DEPLOY.md) | CI/CD setup guide for Firebase Hosting via GitHub Actions |
 
 ## 🚀 Getting Started

@@ -41,13 +41,16 @@ To elevate the user experience for the Year of the Horse, the system follows the
 
 | Route | Component | Purpose |
 | :--- | :--- | :--- |
-| `/` | `PublicRegistration` | New attendee registration (disabled when `ENABLE_REGISTRATION = false`) |
+| `/` | `LandingPage` | Event landing page and welcome screen |
+| `/registration` | `PublicRegistration` | New attendee registration (disabled when `ENABLE_REGISTRATION = false`) |
 | `/walkin` | `PublicRegistration` | Walk-in registration (skips ticket selection) |
 | `/manage` | `ManageReservation` | Lookup and cancel existing reservations |
-| `/schedule` | `EventSchedule` | Event day schedule and "Manage Reservation" entry point |
+| `/program` | `ProgramList` | Event day schedule and program details |
+| `/food` | `FoodMenu` | Gala food menu |
 | `/staff` | `StaffPortal` | Staff check-in, payment processing, lottery number assignment |
 | `/admin` | `AdminDashboard` | Real-time analytics, CSV export |
-| `/lottery` | `LotteryWheel` | Interactive prize drawing wheel |
+| `/admin/list` | `AdminDashboard` | Detailed reservation list view for observers/admins |
+| `/raffle` | `RaffleWheel` | Interactive prize drawing wheel |
 
 ---
 
