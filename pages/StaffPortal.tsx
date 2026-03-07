@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { getReservations, updateReservation, processFamilyCheckInTransaction } from '../services/dataService';
+import { getCurrentUserDisplayName, getCurrentUserRole } from '../services/authService';
 import PublicRegistration from './PublicRegistration';
 import { Reservation, CheckInStatus, PaymentStatus, PaymentMethod } from '../types';
 import { StaffHeader } from '../components/staff/StaffHeader';
@@ -27,17 +28,23 @@ const StaffPortal: React.FC = () => {
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrCodeData, setQrCodeData] = useState<string>('');
 
-  // Persisted Lane State
-  const [currentLane, setCurrentLane] = useState<string>(() => {
-    return localStorage.getItem('staffLane') || 'Select Lane';
-  });
+  const [currentLane, setCurrentLane] = useState<string>('');
 
-  // Effect to save lane
   useEffect(() => {
-    if (currentLane !== 'Select Lane') {
-      localStorage.setItem('staffLane', currentLane);
+    const role = getCurrentUserRole();
+    const displayName = getCurrentUserDisplayName();
+
+    if (role === 'staff') {
+      const match = displayName.match(/\d+/);
+      if (match) {
+        setCurrentLane(`Lane ${match[0]}`);
+      } else {
+        setCurrentLane(displayName);
+      }
+    } else {
+      setCurrentLane(displayName);
     }
-  }, [currentLane]);
+  }, []);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const cashInputRef = useRef<HTMLInputElement>(null);
@@ -147,7 +154,7 @@ const StaffPortal: React.FC = () => {
         paymentStatus: PaymentStatus.Paid,
         paymentMethod: PaymentMethod.Cash,
         paidAmount: selectedRes.totalAmount,
-        lastModifiedBy: currentLane !== 'Select Lane' ? currentLane : undefined
+        lastModifiedBy: currentLane || undefined
       };
 
       const newLottery = await processFamilyCheckInTransaction(
@@ -178,14 +185,13 @@ const StaffPortal: React.FC = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto pb-24 px-4 antialiased">
+    <div className="max-w-xl mx-auto pb-24 px-3 sm:px-4 antialiased">
       <AdminSwitcher />
       <StaffHeader
         setMode={handleSetMode}
         triggerHaptic={triggerHaptic}
         onShowWalkInQr={generateWalkInQr}
         currentLane={currentLane}
-        setCurrentLane={setCurrentLane}
       />
 
       {mode === 'search' && (
