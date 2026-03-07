@@ -11,6 +11,7 @@ interface MenuItem {
 const snacks: { zh: string; en: string }[] = [
     { zh: '糖葫芦', en: 'Sugar Coated Fruits' },
     { zh: '汤圆', en: 'Glutinous Rice Balls' },
+    { zh: '青团', en: 'QingTuan' },
     { zh: '奶茶', en: 'Boba Tea' },
     { zh: '水果奶昔', en: 'Mango Smoothie' },
     { zh: '麻花', en: 'Twisted Fried Dough Sticks' },
