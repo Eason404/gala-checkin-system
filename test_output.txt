@@ -1,0 +1,107 @@
+
+> natick-cny-2026-gala-system@0.0.0 test
+> jest
+
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+FAIL pages/__tests__/PublicRegistration.test.tsx
+  ● PublicRegistration Component › Layout & Props › handles walkin route via query parameters
+
+    expect(element).toBeInTheDocument()
+
+    element could not be found in the document
+
+      94 |
+      95 |             // Should act like forceWalkIn
+    > 96 |             expect(await screen.findByText('请填写真实姓名和联系方式')).toBeInTheDocument();
+         |                                                             ^
+      97 |             // Wait to ensure it skipped to step 2
+      98 |             expect(screen.queryByText('1 成人 (12岁以上)')).not.toBeInTheDocument();
+      99 |         });
+
+      at Object.<anonymous> (pages/__tests__/PublicRegistration.test.tsx:96:61)
+
+PASS services/dataService.test.ts
+  ● Console
+
+    console.error
+      Reminder Email error Error: Network Error
+          at Object.<anonymous> (/Users/easonj/VScodeProjects/gala-checkin-system/services/dataService.test.ts:313:53)
+          at Promise.finally.completed (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+          at _callCircusTest (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+          at _runTest (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+          at /Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+          at _runTestsForDescribeBlock (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+          at run (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+          at jestAdapter (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-circus/build/runner.js:101:19)
+          at runTestInternal (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-runner/build/index.js:275:16)
+          at runTest (/Users/easonj/VScodeProjects/gala-checkin-system/node_modules/jest-runner/build/index.js:343:7)
+
+      430 |     }
+      431 |   } catch (e) {
+    > 432 |     console.error("Reminder Email error", e);
+          |             ^
+      433 |     throw e; // Let UI know sending failed
+      434 |   }
+      435 | };
+
+      at sendEventReminderEmail (services/dataService.ts:432:13)
+      at Object.<anonymous> (services/dataService.test.ts:315:7)
+
+PASS components/registration/__tests__/StepTwoForm.test.tsx
+PASS pages/__tests__/ProgramList.test.tsx
+PASS pages/__tests__/LandingPage.test.tsx
+PASS components/registration/__tests__/StepOneTicketSelection.test.tsx
+PASS pages/__tests__/ManageReservation.test.tsx
+PASS components/schedule/__tests__/TimelineSection.test.tsx
+PASS components/raffle/__tests__/SilkScrollDraw.test.tsx
+PASS components/__tests__/RaffleWheel.test.tsx
+PASS components/registration/__tests__/LiveTicker.test.tsx
+PASS services/authService.test.ts
+  ● Console
+
+    console.log
+      [Auth] 尝试验证代码...
+
+      at loginWithCode (services/authService.ts:68:11)
+
+    console.log
+      [Auth] 尝试验证代码...
+
+      at loginWithCode (services/authService.ts:68:11)
+
+    console.log
+      [Auth] 尝试验证代码...
+
+      at loginWithCode (services/authService.ts:68:11)
+
+    console.log
+      [Auth] 尝试验证代码...
+
+      at loginWithCode (services/authService.ts:68:11)
+
+    console.error
+      [Auth] Firebase 错误: { code: 'permission-denied' }
+
+      88 |     }
+      89 |   } catch (error: any) {
+    > 90 |     console.error("[Auth] Firebase 错误:", error);
+         |             ^
+      91 |     if (error.code === 'permission-denied') {
+      92 |       return { success: false, role: null, error: 'PERMISSION_DENIED' };
+      93 |     }
+
+      at loginWithCode (services/authService.ts:90:13)
+      at Object.<anonymous> (services/authService.test.ts:89:22)
+
+PASS utils/validation.test.ts
+
+Test Suites: 1 failed, 12 passed, 13 total
+Tests:       1 failed, 88 passed, 89 total
+Snapshots:   0 total
+Time:        1.327 s
+Ran all test suites.

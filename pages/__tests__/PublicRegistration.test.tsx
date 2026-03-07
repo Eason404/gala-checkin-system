@@ -71,7 +71,8 @@ describe('PublicRegistration Component', () => {
             totalHeadcountCap: 450,
             earlyBirdCap: 300,
             regularCap: 50,
-            walkInCap: 50
+            walkInCap: 50,
+            publicWalkInEnabled: true
         });
         (dataService.getReservations as jest.Mock).mockResolvedValue([]);
         (dataService.getRecentReservations as jest.Mock).mockResolvedValue([]);
