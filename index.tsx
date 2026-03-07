@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { UserProvider } from './context/UserContext';
 
 const rootElement = document.getElementById('root');
 
@@ -14,16 +15,18 @@ if (!rootElement) {
 console.log("System initializing...");
 
 try {
-    const root = ReactDOM.createRoot(rootElement);
-    root.render(
-      <React.StrictMode>
-        <ErrorBoundary>
-            <App />
-        </ErrorBoundary>
-      </React.StrictMode>
-    );
-    console.log("System mounted successfully.");
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <UserProvider>
+          <App />
+        </UserProvider>
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
+  console.log("System mounted successfully.");
 } catch (e) {
-    console.error("System failed to mount:", e);
-    throw e; // Re-throw to be caught by global handler
+  console.error("System failed to mount:", e);
+  throw e; // Re-throw to be caught by global handler
 }

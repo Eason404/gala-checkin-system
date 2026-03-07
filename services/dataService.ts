@@ -1,9 +1,10 @@
 
 import { Reservation, TicketType, PaymentStatus, CheckInStatus, PaymentMethod, Stats, TicketConfig, Coupon } from '../types';
 import { db, analytics } from '../firebaseConfig';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy, Timestamp, setDoc, getDoc, limit, onSnapshot, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy, Timestamp, setDoc, getDoc, limit, onSnapshot, runTransaction, startAfter } from 'firebase/firestore';
 import { logEvent } from 'firebase/analytics';
 import { getCurrentUserCode } from './authService';
+import DOMPurify from 'dompurify';
 
 const COLLECTION_NAME = 'reservations';
 const MAIL_COLLECTION = 'mail';
@@ -281,11 +282,11 @@ export const sendCancellationEmail = async (reservation: Reservation) => {
 
         <div style="padding: 40px 30px;">
           <p style="color: #333333; font-size: 16px; margin-bottom: 20px;">
-            您好 / Dear <strong>${reservation.contactName}</strong>,
+            您好 / Dear <strong>${DOMPurify.sanitize(reservation.contactName)}</strong>,
           </p>
           
           <p style="color: #555555; font-size: 14px; line-height: 1.6; margin-bottom: 30px;">
-            您的 Natick 2026 春晚预约（ID: <strong>${reservation.id}</strong>）已成功取消。<br>
+            您的 Natick 2026 春晚预约（ID: <strong>${DOMPurify.sanitize(reservation.id)}</strong>）已成功取消。<br>
             Your reservation for the Natick 2026 CNY Gala has been successfully cancelled.
           </p>
 
@@ -320,10 +321,11 @@ export const sendCancellationEmail = async (reservation: Reservation) => {
 };
 
 export const generateEventReminderEmailHtml = (reservationData?: Reservation) => {
-  const contactName = reservationData ? reservationData.contactName : "Guest";
-  const totalDue = reservationData ? reservationData.totalAmount : 0;
-  const resIdStr = reservationData ? reservationData.id : "YOUR-RESERVATION-ID";
-  const qrUrl = reservationData ? "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + reservationData.id : "";
+  // Use DOMPurify to sanitize user-provided data
+  const sanitizedName = reservationData?.contactName ? DOMPurify.sanitize(reservationData.contactName) : 'Guest';
+  const sanitizedId = reservationData?.id ? DOMPurify.sanitize(reservationData.id) : 'YOUR-RESERVATION-ID';
+  const totalDue = reservationData?.totalAmount || 0;
+  const qrUrl = reservationData?.id ? "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(sanitizedId) : "";
 
   let dueStrHTML = "";
   if (reservationData) {
@@ -337,12 +339,12 @@ export const generateEventReminderEmailHtml = (reservationData?: Reservation) =>
   if (qrUrl) {
     qrStrHTML = `<div style="text-align: center; margin-bottom: 20px;">
       <img src="${qrUrl}" width="180" height="180" style="border: 4px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; display: inline-block;" alt="Check-in QR Code" />
-      <p style="margin: 10px 0 0; color: #D72638; font-size: 18px; font-weight: 900; font-family: monospace; letter-spacing: 2px;">${resIdStr}</p>
+      <p style="margin: 10px 0 0; color: #D72638; font-size: 18px; font-weight: 900; font-family: monospace; letter-spacing: 2px;">${sanitizedId}</p>
       <p style="margin: 5px 0 0; color: #666; font-size: 12px;">请出示此码签到 / Scan to Check-in</p>
     </div>`;
   }
 
-  const calendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Natick+2026+CNY+Gala&dates=20260308T140000Z/20260308T183000Z&details=Ticket+Confirmation+ID:+" + resIdStr + "%0A%0APlease+bring+cash+for+check-in+and+snacks.+Present+this+email+at+the+reception.&location=Natick+High+School,+15+West+St,+Natick,+MA+01760";
+  const calendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Natick+2026+CNY+Gala&dates=20260308T140000Z/20260308T183000Z&details=Ticket+Confirmation+ID:+" + sanitizedId + "%0A%0APlease+bring+cash+for+check-in+and+snacks.+Present+this+email+at+the+reception.&location=Natick+High+School,+15+West+St,+Natick,+MA+01760";
 
   return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e0e0e0;">
@@ -357,7 +359,7 @@ export const generateEventReminderEmailHtml = (reservationData?: Reservation) =>
         
         <!-- Welcome -->
         <p style="color: #333; font-size: 15px; margin: 0 0 25px; text-align: center;">
-          您好 / Dear <strong>${contactName}</strong>,<br/>
+          您好 / Dear <strong>${sanitizedName}</strong>,<br/>
           <span style="color: #666; font-size: 13px; margin-top: 5px; display: inline-block;">We look forward to seeing you! 期待您的光临！</span>
         </p>
 
@@ -428,9 +430,9 @@ export const sendEventReminderEmail = async (targetEmails: string[], reservation
         isReminderEmailSent: true
       });
     }
-  } catch (e) {
-    console.error("Reminder Email error", e);
-    throw e; // Let UI know sending failed
+  } catch (error) {
+    console.error("[Email] Error sending event reminder email:", error);
+    throw error;
   }
 };
 
@@ -512,12 +514,34 @@ export const sendDiscountEmail = async (reservation: Reservation) => {
 export const getReservations = async (): Promise<Reservation[]> => {
   try {
     const q = query(collection(db, COLLECTION_NAME), orderBy('createdTime', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(mapDocToReservation);
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ ...doc.data() as Reservation, firebaseDocId: doc.id }));
   } catch (error) {
     console.error("Error fetching", error);
     return [];
   }
+};
+
+export const getReservationsPaged = async (pageSize: number = 20, lastVisibleDoc?: any): Promise<{ reservations: Reservation[], lastDoc: any, totalCount: number }> => {
+  const coll = collection(db, COLLECTION_NAME);
+
+  // 1. Get total count (for UI progress/total info)
+  const totalSnapshot = await getDocs(query(coll, limit(1000))); // Rough estimate
+  const totalCount = totalSnapshot.size;
+
+  // 2. Build paged query
+  let q;
+  if (lastVisibleDoc) {
+    q = query(coll, orderBy('createdTime', 'desc'), startAfter(lastVisibleDoc), limit(pageSize));
+  } else {
+    q = query(coll, orderBy('createdTime', 'desc'), limit(pageSize));
+  }
+
+  const querySnapshot = await getDocs(q);
+  const reservations = querySnapshot.docs.map(doc => ({ ...doc.data() as Reservation, firebaseDocId: doc.id }));
+  const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+
+  return { reservations, lastDoc, totalCount };
 };
 
 export const getLotteryCandidates = async (): Promise<Reservation[]> => {
