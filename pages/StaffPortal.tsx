@@ -91,7 +91,7 @@ const StaffPortal: React.FC = () => {
   const executeSearch = async (termOverride?: string) => {
     setErrorMsg('');
     const term = (termOverride || searchPhone).trim();
-    if (term.length < 4) return setErrorMsg('信息太短');
+    if (term.length < 4) return setErrorMsg('Query too short');
 
     setLoading(true);
     const data = await getReservations();
@@ -110,7 +110,7 @@ const StaffPortal: React.FC = () => {
 
     if (found) {
       if (found.checkInStatus === CheckInStatus.Cancelled) {
-        setErrorMsg('此票已取消 (Cancelled)');
+        setErrorMsg('Ticket Cancelled');
         triggerHaptic([50, 100, 50]);
         return;
       }
@@ -125,7 +125,7 @@ const StaffPortal: React.FC = () => {
       setMode('result');
       setSearchPhone('');
     } else {
-      setErrorMsg('未找到有效记录');
+      setErrorMsg('No valid record found');
       triggerHaptic([50, 100]);
     }
   };
@@ -164,9 +164,9 @@ const StaffPortal: React.FC = () => {
     } catch (e: any) {
       console.error(e);
       if (e.message === 'RESERVATION_CANCELLED') {
-        setErrorMsg('此票已取消 (Cancelled)');
+        setErrorMsg('Ticket Cancelled');
       } else {
-        setErrorMsg('更新失败 (Update failed)');
+        setErrorMsg('Update failed');
       }
     } finally {
       setLoading(false);
@@ -249,7 +249,7 @@ const StaffPortal: React.FC = () => {
       {showQrModal && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setShowQrModal(false)}>
           <div className="bg-white rounded-[2.5rem] shadow-2xl p-8 max-w-sm w-full text-center" onClick={e => e.stopPropagation()}>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">现场购票扫码区</h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Walk-in QR Code</h2>
             <p className="text-gray-500 text-sm mb-6">Scan to register for Walk-in tickets</p>
             {qrCodeData && (
               <img src={qrCodeData} alt="Walk-in QR Code" className="w-full h-auto rounded-xl mx-auto shadow-sm" />
@@ -258,7 +258,7 @@ const StaffPortal: React.FC = () => {
               onClick={() => setShowQrModal(false)}
               className="mt-8 w-full py-4 bg-gray-100 text-gray-900 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-gray-200 transition-colors"
             >
-              关闭 (Close)
+              Close
             </button>
           </div>
         </div>

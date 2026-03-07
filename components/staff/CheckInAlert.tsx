@@ -16,8 +16,8 @@ export const CheckInAlert: React.FC<CheckInAlertProps> = ({ selectedRes, resetTo
           <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertTriangle className="w-10 h-10 text-orange-500" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">已签到! <span className="text-3xl ml-1 font-black text-orange-500">Checked In</span></h3>
-          <p className="text-sm font-semibold text-gray-400">请勿重复放行 / Duplicate Scan</p>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2"><span className="text-3xl font-black text-orange-500">Checked In</span></h3>
+          <p className="text-sm font-semibold text-gray-400">Duplicate Scan</p>
 
           <div className="my-8 bg-gray-50 rounded-2xl p-6 text-left border border-gray-100">
             <div className="flex justify-between items-center border-b border-gray-200 pb-3 mb-3">
@@ -26,7 +26,7 @@ export const CheckInAlert: React.FC<CheckInAlertProps> = ({ selectedRes, resetTo
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Size</span>
-              <span className="font-bold text-gray-900 text-base">{selectedRes.totalPeople} 人 (People)</span>
+              <span className="font-bold text-gray-900 text-base">{selectedRes.totalPeople} People</span>
             </div>
           </div>
 
@@ -34,7 +34,7 @@ export const CheckInAlert: React.FC<CheckInAlertProps> = ({ selectedRes, resetTo
             onClick={resetToNext}
             className="w-full py-5 bg-gray-900 text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all hover:bg-black"
           >
-            <span>好的, 下一位 <span className="text-2xl ml-1 font-black">OK, Next</span></span>
+            <span>OK, Next</span>
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>

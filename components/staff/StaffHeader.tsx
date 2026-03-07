@@ -23,7 +23,7 @@ export const StaffHeader: React.FC<StaffHeaderProps> = ({ setMode, triggerHaptic
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-3xl font-black text-white tracking-tight drop-shadow-md">签到台</h2>
+            <h2 className="text-3xl font-black text-white tracking-tight drop-shadow-md">Check-in Desk</h2>
             {currentLane && setCurrentLane && (
               <div className="relative">
                 <button
@@ -62,7 +62,7 @@ export const StaffHeader: React.FC<StaffHeaderProps> = ({ setMode, triggerHaptic
           onClick={() => { setMode('dashboard'); triggerHaptic(10); }}
           className="bg-white/10 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-lg tracking-wider hover:bg-white/20 transition-colors flex items-center gap-1"
         >
-          <BarChart3 className="w-4 h-4 mr-1" /> 工作台 <span className="text-sm ml-1">Stats</span>
+          <BarChart3 className="w-4 h-4 mr-1" /> <span className="text-sm">Stats</span>
         </button>
         {onShowWalkInQr && (
           <button
@@ -70,14 +70,14 @@ export const StaffHeader: React.FC<StaffHeaderProps> = ({ setMode, triggerHaptic
             className="bg-white/10 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-lg tracking-wider hover:bg-white/20 transition-colors flex items-center gap-1"
             title="Show Walk-In QR Code"
           >
-            现场码 <span className="text-sm ml-1">QR</span>
+            <span className="text-sm">QR</span>
           </button>
         )}
         <button
           onClick={() => { setMode('walkin'); triggerHaptic(20); }}
           className="bg-cny-gold text-cny-dark px-4 py-2 rounded-xl font-bold text-xs uppercase shadow-lg tracking-wider hover:bg-white transition-colors"
         >
-          现场购票 <span className="text-sm ml-1">Walk-In</span>
+          <span className="text-sm">Walk-In</span>
         </button>
       </div>
     </div>

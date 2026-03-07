@@ -14,7 +14,7 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({ onScanSuccess, o
   useEffect(() => {
     const html5QrCode = new Html5Qrcode("qr-reader");
     scannerRef.current = html5QrCode;
-    
+
     html5QrCode.start(
       { facingMode: "environment" },
       { fps: 15, qrbox: 250 },
@@ -39,12 +39,12 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({ onScanSuccess, o
   return (
     <div className="fixed inset-0 bg-black z-[100] flex flex-col p-6 animate-in fade-in">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-white font-bold uppercase tracking-widest text-base">扫描中 Scanning...</h3>
+        <h3 className="text-white font-bold uppercase tracking-widest text-base">Scanning...</h3>
         <button onClick={onClose} className="text-white/40 hover:text-white transition-colors"><X className="w-8 h-8" /></button>
       </div>
       <div className="flex-1 flex flex-col justify-center">
         <div id="qr-reader" className="w-full aspect-square rounded-3xl overflow-hidden bg-white/5 border-4 border-white/10 shadow-2xl" />
-        <p className="mt-8 text-white/40 text-center text-sm font-medium">请对准纸质或电子二维码<br/>Align QR code within frame</p>
+        <p className="mt-8 text-white/40 text-center text-sm font-medium">Align QR code within frame</p>
       </div>
     </div>
   );

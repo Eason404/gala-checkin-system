@@ -1,4 +1,3 @@
-
 declare var describe: any;
 declare var test: any;
 declare var expect: any;
@@ -6,7 +5,7 @@ declare var beforeEach: any;
 declare var jest: any;
 
 // Mock Storage
-const mockStorage: Record<string, string> = {};
+let mockStorage: Record<string, string> = {};
 
 jest.mock('../firebaseConfig', () => ({
   db: {},
@@ -41,8 +40,7 @@ import { loginWithCode, logout, getCurrentUserRole, getCurrentUserCode } from '.
 
 describe('AuthService - Database based access', () => {
   beforeEach(() => {
-    // Reset Session Storage
-    for (const key in mockStorage) delete mockStorage[key];
+    mockStorage = {}; // Reset mockStorage
 
     Object.defineProperty(window, 'sessionStorage', {
       value: {
@@ -96,13 +94,15 @@ describe('AuthService - Database based access', () => {
 
   describe('Session Management', () => {
     test('logout 应清除 SessionStorage 并刷新页面', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
       try {
         logout();
       } catch (e: any) {
-        if (!e.message.includes('Not implemented: navigation') && e.type !== 'not implemented') throw e;
+        if (!e.message?.includes('Not implemented: navigation') && e.type !== 'not implemented') throw e;
       }
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('cny_access_token');
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('cny_access_role');
+      consoleSpy.mockRestore();
     });
 
     test('getCurrentUserCode 应返回存储的代码或默认为 PUBLIC', () => {
