@@ -64,6 +64,16 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                   />
                   <p className="text-[10px] text-gray-400 text-center">强制在控制台显示这些员工 (Comma separated codes)</p>
                </div>
+
+               <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <label className="text-xs font-bold text-blue-500 uppercase tracking-widest">开启现场注册 (Public Walk-In)</label>
+                  <input type="checkbox" className="w-6 h-6 rounded text-blue-600 focus:ring-blue-600" checked={editConfig.publicWalkInEnabled || false} onChange={e => setEditConfig({ ...editConfig, publicWalkInEnabled: e.target.checked })} />
+               </div>
+               <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-xl border border-yellow-100">
+                  <label className="text-xs font-bold text-yellow-500 uppercase tracking-widest">仅限无饭票(No Food Only)</label>
+                  <input type="checkbox" className="w-6 h-6 rounded text-yellow-600 focus:ring-yellow-600" checked={editConfig.walkInNoFoodOnly || false} onChange={e => setEditConfig({ ...editConfig, walkInNoFoodOnly: e.target.checked })} />
+               </div>
+
                <button onClick={handleSaveConfig} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm uppercase tracking-[0.2em] shadow-xl">保存设置 Save Config</button>
             </div>
          </div>

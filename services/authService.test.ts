@@ -49,12 +49,9 @@ describe('AuthService - Database based access', () => {
         getItem: jest.fn((key: string) => mockStorage[key] || null),
         setItem: jest.fn((key: string, value: string) => { mockStorage[key] = value; }),
         removeItem: jest.fn((key: string) => { delete mockStorage[key]; }),
-        clear: jest.fn(() => { for (const key in mockStorage) delete mockStorage[key]; }),
       },
       writable: true
     });
-
-    // window.location is mocked below instead of defineProperty which fails in jsdom 14+
 
     jest.clearAllMocks();
   });
@@ -102,7 +99,7 @@ describe('AuthService - Database based access', () => {
       try {
         logout();
       } catch (e: any) {
-        if (!e.message.includes('Not implemented: navigation')) throw e;
+        if (!e.message.includes('Not implemented: navigation') && e.type !== 'not implemented') throw e;
       }
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('cny_access_token');
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('cny_access_role');

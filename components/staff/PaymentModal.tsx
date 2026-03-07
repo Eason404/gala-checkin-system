@@ -20,8 +20,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     <div className="fixed inset-0 bg-cny-dark/90 backdrop-blur-xl z-[110] flex items-center justify-center p-6 animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
         <div className="bg-cny-red p-8 text-white text-center">
-          <span className="text-xs font-bold uppercase tracking-widest opacity-70">应收金额 Total Due</span>
-          <div className="text-6xl font-bold mt-2 tracking-tighter">${selectedRes.totalAmount}</div>
+          <span className="text-xs font-bold uppercase tracking-widest opacity-70">应收现金 Cash to Collect</span>
+          <div className="text-6xl font-black mt-2 tracking-tighter">${selectedRes.totalAmount}</div>
+
+          {selectedRes.ticketType !== 'WalkInNoFood' && (
+            <div className="mt-4 inline-block bg-white/20 px-4 py-2 rounded-xl text-sm font-bold shadow-sm">
+              需发饭卡 Meal Cards to Give: <span className="text-xl ml-1">{selectedRes.totalPeople}</span>
+            </div>
+          )}
         </div>
         <div className="p-8 space-y-6">
           <div>

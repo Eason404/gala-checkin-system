@@ -260,6 +260,20 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
     );
   }
 
+  // Walk-In check - must be enabled in config
+  if (isWalkIn && config && !config.publicWalkInEnabled) {
+    return (
+      <div className="max-w-xl mx-auto space-y-12 pb-32 pt-20 text-center animate-in fade-in duration-500">
+        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-black text-white">现场注册目前已关闭</h2>
+        <p className="text-white/60">Walk-in registration is currently disabled by the organizer.</p>
+        <Link to="/" className="inline-block mt-8 px-8 py-4 bg-white/10 text-white rounded-[2rem] font-bold hover:bg-white/20 transition-colors">
+          返回主页 Return Home
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-xl mx-auto space-y-12 pb-32">
       <LiveTicker />
@@ -318,6 +332,8 @@ const PublicRegistration: React.FC<PublicRegistrationProps> = ({ forceWalkIn = f
               handleNextStep={handleNextStep}
               progressBarRef={progressBarRef}
               earlyBirdProgress={earlyBirdProgress}
+              isWalkIn={isWalkIn}
+              isNoFoodOnly={config?.walkInNoFoodOnly}
             />
           ) : (
             <StepTwoForm
