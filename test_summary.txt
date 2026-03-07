@@ -1,0 +1,115 @@
+
+> natick-cny-2026-gala-system@0.0.0 test
+> jest services/dataService.test.ts
+
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+FAIL services/dataService.test.ts
+  DataService - Full Coverage Suite
+    Reservation Management
+      ✓ 成功创建预约应包含生成的 ID 和 默认状态 (2 ms)
+      ✓ 创建预约应触发邮件发送 (Mail Collection Write) (1 ms)
+      ✓ 验证儿童免费逻辑 (Children should not be charged)
+      ✓ 更新预约状态应生效 (1 ms)
+      ✓ 创建预约应验证必填项 (5 ms)
+      ✕ getReservations should fail gracefully and return empty array
+      ✕ Email functions should handle errors safely (20 ms)
+      ✕ sendEventReminderEmail should write to mail collection and update reservation (1 ms)
+      ✕ sendEventReminderEmail should throw error if failed (1 ms)
+      ✓ 删除预约应从列表中移除 (1 ms)
+      ✓ updateReservation 应能保存 editHistory 并且 mapDocToReservation 能够还原 (1 ms)
+    Configuration Management
+      ✓ getTicketConfig 应返回默认值 (当 DB 为空时)
+      ✓ updateTicketConfig 应更新 DB 并可通过 getTicketConfig 读取
+      ✓ updateLotteryState and subscribeToLotteryState should work correctly (1 ms)
+      ✓ subscribeToLotteryState fallback safely when doc missing
+    Business Logic & Stats
+      ✓ 不同票种价格应正确应用 (EarlyBird: $15, Regular: $20) (1 ms)
+      ✓ 统计应正确计算各项指标 (已签到 vs 未签到 vs 已取消)
+      ✓ 统计 coupon usage including legacy couponCode string (1 ms)
+      ✓ 应该计算所有的 demographic count 和 lunch box 调整
+      ✓ 盒饭追踪：已签到 vs 未签到的饭卡分配 (Meal tracking with mixed check-in status)
+      ✓ getRecentReservations returns recent items safely (4 ms)
+      ✓ getRecentReservations fails gracefully by returning empty array
+      ✓ getReservationsPaged should return chunked data and total count (1 ms)
+    Duplicate Prevention
+      ✓ Should throw error for duplicate phone number
+      ✓ Should allow registration with a duplicate phone number if previous was cancelled (1 ms)
+      ✓ Should handle ID collision and retry (Simulated via mock)
+
+  ● DataService - Full Coverage Suite › Reservation Management › getReservations should fail gracefully and return empty array
+
+    Network Error
+
+      274 |     test('getReservations should fail gracefully and return empty array', async () => {
+      275 |       const getDocsMock = jest.requireMock('firebase/firestore').getDocs;
+    > 276 |       getDocsMock.mockReturnValueOnce(Promise.reject(new Error('Network Error')));
+          |                                                      ^
+      277 |       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      278 |       const res = await getReservations();
+      279 |       expect(res).toEqual([]);
+
+      at Object.<anonymous> (services/dataService.test.ts:276:54)
+
+  ● DataService - Full Coverage Suite › Reservation Management › Email functions should handle errors safely
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Network Error"
+    Received message:   "Cannot read properties of undefined (reading 'sanitize')"
+
+          323 | export const generateEventReminderEmailHtml = (reservationData?: Reservation) => {
+          324 |   // Use DOMPurify to sanitize user-provided data
+        > 325 |   const sanitizedName = reservationData?.contactName ? DOMPurify.sanitize(reservationData.contactName) : 'Guest';
+              |                                                                  ^
+          326 |   const sanitizedId = reservationData?.id ? DOMPurify.sanitize(reservationData.id) : 'YOUR-RESERVATION-ID';
+          327 |   const totalDue = reservationData?.totalAmount || 0;
+          328 |   const qrUrl = reservationData?.id ? "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(sanitizedId) : "";
+
+      at generateEventReminderEmailHtml (services/dataService.ts:325:66)
+      at sendEventReminderEmail (services/dataService.ts:417:53)
+      at Object.<anonymous> (services/dataService.test.ts:309:42)
+      at Object.toThrow (node_modules/expect/build/index.js:2155:20)
+      at Object.<anonymous> (services/dataService.test.ts:309:148)
+
+  ● DataService - Full Coverage Suite › Reservation Management › sendEventReminderEmail should write to mail collection and update reservation
+
+    TypeError: Cannot read properties of undefined (reading 'sanitize')
+
+      323 | export const generateEventReminderEmailHtml = (reservationData?: Reservation) => {
+      324 |   // Use DOMPurify to sanitize user-provided data
+    > 325 |   const sanitizedName = reservationData?.contactName ? DOMPurify.sanitize(reservationData.contactName) : 'Guest';
+          |                                                                  ^
+      326 |   const sanitizedId = reservationData?.id ? DOMPurify.sanitize(reservationData.id) : 'YOUR-RESERVATION-ID';
+      327 |   const totalDue = reservationData?.totalAmount || 0;
+      328 |   const qrUrl = reservationData?.id ? "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(sanitizedId) : "";
+
+      at generateEventReminderEmailHtml (services/dataService.ts:325:66)
+      at sendEventReminderEmail (services/dataService.ts:417:53)
+      at Object.<anonymous> (services/dataService.test.ts:323:35)
+
+  ● DataService - Full Coverage Suite › Reservation Management › sendEventReminderEmail should throw error if failed
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Network Error"
+    Received message:   "Cannot read properties of undefined (reading 'sanitize')"
+
+          323 | export const generateEventReminderEmailHtml = (reservationData?: Reservation) => {
+          324 |   // Use DOMPurify to sanitize user-provided data
+        > 325 |   const sanitizedName = reservationData?.contactName ? DOMPurify.sanitize(reservationData.contactName) : 'Guest';
+              |                                                                  ^
+          326 |   const sanitizedId = reservationData?.id ? DOMPurify.sanitize(reservationData.id) : 'YOUR-RESERVATION-ID';
+          327 |   const totalDue = reservationData?.totalAmount || 0;
+          328 |   const qrUrl = reservationData?.id ? "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(sanitizedId) : "";
+
+      at generateEventReminderEmailHtml (services/dataService.ts:325:66)
+      at sendEventReminderEmail (services/dataService.ts:417:53)
+      at Object.<anonymous> (services/dataService.test.ts:342:42)
+      at Object.toThrow (node_modules/expect/build/index.js:2155:20)
+      at Object.<anonymous> (services/dataService.test.ts:342:148)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 22 passed, 26 total
+Snapshots:   0 total
+Time:        0.475 s, estimated 1 s
+Ran all test suites matching services/dataService.test.ts.

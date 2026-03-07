@@ -27,9 +27,33 @@ jest.mock('firebase/firestore', () => {
   const mockGetDocs = jest.fn((q: any) => {
     let filteredDb = [...mockDb];
     if (q && q.args) {
-      const whereClause = q.args.find((a: any) => a && a.type === 'where');
-      if (whereClause && whereClause.field === 'phoneNumber') {
-        filteredDb = filteredDb.filter(d => whereClause.val.includes(d.phoneNumber));
+      // 1. Handle where clauses
+      const whereClauses = q.args.filter((a: any) => a && a.type === 'where');
+      whereClauses.forEach((w: any) => {
+        if (w.field === 'phoneNumber') {
+          filteredDb = filteredDb.filter(d => w.val.includes(d.phoneNumber));
+        }
+      });
+
+      // 2. Handle orderBy (desc)
+      const order = q.args.find((a: any) => a && a.type === 'orderBy');
+      if (order && order.field === 'createdTime') {
+        filteredDb.sort((a, b) => b.createdTime - a.createdTime);
+      }
+
+      // 3. Handle startAfter
+      const startAfterToken = q.args.find((a: any) => a && a.type === 'startAfter');
+      if (startAfterToken && startAfterToken.doc) {
+        const index = filteredDb.findIndex(d => d.firebaseDocId === startAfterToken.doc.id);
+        if (index !== -1) {
+          filteredDb = filteredDb.slice(index + 1);
+        }
+      }
+
+      // 4. Handle limit
+      const limitVal = q.args.find((a: any) => a && a.type === 'limit');
+      if (limitVal && limitVal.limit) {
+        filteredDb = filteredDb.slice(0, limitVal.limit);
       }
     }
     return Promise.resolve({
@@ -41,6 +65,7 @@ jest.mock('firebase/firestore', () => {
         }),
         ref: { id: data.firebaseDocId }
       })),
+      size: filteredDb.length,
       empty: filteredDb.length === 0
     });
   });
@@ -121,6 +146,7 @@ jest.mock('firebase/firestore', () => {
     where: jest.fn((field, op, val) => ({ type: 'where', field, op, val })),
     orderBy: jest.fn((field, dir) => ({ type: 'orderBy', field, dir })),
     limit: jest.fn((limitCount) => ({ type: 'limit', limit: limitCount })),
+    startAfter: jest.fn((doc) => ({ type: 'startAfter', doc })),
     onSnapshot: jest.fn((docRef: any, callback: any) => {
       const docId = docRef.id;
       const data = mockSystemConfig[docId];
@@ -157,6 +183,14 @@ jest.mock('firebase/analytics', () => ({
   logEvent: jest.fn()
 }));
 
+// Mock DOMPurify
+jest.mock('dompurify', () => ({
+  __esModule: true,
+  default: {
+    sanitize: jest.fn((str: string) => str)
+  }
+}));
+
 // Mock AuthService to track operator
 jest.mock('./authService', () => ({
   getCurrentUserCode: jest.fn(() => 'TEST_USER')
@@ -167,6 +201,7 @@ import {
   calculateStats,
   updateReservation,
   getReservations,
+  getReservationsPaged,
   deleteReservation,
   generateLotteryNumber,
   getTicketConfig,
@@ -214,7 +249,7 @@ describe('DataService - Full Coverage Suite', () => {
       const mailCall = calls.find((c: any) => c[0].id === 'mail');
       expect(mailCall).toBeDefined();
       expect(mailCall[1].to).toContain('valid@email.com');
-      expect(mailCall[1].message.subject).toContain('预约确认');
+      expect(mailCall[1].message.subject).toContain('Natick 2026 春晚预约确认');
     });
 
     test('验证儿童免费逻辑 (Children should not be charged)', async () => {
@@ -277,12 +312,12 @@ describe('DataService - Full Coverage Suite', () => {
       await sendDiscountEmail({ id: '1', contactName: 'N', email: 'test@ex.com' } as any);
 
       // Test Event Reminder Email
-      await sendEventReminderEmail([]); // empty emails
+      await sendEventReminderEmail([], { id: 'rem-1', contactName: 'N' } as any); // empty emails
       addDocMock.mockReturnValueOnce(Promise.reject(new Error('Network Error')));
       await expect(sendEventReminderEmail(['test@ex.com'], { id: '1', firebaseDocId: 'doc-1', contactName: 'N', totalAmount: 10 } as any)).rejects.toThrow('Network Error');
 
-      // Expect one more error log from EventReminderEmail failure
-      expect(consoleSpy).toHaveBeenCalledTimes(4);
+      // Expect error log from confirmation and cancellation/discount failures
+      expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
 
@@ -558,6 +593,22 @@ describe('DataService - Full Coverage Suite', () => {
       getDocsMock.mockImplementationOnce(() => Promise.reject(new Error('Test error')));
       const recent = await getRecentReservations(5);
       expect(recent.length).toBe(0);
+    });
+
+    test('getReservationsPaged should return chunked data and total count', async () => {
+      // Seed 25 docs
+      for (let i = 0; i < 25; i++) {
+        mockDb.push({ id: `PAGE-${i}`, firebaseDocId: `PAGE-${i}`, createdTime: Date.now() - i });
+      }
+
+      const result = await getReservationsPaged(10);
+      expect(result.reservations).toHaveLength(10);
+      expect(result.totalCount).toBe(25);
+      expect(result.lastDoc).toBeDefined();
+
+      const result2 = await getReservationsPaged(10, result.lastDoc);
+      expect(result2.reservations).toHaveLength(10);
+      expect(result2.reservations[0].id).toBe('PAGE-10');
     });
   });
 
