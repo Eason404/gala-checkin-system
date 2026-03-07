@@ -16,7 +16,6 @@ export const CheckInAlert: React.FC<CheckInAlertProps> = ({ selectedRes, resetTo
           <div className="w-24 h-24 bg-orange-50 rounded-[2rem] flex items-center justify-center mx-auto mb-2 rotate-3 hover:rotate-0 transition-all">
             <AlertTriangle className="w-12 h-12 text-orange-500" />
           </div>
-
           <div>
             <h3 className="text-4xl font-black text-orange-500 tracking-tight leading-none mb-2">Checked In</h3>
             <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Duplicate Scan</p>
