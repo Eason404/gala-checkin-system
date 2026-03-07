@@ -25,8 +25,9 @@ export enum PaymentMethod {
 }
 
 export interface Coupon {
-  code: string;   // 'VOLUNTEER', 'PERFORMER', 'VOLUNTEER_NO_LUNCH'
+  code: string;   // 'VOLUNTEER', 'PERFORMER', 'VOLUNTEER_NO_LUNCH', 'GM_OVERRIDE'
   amount: number;
+  reason?: string;
 }
 
 export interface Reservation {
@@ -57,6 +58,7 @@ export interface Reservation {
   operatorId?: string;       // Who created this (e.g., 'PUBLIC', 'S1', 'A1')
   lastModifiedBy?: string;   // Who last updated this (e.g., 'S2', 'A2')
   isReminderEmailSent?: boolean; // Track if the event reminder email has been sent
+  editHistory?: { timestamp: number; operatorId: string; reason: string }[];
 }
 
 export interface TicketConfig {

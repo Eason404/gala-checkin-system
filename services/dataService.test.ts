@@ -322,6 +322,30 @@ describe('DataService - Full Coverage Suite', () => {
       const all = await getReservations();
       expect(all.length).toBe(0);
     });
+
+    test('updateReservation 应能保存 editHistory 并且 mapDocToReservation 能够还原', async () => {
+      const res = await createReservation({ contactName: 'AuditMe', phoneNumber: '12345678', email: 'a@ex.com' });
+
+      const historyEntry = {
+        timestamp: Date.now(),
+        operatorId: 'TEST_USER',
+        reason: 'GM discount applied: discount $10 - Reason: Manual override'
+      };
+
+      await updateReservation(res.id, {
+        editHistory: [historyEntry],
+        coupons: [{ code: 'GM_OVERRIDE', amount: 10, reason: 'Manual override' }]
+      }, res.firebaseDocId);
+
+      const all = await getReservations();
+      const updated = all.find(r => r.id === res.id);
+
+      expect(updated?.editHistory).toHaveLength(1);
+      expect(updated?.editHistory![0].reason).toContain('Manual override');
+      expect(updated?.coupons).toHaveLength(1);
+      expect(updated?.coupons![0].reason).toBe('Manual override');
+      expect(updated?.coupons![0].code).toBe('GM_OVERRIDE');
+    });
   });
 
   describe('Configuration Management', () => {

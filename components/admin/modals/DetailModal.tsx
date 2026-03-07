@@ -26,6 +26,9 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
   const [couponLoading, setCouponLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedCouponType, setSelectedCouponType] = useState('VOLUNTEER');
+  const [gmDiscountAmount, setGmDiscountAmount] = useState<number | ''>('');
+  const [gmReason, setGmReason] = useState('');
   const [editForm, setEditForm] = useState<Partial<Reservation>>({});
   const [editReason, setEditReason] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
@@ -100,11 +103,21 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       const pricePerPerson = selectedForAction.pricePerPerson || 20;
       let couponAmount = 0;
 
+      let couponReason: string | undefined = undefined;
+
       // Define coupon value
       if (type === 'SPONSOR') {
         couponAmount = 15; // Sponsor discount is fixed at $15
       } else if (type === 'CAST_CREW_PARENT') {
         couponAmount = 0; // Cast/Crew Parent discount is $0
+      } else if (type === 'GM_OVERRIDE') {
+        couponAmount = Number(gmDiscountAmount);
+        couponReason = gmReason.trim();
+        if (couponAmount <= 0 || !couponReason) {
+          alert('GM discount requires a valid amount greater than 0 and a reason.');
+          setCouponLoading(false);
+          return;
+        }
       } else {
         // Default is to waive 1 ticket cost (VOLUNTEER, PERFORMER, VOLUNTEER_NO_LUNCH)
         couponAmount = pricePerPerson;
@@ -113,7 +126,8 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       // New coupon object
       const newCoupon: Coupon = {
         code: type,
-        amount: couponAmount
+        amount: couponAmount,
+        ...(couponReason && { reason: couponReason })
       };
 
       // Current list
@@ -125,17 +139,29 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       const baseTotal = selectedForAction.adultsCount * pricePerPerson;
       const newTotal = Math.max(0, baseTotal - totalDiscount);
 
+      const currentOperator = getCurrentUserCode();
+      const newHistoryEntry = type === 'GM_OVERRIDE' ? {
+        timestamp: Date.now(),
+        operatorId: currentOperator,
+        reason: `GM discount applied: discount $${couponAmount} - Reason: ${couponReason}`
+      } : undefined;
+
+      const updatedHistory = newHistoryEntry ?
+        [...(selectedForAction.editHistory || []), newHistoryEntry] :
+        selectedForAction.editHistory;
+
       const updates: Partial<Reservation> = {
         discountAmount: totalDiscount,
         coupons: updatedCoupons,
         totalAmount: newTotal,
         // Update legacy field for compatibility
-        couponCode: updatedCoupons.map(c => c.code).join(',')
+        couponCode: updatedCoupons.map(c => c.code).join(','),
+        ...(newHistoryEntry && { editHistory: updatedHistory, lastModifiedBy: currentOperator })
       };
 
       await updateReservation(selectedForAction.id, updates, selectedForAction.firebaseDocId);
 
-      const updatedRes = { ...selectedForAction, ...updates };
+      const updatedRes = { ...selectedForAction, ...updates } as Reservation;
       setSelectedForAction(updatedRes);
       if (fetchData) await fetchData();
       await sendDiscountEmail(updatedRes);
@@ -144,6 +170,11 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       console.error("Failed to add coupon", e);
     } finally {
       setCouponLoading(false);
+      if (type === 'GM_OVERRIDE') {
+        setGmDiscountAmount('');
+        setGmReason('');
+        setSelectedCouponType('VOLUNTEER');
+      }
     }
   };
 
@@ -272,49 +303,58 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                     {currentCoupons.length === 0 && <p className="text-xs text-gray-300 italic text-center py-2">无优惠 No coupons applied</p>}
                   </div>
 
-                  {/* Add Buttons - Only visible to admin */}
+                  {/* Add Coupon Dropdown - Only visible to admin */}
                   {isAdmin && (
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
-                      <button
-                        onClick={() => handleAddCoupon('VOLUNTEER')}
-                        disabled={couponLoading}
-                        className="px-2 py-2 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
-                      >
-                        <span>+ 志愿者 Vol</span>
-                        <span className="text-gray-400 font-normal">(-${currentTicketPrice})</span>
-                      </button>
-                      <button
-                        onClick={() => handleAddCoupon('PERFORMER')}
-                        disabled={couponLoading}
-                        className="px-2 py-2 bg-gray-50 hover:bg-purple-50 hover:text-purple-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
-                      >
-                        <span>+ 演职 Perf</span>
-                        <span className="text-gray-400 font-normal">(-${currentTicketPrice})</span>
-                      </button>
-                      <button
-                        onClick={() => handleAddCoupon('SPONSOR')}
-                        disabled={couponLoading}
-                        className="px-2 py-2 bg-gray-50 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
-                      >
-                        <span className="whitespace-nowrap flex items-center gap-0.5"><Crown className="w-2.5 h-2.5" /> 赞助商 Sponsor</span>
-                        <span className="text-gray-400 font-normal">(-$15)</span>
-                      </button>
-                      <button
-                        onClick={() => handleAddCoupon('VOLUNTEER_NO_LUNCH')}
-                        disabled={couponLoading}
-                        className="px-2 py-2 bg-gray-50 hover:bg-orange-50 hover:text-orange-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1"
-                      >
-                        <span className="whitespace-nowrap flex items-center gap-0.5"><Coffee className="w-2.5 h-2.5" /> 义工(无饭)</span>
-                        <span className="text-gray-400 font-normal">(Free)</span>
-                      </button>
-                      <button
-                        onClick={() => handleAddCoupon('CAST_CREW_PARENT')}
-                        disabled={couponLoading}
-                        className="px-2 py-2 bg-gray-50 hover:bg-pink-50 hover:text-pink-600 border border-gray-100 rounded-xl text-[9px] font-bold transition-colors flex flex-col items-center gap-1 col-span-2"
-                      >
-                        <span className="whitespace-nowrap flex items-center gap-0.5"><Users className="w-2.5 h-2.5" /> 演职人员父母 Parent</span>
-                        <span className="text-gray-400 font-normal">($0)</span>
-                      </button>
+                    <div className="pt-3 border-t border-gray-100 space-y-2">
+                      <div className="flex gap-2 items-center">
+                        <select
+                          value={selectedCouponType}
+                          onChange={(e) => setSelectedCouponType(e.target.value)}
+                          className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 outline-none focus:border-cny-red"
+                          disabled={couponLoading}
+                        >
+                          <option value="VOLUNTEER">志愿者 Vol (-${currentTicketPrice})</option>
+                          <option value="PERFORMER">演职 Perf (-${currentTicketPrice})</option>
+                          <option value="SPONSOR">赞助商 Sponsor (-$15)</option>
+                          <option value="VOLUNTEER_NO_LUNCH">义工(无饭) (Free)</option>
+                          <option value="CAST_CREW_PARENT">演职人员父母 Parent ($0)</option>
+                          <option value="GM_OVERRIDE">GM discount (Custom adjustment)</option>
+                        </select>
+                        <button
+                          onClick={() => handleAddCoupon(selectedCouponType)}
+                          disabled={couponLoading || (selectedCouponType === 'GM_OVERRIDE' && (!gmDiscountAmount || !gmReason.trim()))}
+                          className="px-4 py-2 bg-cny-red text-white hover:bg-red-700 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-1"
+                        >
+                          {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : '添加 Add'}
+                        </button>
+                      </div>
+
+                      {/* GM discount Conditional Inputs */}
+                      {selectedCouponType === 'GM_OVERRIDE' && (
+                        <div className="bg-red-50 p-3 rounded-xl border border-red-100 space-y-3 animate-in fade-in zoom-in-95">
+                          <div>
+                            <label className="block text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Discount Amount ($)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="e.g. 50"
+                              value={gmDiscountAmount}
+                              onChange={(e) => setGmDiscountAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                              className="w-full bg-white border border-red-200 rounded-lg px-3 py-2 text-xs font-bold text-gray-900 outline-none focus:border-red-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Reason (Required)</label>
+                            <input
+                              type="text"
+                              placeholder="Why is this discount applied?"
+                              value={gmReason}
+                              onChange={(e) => setGmReason(e.target.value)}
+                              className="w-full bg-white border border-red-200 rounded-lg px-3 py-2 text-xs font-bold text-gray-900 outline-none focus:border-red-500"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
