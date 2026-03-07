@@ -15,7 +15,10 @@ export const DailyStatsChart: React.FC<DailyStatsChartProps> = ({ reservations }
     reservations.forEach(res => {
       if (res.checkInStatus === CheckInStatus.Cancelled) return;
 
+      if (!res.createdTime) return;
       const dateObj = new Date(res.createdTime);
+      if (isNaN(dateObj.getTime())) return;
+
       const key = dateObj.toISOString().split('T')[0];
 
       if (!stats[key]) {
