@@ -137,6 +137,7 @@ const mapDocToReservation = (docSnap: any): Reservation => {
     totalAmount: data.totalAmount || 0,
     paidAmount: data.paidAmount || 0,
     isReminderEmailSent: data.isReminderEmailSent || false,
+    editHistory: data.editHistory || [],
   } as Reservation;
 };
 
@@ -645,7 +646,8 @@ export const createReservation = async (data: Partial<Reservation>): Promise<Res
     notes: data.notes || '',
     isPerformer: !!data.isPerformer,
     performanceUnit: data.performanceUnit || '',
-    operatorId: currentOperator // Track who created this
+    operatorId: currentOperator, // Track who created this
+    editHistory: []
   };
 
   // Use the generated ID as the Firestore document ID for extra safety and predictable lookups
