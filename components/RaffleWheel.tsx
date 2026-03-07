@@ -9,6 +9,25 @@ import { SilkScrollDraw } from './raffle/SilkScrollDraw';
 
 const DEFAULT_PRIZE = { id: 'default', name: '幸运大抽奖', label: 'Lucky Raffle', color: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-200' };
 
+const RaffleDisclaimer: React.FC = () => (
+  <div className="mt-12 mb-8 p-6 bg-red-950/40 rounded-2xl border border-cny-gold/30 max-w-2xl mx-auto shadow-2xl backdrop-blur-md">
+    <div className="flex items-center justify-center gap-3 mb-3">
+      <Trophy className="w-6 h-6 text-cny-gold" />
+      <h4 className="text-cny-gold font-black tracking-widest uppercase text-sm">
+        抽奖细则 | Raffle Rules
+      </h4>
+    </div>
+    <div className="space-y-2">
+      <p className="font-bold text-white text-lg leading-tight">
+        中奖者须在现场领奖，不在场者视为自动放弃，将重新从奖池抽取。
+      </p>
+      <p className="text-white/60 text-sm italic">
+        (Must be present to win. If the winner is not on-site, the prize will be forfeited and re-drawn.)
+      </p>
+    </div>
+  </div>
+);
+
 const RaffleWheel: React.FC = () => {
   const [candidates, setCandidates] = useState<Winner[]>([]);
   const [winner, setWinner] = useState<Winner | null>(null);
@@ -172,6 +191,7 @@ const RaffleWheel: React.FC = () => {
           </p>
           <p className="text-white/60 text-sm mt-1">请耐心等待主持人宣布 (Please wait for the host to announce)</p>
         </div>
+        <RaffleDisclaimer />
       </div>
     );
   }
@@ -250,19 +270,38 @@ const RaffleWheel: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="text-gray-400 font-bold mt-12 flex items-center justify-center gap-2">
-          {isSpinning ? (
-            <><RefreshCw className="w-5 h-5 animate-spin" /> 正在抽奖中... (Spinning...)</>
-          ) : (
-            <>等待主持人开始抽奖... (Waiting for host...)</>
+        <div className="mt-12 flex flex-col items-center gap-6">
+          <div className="flex items-center gap-4 bg-white/5 backdrop-blur-md px-8 py-4 rounded-2xl border border-white/10 shadow-lg">
+            {isSpinning ? (
+              <div className="flex items-center gap-3 text-cny-gold font-black italic tracking-widest text-lg animate-pulse">
+                <RefreshCw className="w-6 h-6 animate-spin" />
+                <span>正在抽奖中... SPINNING...</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center gap-2 text-white/80 font-bold">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+                  等待主持人开始抽奖...
+                </div>
+                <div className="text-white/40 text-xs uppercase tracking-widest font-medium">Waiting for host to start</div>
+              </div>
+            )}
+          </div>
+
+          {!isSpinning && !winner && (
+            <div className="flex gap-4">
+              <div className="px-4 py-2 bg-red-950/40 border border-red-800/50 rounded-xl flex flex-col items-center">
+                <span className="text-red-400 text-[10px] uppercase font-bold tracking-tighter">当前池内人数</span>
+                <span className="text-cny-gold font-black text-xl">{availableCandidates.length}</span>
+              </div>
+              <div className="px-4 py-2 bg-yellow-950/40 border border-yellow-800/50 rounded-xl flex flex-col items-center">
+                <span className="text-yellow-400 text-[10px] uppercase font-bold tracking-tighter">总参与人数</span>
+                <span className="text-cny-gold font-black text-xl">{candidates.length}</span>
+              </div>
+            </div>
           )}
         </div>
       )}
-
-      <p className="mt-8 text-gray-400 font-bold mb-12 flex flex-col items-center gap-1">
-        <span>当前剩余奖池人数 (Entries Left): {availableCandidates.length}</span>
-        <span className="text-xs font-normal opacity-70">总参与人数 (Total): {candidates.length}</span>
-      </p>
 
       {/* Past Winners Display Area */}
       {pastWinners.length > 0 && (
@@ -272,7 +311,7 @@ const RaffleWheel: React.FC = () => {
           </h3>
           <div className="flex flex-wrap justify-center gap-3">
             {pastWinners.map((w, idx) => (
-              <div key={`${w.number}-${idx}`} className="px-4 py-2 bg-gradient-to-br from-red-900 to-red-800 rounded-lg text-yellow-100 font-bold text-sm md:text-base border border-red-500/30 flex items-center gap-2 shadow-md">
+              <div key={`${w.number}-${idx}`} className="px-4 py-2 bg-gradient-to-br from-red-900 to-red-800 rounded-lg text-yellow-100 font-bold text-sm md:text-base border border-red-500/30 flex items-center gap-2 shadow-md hover:scale-105 transition-transform">
                 <Crown className="w-3 h-3 text-yellow-500" />
                 <span>{w.firstName}</span>
                 {canControl && (
@@ -285,6 +324,9 @@ const RaffleWheel: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Disclaimer Section */}
+      <RaffleDisclaimer />
     </div>
   );
 };
