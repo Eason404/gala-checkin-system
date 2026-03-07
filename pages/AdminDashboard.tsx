@@ -6,7 +6,7 @@ import { calculateStats, getReservations, updateReservation, deleteReservation, 
 import { Stats, Reservation, CheckInStatus, TicketConfig } from '../types';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { getCurrentUserRole } from '../services/authService';
+import { getCurrentUserRole, getCurrentUserDisplayName } from '../services/authService';
 
 // Sub-components
 import { StatsGrid } from '../components/admin/StatsGrid';
@@ -247,6 +247,19 @@ const AdminDashboard: React.FC<{ view?: 'dashboard' | 'list' }> = ({ view = 'das
         setShowModal={setShowEmailModal}
         reservations={reservations}
       />
+
+      {/* GM Welcome Banner */}
+      {role === 'gm' && (
+        <div className="glass-dark px-5 py-4 rounded-2xl shadow-lg border border-cny-gold/20 flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-cny-gold to-orange-400 text-cny-dark font-serif font-black rounded-xl flex items-center justify-center text-lg shadow-md">福</div>
+            <div>
+              <h3 className="text-white font-bold text-lg">欢迎, {getCurrentUserDisplayName()} <span className="text-white/50 text-sm font-normal">(GM)</span></h3>
+              <p className="text-cny-gold/80 font-bold uppercase tracking-wider text-xs">马年快乐！Happy Year of the Horse!</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="glass-dark flex flex-wrap items-center justify-between gap-3 px-5 py-4 rounded-2xl shadow-lg border border-white/10 backdrop-blur-2xl">
