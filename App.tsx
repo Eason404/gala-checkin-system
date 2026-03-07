@@ -160,6 +160,10 @@ function App() {
             <Route path="/registration" element={ENABLE_REGISTRATION ? <PublicRegistration /> : <Navigate to="/" replace />} />
             <Route path="/registration-temp" element={<PublicRegistration />} />
             <Route path="/walkin" element={<PublicRegistration forceWalkIn={true} />} />
+
+            {/* The hidden walk-in route for on-site registration */}
+            <Route path="/public-walkin" element={<PublicRegistration forceWalkIn={true} />} />
+
             <Route path="/login" element={<Login />} />
             <Route path="/manage" element={<ManageReservation />} />
             <Route path="/program" element={<ProgramList />} />

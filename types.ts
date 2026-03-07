@@ -3,6 +3,7 @@ export enum TicketType {
   EarlyBird = 'EarlyBird',
   Regular = 'Regular',
   WalkIn = 'WalkIn',
+  WalkInNoFood = 'WalkInNoFood',
 }
 
 export enum PaymentStatus {
@@ -72,6 +73,8 @@ export interface TicketConfig {
   totalMealCards?: number;   // Total physical meal cards (饭卡), default 380
   mealCardsPerStaff?: number; // Customized meal card numbers per staff
   trackedStaffCodes?: string[]; // Specific staff codes to always show on the dashboard
+  publicWalkInEnabled?: boolean; // Show secret walk-in URL
+  walkInNoFoodOnly?: boolean;    // Only offer the $5 option for Walk-ins
 }
 
 export interface Stats {

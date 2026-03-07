@@ -12,6 +12,7 @@ import { PaymentModal } from '../components/staff/PaymentModal';
 import { SuccessView } from '../components/staff/SuccessView';
 import { StaffDashboard } from '../components/staff/StaffDashboard';
 import { AdminSwitcher } from '../components/AdminSwitcher';
+import QRCode from 'qrcode';
 
 const StaffPortal: React.FC = () => {
   const [mode, setMode] = useState<'search' | 'result' | 'walkin' | 'scanner' | 'success' | 'already_checked_in' | 'dashboard'>('search');
@@ -23,6 +24,20 @@ const StaffPortal: React.FC = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
   const [cashTendered, setCashTendered] = useState('');
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState<string>('');
+
+  // Persisted Lane State
+  const [currentLane, setCurrentLane] = useState<string>(() => {
+    return localStorage.getItem('staffLane') || 'Select Lane';
+  });
+
+  // Effect to save lane
+  useEffect(() => {
+    if (currentLane !== 'Select Lane') {
+      localStorage.setItem('staffLane', currentLane);
+    }
+  }, [currentLane]);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const cashInputRef = useRef<HTMLInputElement>(null);
@@ -57,10 +72,26 @@ const StaffPortal: React.FC = () => {
     if (showPayModal && cashInputRef.current) cashInputRef.current.focus();
   }, [showPayModal]);
 
+  const generateWalkInQr = async () => {
+    try {
+      const walkInUrl = `${window.location.origin}${window.location.pathname}#/public-walkin`;
+      const url = await QRCode.toDataURL(walkInUrl, {
+        width: 300,
+        margin: 2,
+        color: { dark: '#000000', light: '#ffffff' },
+      });
+      setQrCodeData(url);
+      setShowQrModal(true);
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('Failed to generate QR Code');
+    }
+  };
+
   const executeSearch = async (termOverride?: string) => {
     setErrorMsg('');
     const term = (termOverride || searchPhone).trim();
-    if (term.length < 4) return setErrorMsg('信息太短');
+    if (term.length < 4) return setErrorMsg('Query too short');
 
     setLoading(true);
     const data = await getReservations();
@@ -79,7 +110,7 @@ const StaffPortal: React.FC = () => {
 
     if (found) {
       if (found.checkInStatus === CheckInStatus.Cancelled) {
-        setErrorMsg('此票已取消 (Cancelled)');
+        setErrorMsg('Ticket Cancelled');
         triggerHaptic([50, 100, 50]);
         return;
       }
@@ -94,7 +125,7 @@ const StaffPortal: React.FC = () => {
       setMode('result');
       setSearchPhone('');
     } else {
-      setErrorMsg('未找到有效记录');
+      setErrorMsg('No valid record found');
       triggerHaptic([50, 100]);
     }
   };
@@ -116,6 +147,7 @@ const StaffPortal: React.FC = () => {
         paymentStatus: PaymentStatus.Paid,
         paymentMethod: PaymentMethod.Cash,
         paidAmount: selectedRes.totalAmount,
+        lastModifiedBy: currentLane !== 'Select Lane' ? currentLane : undefined
       };
 
       const newLottery = await processFamilyCheckInTransaction(
@@ -132,9 +164,9 @@ const StaffPortal: React.FC = () => {
     } catch (e: any) {
       console.error(e);
       if (e.message === 'RESERVATION_CANCELLED') {
-        setErrorMsg('此票已取消 (Cancelled)');
+        setErrorMsg('Ticket Cancelled');
       } else {
-        setErrorMsg('更新失败 (Update failed)');
+        setErrorMsg('Update failed');
       }
     } finally {
       setLoading(false);
@@ -148,7 +180,13 @@ const StaffPortal: React.FC = () => {
   return (
     <div className="max-w-xl mx-auto pb-24 px-4 antialiased">
       <AdminSwitcher />
-      <StaffHeader setMode={handleSetMode} triggerHaptic={triggerHaptic} />
+      <StaffHeader
+        setMode={handleSetMode}
+        triggerHaptic={triggerHaptic}
+        onShowWalkInQr={generateWalkInQr}
+        currentLane={currentLane}
+        setCurrentLane={setCurrentLane}
+      />
 
       {mode === 'search' && (
         <SearchSection
@@ -205,6 +243,25 @@ const StaffPortal: React.FC = () => {
 
       {mode === 'success' && selectedRes && (
         <SuccessView selectedRes={selectedRes} resetToNext={resetToNext} />
+      )}
+
+      {/* QR Code Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setShowQrModal(false)}>
+          <div className="bg-white rounded-[2.5rem] shadow-2xl p-8 max-w-sm w-full text-center" onClick={e => e.stopPropagation()}>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Walk-in QR Code</h2>
+            <p className="text-gray-500 text-sm mb-6">Scan to register for Walk-in tickets</p>
+            {qrCodeData && (
+              <img src={qrCodeData} alt="Walk-in QR Code" className="w-full h-auto rounded-xl mx-auto shadow-sm" />
+            )}
+            <button
+              onClick={() => setShowQrModal(false)}
+              className="mt-8 w-full py-4 bg-gray-100 text-gray-900 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-gray-200 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

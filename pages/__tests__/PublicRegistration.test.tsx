@@ -5,6 +5,9 @@ import PublicRegistration from '../PublicRegistration';
 import * as dataService from '../../services/dataService';
 import { TicketType, CheckInStatus } from '../../types';
 
+// Mock window.scrollTo since JSDOM doesn't implement it
+window.scrollTo = jest.fn();
+
 // Mock Firebase before anything else imports it
 jest.mock('firebase/app', () => ({
     initializeApp: jest.fn()

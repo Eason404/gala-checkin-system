@@ -12,8 +12,8 @@ interface StepOneProps {
   earlyBirdProgress: number;
 }
 
-export const StepOneTicketSelection: React.FC<StepOneProps> = ({
-  formData, setFormData, triggerHaptic, handleNextStep, progressBarRef, earlyBirdProgress
+export const StepOneTicketSelection: React.FC<StepOneProps & { isWalkIn?: boolean, isNoFoodOnly?: boolean }> = ({
+  formData, setFormData, triggerHaptic, handleNextStep, progressBarRef, earlyBirdProgress, isWalkIn = false, isNoFoodOnly = false
 }) => {
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -90,33 +90,65 @@ export const StepOneTicketSelection: React.FC<StepOneProps> = ({
           </div>
         </button>
 
-        {/* Regular - Simplified but elegant */}
-        <button
-          type="button"
-          onClick={() => { setFormData({ ...formData, ticketType: TicketType.Regular }); triggerHaptic(20); }}
-          className={`relative p-8 rounded-[3rem] border-2 transition-all group overflow-hidden text-left
-            ${formData.ticketType === TicketType.Regular
-              ? 'border-gray-900 bg-gray-50 ring-8 ring-gray-900/5 scale-[1.01]'
-              : 'border-gray-50 bg-gray-50/50 opacity-40 grayscale hover:grayscale-0 transition-all'}`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className={`p-5 rounded-[1.5rem] transition-colors ${formData.ticketType === TicketType.Regular ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-400'}`}>
-                <Ticket className="w-8 h-8" />
-              </div>
-              <div>
-                <div className={`text-sm font-black uppercase tracking-[0.2em] mb-1 ${formData.ticketType === TicketType.Regular ? 'text-gray-900' : 'text-gray-400'}`}>
-                  常规票 REGULAR
+        {/* Regular / Walk-in */}
+        {!isNoFoodOnly && (
+          <button
+            type="button"
+            onClick={() => { setFormData({ ...formData, ticketType: isWalkIn ? TicketType.WalkIn : TicketType.Regular }); triggerHaptic(20); }}
+            className={`relative p-8 rounded-[3rem] border-2 transition-all group overflow-hidden text-left
+              ${formData.ticketType === (isWalkIn ? TicketType.WalkIn : TicketType.Regular)
+                ? 'border-gray-900 bg-gray-50 ring-8 ring-gray-900/5 scale-[1.01]'
+                : 'border-gray-50 bg-gray-50/50 opacity-40 grayscale hover:grayscale-0 transition-all'}`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className={`p-5 rounded-[1.5rem] transition-colors ${formData.ticketType === TicketType.Regular ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                  <Ticket className="w-8 h-8" />
                 </div>
-                <div className="text-4xl font-black text-gray-900 tracking-tighter">$20</div>
+                <div>
+                  <div className={`text-sm font-black uppercase tracking-[0.2em] mb-1 ${formData.ticketType === (isWalkIn ? TicketType.WalkIn : TicketType.Regular) ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {isWalkIn ? '现场购票 (含饭票) WALK-IN WITH FOOD' : '常规票 REGULAR'}
+                  </div>
+                  <div className="text-4xl font-black text-gray-900 tracking-tighter">$20</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">库存充足 / Available</p>
+                <p className="text-[9px] text-gray-300 font-medium">Available</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">库存充足 / Available</p>
-              <p className="text-[9px] text-gray-300 font-medium">Available</p>
+          </button>
+        )}
+
+        {/* Walk-in No Food Optional */}
+        {isWalkIn && (
+          <button
+            type="button"
+            onClick={() => { setFormData({ ...formData, ticketType: TicketType.WalkInNoFood }); triggerHaptic(20); }}
+            className={`relative p-8 rounded-[3rem] border-2 transition-all group overflow-hidden text-left
+              ${formData.ticketType === TicketType.WalkInNoFood
+                ? 'border-gray-900 bg-gray-50 ring-8 ring-gray-900/5 scale-[1.01]'
+                : 'border-gray-50 bg-gray-50/50 opacity-40 grayscale hover:grayscale-0 transition-all'}`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className={`p-5 rounded-[1.5rem] transition-colors ${formData.ticketType === TicketType.WalkInNoFood ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                  <Ticket className="w-8 h-8" />
+                </div>
+                <div>
+                  <div className={`text-sm font-black uppercase tracking-[0.2em] mb-1 ${formData.ticketType === TicketType.WalkInNoFood ? 'text-gray-900' : 'text-gray-400'}`}>
+                    入场票 (无饭票) NO FOOD TICKET
+                  </div>
+                  <div className="text-4xl font-black text-gray-900 tracking-tighter">$5</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">库存充足 / Available</p>
+                <p className="text-[9px] text-gray-300 font-medium">Available</p>
+              </div>
             </div>
-          </div>
-        </button>
+          </button>
+        )}
       </div>
 
       <div className="pt-4">

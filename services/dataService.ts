@@ -618,7 +618,13 @@ export const createReservation = async (data: Partial<Reservation>): Promise<Res
   const currentOperator = getCurrentUserCode();
 
   const ticketType = data.ticketType || TicketType.EarlyBird;
-  let price = ticketType === TicketType.EarlyBird ? 15 : 20;
+  let price = 20;
+  if (ticketType === TicketType.EarlyBird) {
+    price = 15;
+  } else if (ticketType === TicketType.WalkInNoFood) {
+    price = 5;
+  }
+
   const adults = data.adultsCount || 0;
   const children = data.childrenCount || 0;
 
@@ -768,7 +774,9 @@ const DEFAULT_CONFIG: TicketConfig = {
   lotteryEnabled: false,
   totalMealCards: 380,
   mealCardsPerStaff: 1,
-  trackedStaffCodes: []
+  trackedStaffCodes: [],
+  publicWalkInEnabled: false,
+  walkInNoFoodOnly: false
 };
 
 export const getTicketConfig = async (): Promise<TicketConfig> => {
