@@ -7,13 +7,14 @@ import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'staff' | 'observer' | 'host';
+  requiredRole?: 'admin' | 'gm' | 'staff' | 'observer' | 'host';
 }
 
 /** Get the default landing page for a given role */
 export const getRoleLandingPage = (role: UserRole): string => {
   switch (role) {
     case 'admin': return '/staff';
+    case 'gm': return '/staff';
     case 'staff': return '/staff';
     case 'observer': return '/admin';
     case 'host': return '/raffle';
@@ -60,7 +61,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   // Case 2: Insufficient privileges — auto-redirect to role-appropriate page
   const hasAccess = () => {
     if (!requiredRole) return true;
-    if (role === 'admin') return true;
+    if (role === 'admin' || role === 'gm') return true;
 
     // Staff can access observer-level pages (e.g. analytics dashboard)
     if (requiredRole === 'observer') return role === 'observer' || role === 'staff';

@@ -16,7 +16,7 @@ const BASE_LOCKOUT_MS = 5000; // 5 seconds base, doubles each time
 
 export const ENABLE_AUTH = true;
 
-export type UserRole = 'admin' | 'staff' | 'observer' | 'host' | null;
+export type UserRole = 'admin' | 'gm' | 'staff' | 'observer' | 'host' | null;
 
 /**
  * Check if login attempts are rate-limited.

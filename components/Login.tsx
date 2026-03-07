@@ -165,7 +165,7 @@ const Login: React.FC = () => {
               </div>
               <div className="flex gap-3">
                 <div className="w-5 h-5 bg-orange-200 rounded-full flex items-center justify-center text-[10px] font-black shrink-0">3</div>
-                <p className="text-[11px] text-gray-600 leading-tight">添加字段 <code className="bg-white px-1 text-cny-red">role</code>，值填 <code className="bg-white px-1 text-cny-red">admin</code></p>
+                <p className="text-[11px] text-gray-600 leading-tight">添加字段 <code className="bg-white px-1 text-cny-red">role</code>，值填 <code className="bg-white px-1 text-cny-red">admin</code> 或 <code className="bg-white px-1 text-cny-red">gm</code></p>
               </div>
             </div>
           </div>

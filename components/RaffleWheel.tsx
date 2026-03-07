@@ -18,7 +18,8 @@ const RaffleWheel: React.FC = () => {
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [canControl, setCanControl] = useState(false); // admin or host
+  const [canRevealPhone, setCanRevealPhone] = useState(false);
+  const [canControl, setCanControl] = useState(false); // admin, gm, or host
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Derived available candidates pool that excludes already drawn winners
@@ -31,8 +32,10 @@ const RaffleWheel: React.FC = () => {
   useEffect(() => {
     const role = getCurrentUserRole();
     const adminFlag = role === 'admin';
-    const controlFlag = role === 'admin' || role === 'host';
+    const gmFlag = role === 'gm';
+    const controlFlag = role === 'admin' || role === 'gm' || role === 'host';
     setIsAdmin(adminFlag);
+    setCanRevealPhone(adminFlag || gmFlag);
     setCanControl(controlFlag);
 
     const init = async () => {
@@ -189,7 +192,7 @@ const RaffleWheel: React.FC = () => {
         winner={winner}
         currentDisplay={currentDisplay}
         canControl={canControl}
-        canRevealPhone={isAdmin}
+        canRevealPhone={canRevealPhone}
       />
 
       {/* Controls: Admin & Host */}
