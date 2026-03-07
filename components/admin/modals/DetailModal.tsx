@@ -21,7 +21,8 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 }) => {
 
   const role = getCurrentUserRole();
-  const isAdmin = role === 'admin';
+  const isAdmin = role === 'admin' || role === 'gm';
+  const canDelete = role === 'admin';
 
   const [couponLoading, setCouponLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -479,9 +480,11 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                 <button onClick={handleCancelReservation} disabled={actionLoading || selectedForAction.checkInStatus === CheckInStatus.Cancelled} className="w-full py-4 flex items-center justify-center gap-2 bg-orange-50 text-orange-600 rounded-2xl font-bold text-sm uppercase tracking-wider hover:bg-orange-100 disabled:opacity-50">
                   {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />} 取消预约
                 </button>
-                <button onClick={() => setShowConfirmDelete(true)} className="w-full py-4 flex items-center justify-center gap-2 bg-red-50 text-red-600 rounded-2xl font-bold text-sm uppercase tracking-wider hover:bg-red-100">
-                  <Trash2 className="w-4 h-4" /> 永久删除
-                </button>
+                {canDelete && (
+                  <button onClick={() => setShowConfirmDelete(true)} className="w-full py-4 flex items-center justify-center gap-2 bg-red-50 text-red-600 rounded-2xl font-bold text-sm uppercase tracking-wider hover:bg-red-100">
+                    <Trash2 className="w-4 h-4" /> 永久删除
+                  </button>
+                )}
               </>
             ) : (
               <p className="text-center text-gray-400 text-xs font-bold uppercase tracking-widest py-4">

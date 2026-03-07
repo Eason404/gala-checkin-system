@@ -42,11 +42,9 @@ describe('LandingPage Component', () => {
         expect(screen.getByText('查询 / 取消预约 My Reservation')).toBeInTheDocument();
     });
 
-    it('renders the Staff, Observer and Admin Portal links', () => {
+    it('renders the Staff Portal link', () => {
         renderComponent();
-        expect(screen.getByText('内部管理')).toBeInTheDocument();
-        expect(screen.getByText('工作人员')).toBeInTheDocument();
-        expect(screen.getByText('观察员')).toBeInTheDocument();
-        expect(screen.getByText('系统管理')).toBeInTheDocument();
+        expect(screen.getByText('工作人员入口')).toBeInTheDocument();
+        expect(screen.getByText('Staff / Admin / Host Portal')).toBeInTheDocument();
     });
 });

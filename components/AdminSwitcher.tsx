@@ -5,6 +5,7 @@ import { getCurrentUserRole } from '../services/authService';
 
 const ROLE_LABELS: Record<string, string> = {
     admin: 'Admin',
+    gm: 'GM',
     staff: 'Staff',
     observer: 'Observer',
 };
@@ -20,9 +21,9 @@ export const AdminSwitcher: React.FC = () => {
     const isAdminDashboard = location.pathname === '/admin' || location.pathname === '/admin/';
     const isAdminList = location.pathname.includes('/admin/list');
 
-    const canCheckIn = role === 'staff' || role === 'admin';
+    const canCheckIn = role === 'staff' || role === 'admin' || role === 'gm';
     const canViewDashboard = true; // all authenticated roles
-    const canViewList = role === 'observer' || role === 'admin';
+    const canViewList = role === 'observer' || role === 'admin' || role === 'gm';
 
     const btnClass = (active: boolean) =>
         `flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${active
