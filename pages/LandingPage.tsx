@@ -1,10 +1,48 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, Music2, Users, Ticket, ArrowRight, Sparkles, AlertCircle, Utensils, Banknote, MapPin, Search, KeyRound } from 'lucide-react';
+import { CalendarDays, Music2, Users, Ticket, ArrowRight, Sparkles, AlertCircle, Utensils, Banknote, MapPin, Search, KeyRound, QrCode } from 'lucide-react';
+import QRCode from 'qrcode';
 import { TimelineSection } from '../components/schedule/TimelineSection';
 
 const LandingPage: React.FC = () => {
+    const [footerQr, setFooterQr] = useState<string>('');
+    const [programQr, setProgramQr] = useState<string>('');
+    const [foodQr, setFoodQr] = useState<string>('');
+
+    useEffect(() => {
+        const generateQRs = async () => {
+            const qrOptions = {
+                width: 120,
+                margin: 2,
+                color: {
+                    dark: '#D4AF37', // cny-gold
+                    light: '#00000000' // transparent
+                }
+            };
+
+            try {
+                const origin = window.location.origin;
+                // Check if using HashRouter (standard for many of these apps)
+                const isHash = window.location.hash !== '';
+                const base = isHash ? `${origin}/#` : origin;
+
+                const [footer, program, food] = await Promise.all([
+                    QRCode.toDataURL(window.location.href, qrOptions),
+                    QRCode.toDataURL(`${base}/program`, qrOptions),
+                    QRCode.toDataURL(`${base}/food`, qrOptions)
+                ]);
+
+                setFooterQr(footer);
+                setProgramQr(program);
+                setFoodQr(food);
+            } catch (err) {
+                console.error('QR Code generation error:', err);
+            }
+        };
+        generateQRs();
+    }, []);
+
     return (
         <div className="animate-in fade-in duration-700 space-y-12 pb-20">
             {/* Hero Section */}
@@ -119,14 +157,28 @@ const LandingPage: React.FC = () => {
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Music2 className="w-24 h-24" />
                         </div>
-                        <div className="relative z-10">
-                            <div className="w-14 h-14 bg-cny-gold text-cny-dark rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:-rotate-6 transition-transform">
-                                <Music2 className="w-7 h-7" />
+                        <div className="relative z-10 flex justify-between items-start">
+                            <div>
+                                <div className="w-14 h-14 bg-cny-gold text-cny-dark rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:-rotate-6 transition-transform">
+                                    <Music2 className="w-7 h-7" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">节目单</h3>
+                                <p className="text-white/60 text-sm font-medium mb-4 uppercase tracking-widest">Performances</p>
+                                <div className="flex items-center text-cny-gold gap-2 font-bold text-xs uppercase tracking-widest group-hover:translate-x-2 transition-transform">
+                                    查看详情 View <ArrowRight className="w-4 h-4" />
+                                </div>
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">节目单</h3>
-                            <p className="text-white/60 text-sm font-medium mb-4 uppercase tracking-widest">Performances</p>
-                            <div className="flex items-center text-cny-gold gap-2 font-bold text-xs uppercase tracking-widest group-hover:translate-x-2 transition-transform">
-                                查看详情 View <ArrowRight className="w-4 h-4" />
+
+                            {/* Card QR Code */}
+                            <div className="hidden sm:flex flex-col items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                                {programQr ? (
+                                    <img src={programQr} alt="Program QR" className="w-20 h-20 rounded-lg p-1 bg-white/5" />
+                                ) : (
+                                    <div className="w-20 h-20 bg-white/5 rounded-lg animate-pulse flex items-center justify-center">
+                                        <QrCode className="w-6 h-6 text-white/20" />
+                                    </div>
+                                )}
+                                <span className="text-[8px] font-bold text-cny-gold/60 uppercase tracking-tighter">扫码浏览 Scan</span>
                             </div>
                         </div>
                     </Link>
@@ -136,14 +188,28 @@ const LandingPage: React.FC = () => {
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Utensils className="w-24 h-24" />
                         </div>
-                        <div className="relative z-10">
-                            <div className="w-14 h-14 bg-cny-gold text-cny-dark rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:-rotate-6 transition-transform">
-                                <Utensils className="w-7 h-7" />
+                        <div className="relative z-10 flex justify-between items-start">
+                            <div>
+                                <div className="w-14 h-14 bg-cny-gold text-cny-dark rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:-rotate-6 transition-transform">
+                                    <Utensils className="w-7 h-7" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">新春美食</h3>
+                                <p className="text-white/60 text-sm font-medium mb-4 uppercase tracking-widest">Food & Snacks</p>
+                                <div className="flex items-center text-cny-gold gap-2 font-bold text-xs uppercase tracking-widest group-hover:translate-x-2 transition-transform">
+                                    查看详情 View <ArrowRight className="w-4 h-4" />
+                                </div>
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">新春美食</h3>
-                            <p className="text-white/60 text-sm font-medium mb-4 uppercase tracking-widest">Food & Snacks</p>
-                            <div className="flex items-center text-cny-gold gap-2 font-bold text-xs uppercase tracking-widest group-hover:translate-x-2 transition-transform">
-                                查看详情 View <ArrowRight className="w-4 h-4" />
+
+                            {/* Card QR Code */}
+                            <div className="hidden sm:flex flex-col items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                                {foodQr ? (
+                                    <img src={foodQr} alt="Food QR" className="w-20 h-20 rounded-lg p-1 bg-white/5" />
+                                ) : (
+                                    <div className="w-20 h-20 bg-white/5 rounded-lg animate-pulse flex items-center justify-center">
+                                        <QrCode className="w-6 h-6 text-white/20" />
+                                    </div>
+                                )}
+                                <span className="text-[8px] font-bold text-cny-gold/60 uppercase tracking-tighter">扫码浏览 Scan</span>
                             </div>
                         </div>
                     </Link>
@@ -201,6 +267,20 @@ const LandingPage: React.FC = () => {
                         <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0" />
                     </div>
                 </Link>
+            </div>
+
+            {/* QR Code Section - Shared and Access */}
+            <div className="flex flex-col items-center justify-center pt-8 pb-4 opacity-70 hover:opacity-100 transition-opacity">
+                <div className="glass-dark p-3 rounded-2xl border border-white/10 shadow-xl flex flex-col items-center gap-2">
+                    {footerQr ? (
+                        <img src={footerQr} alt="Page QR Code" className="w-24 h-24 rounded-lg" />
+                    ) : (
+                        <div className="w-24 h-24 bg-white/5 rounded-lg animate-pulse flex items-center justify-center">
+                            <QrCode className="w-8 h-8 text-white/20" />
+                        </div>
+                    )}
+                    <span className="text-[10px] font-bold text-cny-gold/60 uppercase tracking-widest">扫码分享 Share Page</span>
+                </div>
             </div>
         </div>
     );
