@@ -41,9 +41,9 @@ const RaffleWheel: React.FC = () => {
   const [canControl, setCanControl] = useState(false); // admin, gm, or host
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Derived available candidates pool that excludes already drawn winners
+  // Derived available candidates pool that excludes already drawn winners based on phone number
   const availableCandidates = candidates.filter(c =>
-    !pastWinners.some(pw => pw.number === c.number)
+    !pastWinners.some(pw => pw.phone === c.phone)
   );
 
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null);
