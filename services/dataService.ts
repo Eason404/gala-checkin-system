@@ -769,6 +769,7 @@ export const calculateStats = async (existingReservations?: Reservation[]): Prom
 
     if (r.ticketType === TicketType.EarlyBird) stats.earlyBirdCount += r.adultsCount;
     if (r.ticketType === TicketType.Regular) stats.regularCount += r.adultsCount;
+    if (r.ticketType === TicketType.WalkIn || r.ticketType === TicketType.WalkInNoFood) stats.walkInCount += r.adultsCount;
     if (r.checkInStatus === CheckInStatus.Arrived) stats.checkedInCount += r.totalPeople;
 
     // Coupon Usage
