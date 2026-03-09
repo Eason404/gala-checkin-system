@@ -2,7 +2,7 @@
 import { Download, Loader2, RefreshCw, Activity, Settings, Mail, Users } from 'lucide-react';
 import React, { useEffect, useState, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
-import { calculateStats, getReservationsPaged, updateReservation, deleteReservation, getTicketConfig, updateTicketConfig, sendCancellationEmail, getStaffAccounts } from '../services/dataService';
+import { calculateStats, getReservations, updateReservation, deleteReservation, getTicketConfig, updateTicketConfig, sendCancellationEmail, getStaffAccounts } from '../services/dataService';
 import { Stats, Reservation, CheckInStatus, TicketConfig } from '../types';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -43,9 +43,6 @@ const AdminDashboard: React.FC<{ view?: 'dashboard' | 'list' }> = ({ view = 'das
   const [filterPayment, setFilterPayment] = useState<string>('all');
   const [filterPerformer, setFilterPerformer] = useState<string>('all');
   const [filterCoupon, setFilterCoupon] = useState<string>('all');
-  const [lastVisible, setLastVisible] = useState<any>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
   const [sortKey, setSortKey] = useState<'contactName' | 'totalAmount' | 'createdTime'>('createdTime');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -63,28 +60,23 @@ const AdminDashboard: React.FC<{ view?: 'dashboard' | 'list' }> = ({ view = 'das
   });
   const [showEmailModal, setShowEmailModal] = useState(false);
 
-  const fetchData = async (isLoadMore = false) => {
-    if (isLoadMore) setRefreshing(true);
-    else setLoading(true);
+  const fetchData = async () => {
+    setLoading(true);
 
     try {
-      const { reservations: newRes, lastDoc, totalCount: count } = await getReservationsPaged(50, isLoadMore ? lastVisible : null);
+      const allRes = await getReservations();
 
-      const combinedRes = isLoadMore ? [...reservations, ...newRes] : newRes;
       const fetchedConfig = await getTicketConfig();
       const [fetchedStats, fetchedStaffMap] = await Promise.all([
-        calculateStats(combinedRes),
-        getStaffAccounts(combinedRes, fetchedConfig)
+        calculateStats(allRes),
+        getStaffAccounts(allRes, fetchedConfig)
       ]);
 
       setStats(fetchedStats);
-      setReservations(combinedRes);
+      setReservations(allRes);
       setConfig(fetchedConfig);
       setStaffMap(fetchedStaffMap);
       setEditConfig(fetchedConfig);
-      setLastVisible(lastDoc);
-      setHasMore(newRes.length === 50);
-      setTotalCount(count);
     } catch (e) {
       console.error("Failed to load dashboard data", e);
     } finally {
@@ -277,7 +269,7 @@ const AdminDashboard: React.FC<{ view?: 'dashboard' | 'list' }> = ({ view = 'das
           <h2 className="text-lg font-black text-white tracking-tight">
             {view === 'dashboard' ? 'Dashboard' : 'Registration List'}
           </h2>
-          <button onClick={() => fetchData(false)} className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition" title="Refresh">
+          <button onClick={() => fetchData()} className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition" title="Refresh">
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
         </div>
@@ -328,21 +320,16 @@ const AdminDashboard: React.FC<{ view?: 'dashboard' | 'list' }> = ({ view = 'das
             setCurrentPage={setCurrentPage}
             totalPages={totalPages}
           />
-          {hasMore && (
-            <div className="mt-8 flex justify-center pb-8 text-center flex-col gap-2">
-              <button
-                onClick={() => fetchData(true)}
-                disabled={refreshing}
-                className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-bold transition flex items-center gap-2 border border-white/10 shadow-xl mx-auto"
-              >
-                {refreshing ? <Loader2 className="w-4 h-4 animate-spin text-cny-gold" /> : <RefreshCw className="w-4 h-4 text-cny-gold" />}
-                加载更多 (Load More)
-              </button>
-              <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold">
-                已加载 {reservations.length} / 共 {totalCount} 条记录
+          <div className="mt-8 flex justify-center pb-8 text-center flex-col gap-2">
+            <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold">
+              共 {reservations.length} 条记录 / TOTAL {reservations.length} RECORDS
+            </p>
+            {filteredData.length !== reservations.length && (
+              <p className="text-white/20 text-[10px] tracking-widest font-bold">
+                (显示 {filteredData.length} 条过滤结果)
               </p>
-            </div>
-          )}
+            )}
+          </div>
         </>
       )}
     </div>
