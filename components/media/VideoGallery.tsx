@@ -82,7 +82,7 @@ const VideoGallery: React.FC = () => {
                 ) : (
                     <iframe
                         className="absolute inset-0 w-full h-full"
-                        src={`https://www.youtube.com/embed/${activeVideo.id}?autoplay=1&rel=0`}
+                        src={`https://www.youtube.com/embed/${activeVideo.id}?autoplay=1&rel=0&vq=hd1080`}
                         title={activeVideo.title}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
