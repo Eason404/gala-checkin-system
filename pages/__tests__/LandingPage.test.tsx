@@ -20,26 +20,25 @@ describe('LandingPage Component', () => {
         expect(heroImg).toHaveAttribute('src', '/landing-hero.png');
     });
 
-    it('renders navigation cards for Schedule, Program, and Food', () => {
+    it('renders the post-event Thank You banner', () => {
         renderComponent();
-        expect(screen.getByText('流程安排')).toBeInTheDocument();
-        expect(screen.getByText('Schedule')).toBeInTheDocument();
+        expect(screen.getByText('感谢大家的参与！')).toBeInTheDocument();
+        expect(screen.getByText('EVENT COMPLETE ✓')).toBeInTheDocument();
+        expect(screen.getByText('马到成功！🐎')).toBeInTheDocument();
+    });
+
+    it('renders the event date and location metadata', () => {
+        renderComponent();
+        expect(screen.getByText('2026年3月8日 星期日')).toBeInTheDocument();
+        expect(screen.getByText('纳迪克高中礼堂')).toBeInTheDocument();
+    });
+
+    it('renders archived Program and Food navigation cards', () => {
+        renderComponent();
         expect(screen.getByText('节目单')).toBeInTheDocument();
-        expect(screen.getByText('Performances')).toBeInTheDocument();
+        expect(screen.getByText('Performance Archive')).toBeInTheDocument();
         expect(screen.getByText('新春美食')).toBeInTheDocument();
-        expect(screen.getByText('Food & Snacks')).toBeInTheDocument();
-    });
-
-    it('renders the Sold Out state for registration', () => {
-        renderComponent();
-        expect(screen.getByText('WALK-INS WELCOME')).toBeInTheDocument();
-        expect(screen.getByText('现场购票')).toBeInTheDocument();
-        expect(screen.getByText('Early Bird Sold Out')).toBeInTheDocument();
-    });
-
-    it('renders the Manage Reservation link', () => {
-        renderComponent();
-        expect(screen.getByText('查询 / 取消预约 My Reservation')).toBeInTheDocument();
+        expect(screen.getByText('Food & Snacks Archive')).toBeInTheDocument();
     });
 
     it('renders the Staff Portal link', () => {
